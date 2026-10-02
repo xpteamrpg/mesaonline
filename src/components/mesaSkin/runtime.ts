@@ -44,7 +44,7 @@ export type SkinFocus = {
   pmMax: number;
   defense: number;
   /** Deslocamento em metros (1 quadrado = 1,5 m), com o de voo e o de escavação quando existem. */
-  speed?: { walkM: number; flyM?: number; burrowM?: number };
+  speed?: { walkM: number; flyM?: number; burrowM?: number; /** metros tirados do deslocamento (sobrecarga) */ penaltyM?: number };
   /** Seis atributos da ficha (valor = bônus), na ordem FOR…CAR. */
   attributes?: { key: string; short: string; value: number }[];
 };
@@ -62,7 +62,9 @@ export type SkinRuntime = {
   focus: SkinFocus | null;
   saves: { id: string; name: string; value: string; icon: "pentagram" | "shield" | "star"; tone: string }[];
   skills: { name: string; value: string; icon: LucideIcon }[];
-  equipment: { id: string; name: string; label: string; icon: LucideIcon; tone: string; /** marcado para o combate */ marked: boolean }[];
+  equipment: { id: string; name: string; label: string; icon: LucideIcon; tone: string; /** marcado para o combate */ marked: boolean; /** empunhado ou vestido (em uso) */ equipped: boolean }[];
+  /** Carga da mochila (espaços usados e limite) e quantos itens estão em uso. */
+  carga?: { used: number; max: number; overloaded: boolean; impossible: boolean; hands: number; worn: number; maxHands: number; maxWorn: number };
   /** Ataques da ficha, com a marca "mostrar em Agir". */
   attacks: { id: string; actionId: string; name: string; detail: string; marked: boolean }[];
   /** Poderes da ficha do personagem em foco. */

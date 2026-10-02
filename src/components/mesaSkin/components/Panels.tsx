@@ -43,8 +43,8 @@ function Portrait({ img, src, size, ring }: { img: ImgKey; src?: string; size: n
 
 /** "9 m" (e os quadrados de 1,5 m). */
 const speedLabel = (meters: number) => `${meters.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m`;
-const speedTitle = (speed: { walkM: number; flyM?: number; burrowM?: number }) => [
-  `${speedLabel(speed.walkM)} (${Math.round(speed.walkM / 1.5)} quadrados)`,
+const speedTitle = (speed: { walkM: number; flyM?: number; burrowM?: number; penaltyM?: number }) => [
+  `${speedLabel(speed.walkM)} (${Math.round(speed.walkM / 1.5)} quadrados)${speed.penaltyM ? ` · sobrecarga −${speedLabel(speed.penaltyM)}` : ""}`,
   speed.flyM ? `voo ${speedLabel(speed.flyM)}` : "",
   speed.burrowM ? `escavação ${speedLabel(speed.burrowM)}` : "",
 ].filter(Boolean).join(" · ");
@@ -125,19 +125,19 @@ function HotkeyBar({ links, onAction }: { links: Record<string, string>; onActio
 }
 
 /** Título de seção com seta: clicar recolhe ou abre a lista. */
-function FoldTitle({ glyph, children, open, onToggle, count }: { glyph: React.ReactNode; children: React.ReactNode; open: boolean; onToggle: () => void; count?: number }) {
+function FoldTitle({ glyph, children, open, onToggle, count, warn }: { glyph: React.ReactNode; children: React.ReactNode; open: boolean; onToggle: () => void; count?: number | string; warn?: boolean }) {
   return (
     <button type="button" onClick={onToggle} aria-expanded={open} className="flex w-full items-center gap-2 px-3 pt-2 pb-1.5 text-left">
       <span className="grid h-5 w-5 place-items-center rounded-[5px] border border-[#7a5227]/70 bg-[color:var(--mx-241708)] text-[#e0b25c]">{glyph}</span>
       <h2 className="font-display text-[15px] font-semibold tracking-[0.04em] text-[color:var(--mx-f0e2c6)]">{children}</h2>
-      {count !== undefined && <span className="num text-[11px] text-[#a6947c]">{count}</span>}
+      {count !== undefined && <span className={cx("num text-[11px]", warn ? "font-bold text-[#e8837a]" : "text-[#a6947c]")}>{count}</span>}
       <ChevronDown size={16} className={cx("ml-auto text-[#c9a25e] transition-transform duration-200", !open && "-rotate-90")} />
     </button>
   );
 }
 
 export function CharacterSheet({ links, onAction }: { links: Record<string, string>; onAction: (id: string) => void }) {
-  const { focus, skills, equipment, spells, powers } = useSkinRuntime();
+  const { focus, skills, equipment, spells, powers, carga } = useSkinRuntime();
   const attributes = focus?.attributes;
   const [open, setOpen] = useState({ skills: true, powers: true, equipment: true, spells: true });
   const [openPower, setOpenPower] = useState<string | null>(null);
@@ -236,7 +236,13 @@ export function CharacterSheet({ links, onAction }: { links: Record<string, stri
         )}
 
         {/* equipamentos */}
-        <FoldTitle glyph={<Backpack size={13} color="#e0b25c" />} open={open.equipment} onToggle={() => toggle("equipment")} count={equipment.length}>Equipamentos / Mochila</FoldTitle>
+        <FoldTitle glyph={<Backpack size={13} color="#e0b25c" />} open={open.equipment} onToggle={() => toggle("equipment")} count={carga ? `${carga.used}/${carga.max}` : equipment.length} warn={carga?.overloaded}>Equipamentos / Mochila</FoldTitle>
+        {open.equipment && carga && (
+          <p className="num mx-3 mb-1 text-[11px] text-[#a6947c]" data-carga-line>
+            Carga {carga.used}/{carga.max} espaços{carga.overloaded ? (carga.impossible ? " · acima do dobro: não dá para carregar tanto" : " · sobrecarregado (deslocamento −3 m, armadura −5)") : ""}
+            {" · "}Empunhados {carga.hands}/{carga.maxHands} · Vestidos {carga.worn}/{carga.maxWorn}
+          </p>
+        )}
         {open.equipment && (
           <div className="mx-3 grid min-h-[60px] grid-cols-2 gap-x-2 rounded-[10px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] px-2 py-1">
             {equipment.length === 0 && <p className="col-span-2 px-1.5 py-2 text-[12px] text-[#a6947c]">Mochila vazia.</p>}
@@ -252,6 +258,7 @@ export function CharacterSheet({ links, onAction }: { links: Record<string, stri
                   <e.icon size={14} className="shrink-0" style={{ color: e.tone }} strokeWidth={1.7} />
                   <span className="flex-1 truncate text-[12px] text-[color:var(--mx-ddd0b6)]" title={e.label}>{e.label}</span>
                 </Action>
+                <button type="button" onClick={() => onAction(`equip:${e.id}`)} title={e.equipped ? `Guardar ${e.name} (tirar de uso)` : `Usar ${e.name} (empunhar ou vestir)`} aria-label={e.equipped ? `Guardar ${e.name}` : `Usar ${e.name}`} aria-pressed={e.equipped} data-equip-toggle className={cx("grid h-6 w-6 shrink-0 place-items-center rounded-[6px] transition-colors hover:bg-white/[0.07]", e.equipped ? "text-[#4fa83c]" : "text-[#7a6a52]")}><Shield size={13} strokeWidth={e.equipped ? 2.4 : 1.6} /></button>
                 <button type="button" onClick={() => onAction(`dropItem:${e.id}`)} title={`Soltar ${e.name} no chão`} aria-label={`Soltar ${e.name} no chão`} className="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-[#c9a25e] transition-colors hover:bg-white/[0.08] hover:text-[color:var(--mx-f0d9a5)]"><ArrowDownToLine size={13} strokeWidth={1.8} /></button>
               </div>
             ))}
@@ -582,7 +589,8 @@ export function CombatActions({ links, onAction }: { links: Record<string, strin
                         <input type="checkbox" checked={e.marked} onChange={() => onAction(`loadout:items:${e.id}`)} aria-label={`Usar ${e.name} em combate`} className="h-4 w-4 shrink-0 accent-[#d9a94c]" />
                         <e.icon size={15} className="shrink-0" style={{ color: e.tone }} strokeWidth={1.7} />
                         <span className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--mx-ddd0b6)]" title={e.label}>{e.label}</span>
-                        <button type="button" onClick={() => onAction(`dropItem:${e.id}`)} title={`Soltar ${e.name} no chão`} aria-label={`Soltar ${e.name} no chão`} className="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-[#c9a25e] transition-colors hover:bg-white/[0.08] hover:text-[color:var(--mx-f0d9a5)]"><ArrowDownToLine size={14} strokeWidth={1.8} /></button>
+                        <button type="button" onClick={() => onAction(`equip:${e.id}`)} title={e.equipped ? `Guardar ${e.name} (tirar de uso)` : `Usar ${e.name} (empunhar ou vestir)`} aria-label={e.equipped ? `Guardar ${e.name}` : `Usar ${e.name}`} aria-pressed={e.equipped} data-equip-toggle className={cx("grid h-6 w-6 shrink-0 place-items-center rounded-[6px] transition-colors hover:bg-white/[0.07]", e.equipped ? "text-[#4fa83c]" : "text-[#7a6a52]")}><Shield size={13} strokeWidth={e.equipped ? 2.4 : 1.6} /></button>
+                <button type="button" onClick={() => onAction(`dropItem:${e.id}`)} title={`Soltar ${e.name} no chão`} aria-label={`Soltar ${e.name} no chão`} className="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-[#c9a25e] transition-colors hover:bg-white/[0.08] hover:text-[color:var(--mx-f0d9a5)]"><ArrowDownToLine size={14} strokeWidth={1.8} /></button>
                       </div>
                     ))}
                   </div>

@@ -1,3 +1,4 @@
+import { MAX_HANDS, MAX_WORN, cargaOf, equippedCounts } from "../../game/carga";
 import { Backpack, FlaskConical, Shield, Swords, type LucideIcon } from "lucide-react";
 import type { ImgKey } from "../mesaSkin/assets";
 import { SAVES, SKILLS, type Combatant, type Roll } from "../mesaSkin/data";
@@ -57,6 +58,7 @@ function equipmentOf(sheet: CharacterSheet | null): SkinRuntime["equipment"] {
     name: item.name,
     label: item.quantity > 1 ? `${item.name} (${item.quantity})` : item.name,
     marked: marked.includes(item.id),
+    equipped: Boolean(item.equipped),
     ...itemStyle(item.category),
   }));
 }
@@ -126,7 +128,8 @@ function focusOf(token: BoardToken | undefined, sheet: CharacterSheet | null): S
     pmMax: token.pmMax,
     defense: token.defense,
     speed: {
-      walkM: sheet?.speed || token.movementM || 9,
+      walkM: Math.max(0, (sheet?.speed || token.movementM || 9) - (sheet ? cargaOf(sheet).speedPenaltyM : 0)),
+      penaltyM: sheet ? cargaOf(sheet).speedPenaltyM || undefined : undefined,
       flyM: sheet?.flySpeed ?? token.flyM,
       burrowM: sheet?.burrowSpeed ?? token.burrowM,
     },
@@ -293,6 +296,7 @@ export function buildSkinRuntime(snapshot: RuntimeSnapshot, campaigns: string[],
     saves,
     skills,
     equipment: equipmentOf(sheet),
+    carga: sheet ? { ...cargaOf(sheet), ...equippedCounts(sheet.equipment), maxHands: MAX_HANDS, maxWorn: MAX_WORN } : undefined,
     attacks: attacksOf(sheet),
     powers: sheet || !focusToken?.abilities?.length ? powersOf(sheet) : threatPowersOf(focusToken),
     canOperateFocus: focusToken ? canControlToken(snapshot.multiplayer, focusToken) : false,

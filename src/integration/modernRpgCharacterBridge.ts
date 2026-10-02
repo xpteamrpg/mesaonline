@@ -9,6 +9,7 @@ import {
 } from "../../ficha-modernrpg/characterRoute";
 import type { CharacterSheet } from "../../ficha-modernrpg/sheet";
 import type { BoardToken, TacticalUnitView } from "../game/types";
+import { cargaOf } from "../game/carga";
 import { actionsForCharacter, tokenToTacticalView } from "../tactics/interpretation/characterActionAdapter";
 
 function attribute(sheet: CharacterSheet, key: keyof CharacterSheet["attributes"]): number {
@@ -98,7 +99,7 @@ export function boardTokenFromCharacter(sheet: CharacterSheet, at: { x: number; 
     critMultiplier: Number(critical.match(/x\s*(\d+)/i)?.[1]) || 2,
     attackType: ranged ? "ranged" : "melee",
     rangeM: ranged ? 9 : 1.5,
-    movementM: sheet.speed || 9,
+    movementM: Math.max(0, (sheet.speed || 9) - cargaOf(sheet).speedPenaltyM),
     flyM: sheet.flySpeed,
     burrowM: sheet.burrowSpeed,
     level: sheet.level || 1,

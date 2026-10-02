@@ -1,3 +1,4 @@
+import { toggleEquipped } from "./game/carga";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { coveredCells, footprintOf, parseSize, sideOf, tokenCovers } from "./game/tokenSize";
 import { freshTurnResources, turnPlan } from "./tactics/engine/actionEconomy";
@@ -303,6 +304,20 @@ export default function App() {
    * Larga um item da mochila no chão (botão de seta para baixo, ou arrastar para o mapa): o item sai da ficha (1 unidade
    * se houver várias) e vira um objeto "item" na casa pedida (ou na do personagem), com o nome e a descrição do item.
    */
+  /** Marca ou desmarca um item como em uso (empunhado ou vestido), respeitando 2 empunhados e 4 vestidos. */
+  function toggleEquippedItem(itemId: string) {
+    const token = focusedToken();
+    const sheet = token?.modernRpgCharacterId ? getModernRpgCharacter(token.modernRpgCharacterId) : null;
+    if (!token || !sheet || !canOperate(token)) {
+      appendChat({ author: "Sistema", text: "Selecione um personagem seu, com ficha, para escolher os itens em uso.", kind: "system" });
+      return;
+    }
+    const result = toggleEquipped(sheet, itemId);
+    if (result.error) { appendChat({ author: "Sistema", text: result.error, kind: "system" }); return; }
+    upsertCharacterSheet(result.sheet);
+    window.dispatchEvent(new Event("modernrpg-characters-changed"));
+  }
+
   function dropItemToGround(itemId: string, cell?: { x: number; y: number }) {
     const token = focusedToken();
     const sheet = token?.modernRpgCharacterId ? getModernRpgCharacter(token.modernRpgCharacterId) : null;
@@ -750,6 +765,8 @@ export default function App() {
     if (saveMatch) { showCheckResult(rollSave(saveMatch[1])); return; }
     const skillMatch = /^skill:(.+)$/.exec(action);
     if (skillMatch) { showCheckResult(rollSkill(skillMatch[1])); return; }
+    const equipMatch = /^equip:(.+)$/.exec(action);
+    if (equipMatch) { toggleEquippedItem(equipMatch[1]); return; }
     const dropMatch = /^dropItem:(.+)$/.exec(action);
     if (dropMatch) { dropItemToGround(dropMatch[1]); return; }
     const itemMatch = /^item:(.+)$/.exec(action);
