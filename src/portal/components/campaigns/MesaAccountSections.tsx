@@ -93,7 +93,7 @@ export const ParticipatingTables: React.FC<{ characters: CharacterSheet[]; skipI
   const shown = list.filter((m) => m.role === "jogador" || !skipIds.includes(m.table.id));
   if (shown.length === 0) return null;
   const leave = async (m: MyTable) => {
-    if (!confirm(`Sair de “${m.table.name}”? Os seus personagens ligados a ela saem junto.`)) return;
+    if (!confirm(`Sair de “${m.table.name}”? Os seus personagens saem só desta campanha e continuam em Meus Personagens.`)) return;
     try { await leaveTable(m.table.id); load(); } catch (e) { setMsg(reason(e)); }
   };
   return (
@@ -160,7 +160,7 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
           {members.map((m) => (
             <li key={m.userId} className="flex items-center gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-2 py-1.5 text-xs">
               <b>{m.name}</b><span className="text-[#9c9180]">{m.role === "mestre" ? "mestre" : "jogador"}</span>
-              {m.role !== "mestre" && m.userId !== user?.id && <button onClick={() => { if (confirm(`Expulsar ${m.name}? Ele sai da mesa, perde os personagens ligados e só volta com um novo convite.`)) void run(() => kickMember(table.id, m.userId), `${m.name} foi expulso.`); }} className={`${btn} ml-auto border border-[#b92b3a] text-[#b92b3a]`}>Expulsar</button>}
+              {m.role !== "mestre" && m.userId !== user?.id && <button onClick={() => { if (confirm(`Expulsar ${m.name}? Ele sai desta mesa e só volta com um novo convite. Os personagens dele saem só desta campanha: continuam na conta dele, em Meus Personagens (nada é apagado).`)) void run(() => kickMember(table.id, m.userId), `${m.name} foi expulso.`); }} className={`${btn} ml-auto border border-[#b92b3a] text-[#b92b3a]`}>Expulsar</button>}
             </li>
           ))}
         </ul>

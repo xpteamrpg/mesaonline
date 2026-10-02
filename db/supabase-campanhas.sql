@@ -170,7 +170,8 @@ begin
   return jsonb_build_object('ok', true, 'accepted', p_accept);
 end $$;
 
--- O mestre expulsa um jogador (some da lista, perde os personagens ligados e não volta pelo código).
+-- O mestre expulsa um jogador: some da lista da mesa, os personagens dele saem SÓ desta mesa (a ficha em si não é tocada
+-- e continua na conta dele) e ele não volta pelo código até receber novo convite.
 create or replace function mrpg_table_kick(p_id uuid, p_user uuid)
 returns boolean language plpgsql security definer set search_path = public as $$
 begin
@@ -182,7 +183,7 @@ begin
   return true;
 end $$;
 
--- Jogador sai da mesa por conta própria.
+-- Jogador sai da mesa por conta própria (os personagens saem só desta mesa; as fichas continuam na conta).
 create or replace function mrpg_table_leave(p_id uuid)
 returns boolean language plpgsql security definer set search_path = public as $$
 begin
