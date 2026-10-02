@@ -1,0 +1,383 @@
+{
+ "id": "pronto-kalop",
+ "name": "Kalop Sita",
+ "race": "Kallyanach",
+ "raceId": "kallyanach-ameacas",
+ "class": "Paladino",
+ "classId": "paladino",
+ "level": 3,
+ "campaign": "Campanha livre",
+ "attributes": {
+  "for": {
+   "key": "for",
+   "short": "FOR",
+   "name": "Força",
+   "value": -1
+  },
+  "des": {
+   "key": "des",
+   "short": "DES",
+   "name": "Destreza",
+   "value": 4
+  },
+  "con": {
+   "key": "con",
+   "short": "CON",
+   "name": "Constituição",
+   "value": 2
+  },
+  "int": {
+   "key": "int",
+   "short": "INT",
+   "name": "Inteligência",
+   "value": 2
+  },
+  "sab": {
+   "key": "sab",
+   "short": "SAB",
+   "name": "Sabedoria",
+   "value": -1
+  },
+  "car": {
+   "key": "car",
+   "short": "CAR",
+   "name": "Carisma",
+   "value": 4
+  }
+ },
+ "hp": {
+  "max": 39,
+  "current": 39
+ },
+ "mp": {
+  "max": 13,
+  "current": 13
+ },
+ "defenseOther": 3,
+ "speed": 9,
+ "skills": {
+  "acr": {
+   "trained": false
+  },
+  "ade": {
+   "trained": false
+  },
+  "atl": {
+   "trained": false
+  },
+  "atu": {
+   "trained": false
+  },
+  "cav": {
+   "trained": false
+  },
+  "con": {
+   "trained": false
+  },
+  "cur": {
+   "trained": false
+  },
+  "dip": {
+   "trained": false
+  },
+  "eng": {
+   "trained": false,
+   "other": -5
+  },
+  "for": {
+   "trained": true
+  },
+  "fur": {
+   "trained": false
+  },
+  "gue": {
+   "trained": false
+  },
+  "ini": {
+   "trained": true
+  },
+  "int": {
+   "trained": false
+  },
+  "intu": {
+   "trained": false,
+   "other": -5
+  },
+  "inv": {
+   "trained": false,
+   "other": -5
+  },
+  "jog": {
+   "trained": false
+  },
+  "lad": {
+   "trained": false,
+   "other": -5
+  },
+  "lut": {
+   "trained": true
+  },
+  "mis": {
+   "trained": true
+  },
+  "nob": {
+   "trained": false
+  },
+  "ofi": {
+   "trained": false
+  },
+  "per": {
+   "trained": false,
+   "other": -5
+  },
+  "pil": {
+   "trained": false
+  },
+  "pon": {
+   "trained": false,
+   "other": -5
+  },
+  "ref": {
+   "trained": true
+  },
+  "rel": {
+   "trained": false
+  },
+  "sob": {
+   "trained": false
+  },
+  "von": {
+   "trained": true
+  }
+ },
+ "attacks": [
+  {
+   "id": "atk-mur6qjs2-epo7o",
+   "name": "Corrente de espinhos",
+   "skill": "Luta",
+   "damage": "2d4",
+   "damageBonus": 4,
+   "critical": "19/x2",
+   "damageType": ""
+  },
+  {
+   "id": "atk-mur6qjs3-qig2p",
+   "name": "Cauda",
+   "skill": "Luta",
+   "damage": "—",
+   "critical": "x2",
+   "damageType": ""
+  },
+  {
+   "id": "atk-mur6qjs3-hnvhe",
+   "name": "Asas",
+   "skill": "Luta",
+   "damage": "—",
+   "critical": "x2",
+   "damageType": ""
+  }
+ ],
+ "racialAbilities": [
+  {
+   "id": "ra-kallyanach-ameacas-0",
+   "name": "Bênção de Kallyadranoch (escolha 2)",
+   "description": "Escolha duas bênçãos. Você pode escolher outras dessas bênçãos no lugar de poderes de classe.\n• Armamento Kallyanach: Ganha uma arma natural (1d6) de cauda (impacto), chifres (perfuração) ou mordida (corte). Pode gastar 1 PM para um ataque extra com ela ao usar a ação agredir.\n• Asas Dracônicas: Pode gastar 1 PM por rodada para voar (9m). Enquanto voa desta forma, você fica vulnerável.\n• Escamas Elementais: Recebe +2 na Defesa e a RD de sua Herança Dracônica aumenta para 10.\n• Prática Arcana: Aprende uma magia de 1º círculo de dano igual à sua Herança (Inteligência). Se aprender novamente, custo reduz em -1 PM.\n• Sentidos Dracônicos: Você recebe faro e visão no escuro.\n• Sopro de Dragão: Ação padrão e 1 PM: cone de 6m causa 1d12 de dano do seu elemento (Ref CD Con metade). A cada 4 níveis, pode gastar +1 PM para +1d12 de dano.",
+   "source": "Kallyanach"
+  }
+ ],
+ "classAbilities": [
+  {
+   "id": "ca-paladino-0",
+   "name": "Abençoado",
+   "description": "Soma Carisma no total de PM. Torna-se devoto de um deus (recebe 2 poderes) OU devoto do Bem (sem poderes, sem Obrigações exceto Código do Herói). (Santo não pode ser do Bem).",
+   "level": 1,
+   "source": "Paladino"
+  },
+  {
+   "id": "ca-paladino-1",
+   "name": "Código do Herói",
+   "description": "Manter a palavra, nunca recusar ajuda a inocentes, não mentir/trapacear/roubar. Se violar: perde todos PM (recupera dia seguinte).",
+   "level": 1,
+   "source": "Paladino"
+  },
+  {
+   "id": "ca-paladino-2",
+   "name": "Golpe Divino",
+   "description": "Ao atacar corpo a corpo, gaste 2 PM: Soma Carisma no ataque e +1d8 no dano. A cada 4 níveis, pode gastar +1 PM para aumentar dano em +1d8.",
+   "level": 1,
+   "source": "Paladino"
+  },
+  {
+   "id": "ca-paladino-3",
+   "name": "Cura pelas Mãos",
+   "description": "Ação movimento e 1 PM. Cura 1d8+1 (Luz) em alcance corpo a corpo. A cada 4 níveis, pode gastar +1 PM para aumentar em +1d8+1. (Causa dano em mortos-vivos). Nível 6: Gaste +1 PM para remover condição.",
+   "level": 2,
+   "source": "Paladino"
+  },
+  {
+   "id": "ca-paladino-4",
+   "name": "Aura Sagrada",
+   "description": "Gaste 1 PM (sustentada). Aura de 9m raio. Você e aliados na aura somam seu Carisma nos testes de resistência.",
+   "level": 3,
+   "source": "Paladino"
+  }
+ ],
+ "powers": [
+  {
+   "id": "pw-mur6qjs7-agc8t",
+   "name": "Origem: Nativo de midgard",
+   "type": "Raça",
+   "description": ""
+  },
+  {
+   "id": "combat-geral-proficiencia",
+   "name": "Proficiência(Armas exoticas)",
+   "type": "Combate",
+   "description": "Escolha uma: armas marciais, armas de fogo, armaduras pesadas ou escudos (se tiver marciais, pode pegar exóticas).",
+   "cost": null
+  },
+  {
+   "id": "combat-geral-estilo-de-duas-armas",
+   "name": "Estilo de duas armas",
+   "type": "Combate",
+   "description": "Se empunhar duas armas (uma leve) e agredir: faz dois ataques (um com cada), com –2 de penalidade. Se tiver Ambidestria, não sofre penalidade.",
+   "requirement": "Des 2, treinado em Luta",
+   "cost": null
+  },
+  {
+   "id": "raca-kallyanach-heranca-draconica",
+   "name": "Herança Dracônica (Fogo)",
+   "type": "Racial · Kallyanach",
+   "description": "Você é uma criatura do tipo monstro e recebe redução 5 contra um tipo de dano a sua escolha entre ácido, eletricidade, fogo, frio, luz ou trevas.",
+   "cost": null
+  },
+  {
+   "id": "raca-kallyanach-armamento-kallyanach",
+   "name": "Armamento Kallyanach(Cauda)",
+   "type": "Racial · Kallyanach",
+   "description": "Você possui uma arma natural (dano 1d6, crítico x2) escolhida entre cauda (impacto), chifres (perfuração) ou mordida (perfuração). Uma vez por rodada, quando usa a ação agredir para atacar com outra arma, pode gastar 1 PM para fazer um ataque corpo a corpo extra com essa arma.",
+   "cost": 1
+  },
+  {
+   "id": "raca-kallyanach-asas-draconicas",
+   "name": "Asas Dracônicas",
+   "type": "Racial · Kallyanach",
+   "description": "Você pode gastar 1 PM por rodada para voar com deslocamento de 9m. Enquanto estiver voando desta forma, você fica vulnerável.",
+   "cost": 1
+  },
+  {
+   "id": "raca-harpia-kallyanach-pteros-suraggel-asas-de-aco",
+   "name": "Asas de Aço",
+   "type": "Racial · Harpia, Kallyanach, Pteros, Suraggel",
+   "description": "Asas dão +2 Defesa e contam como armas naturais (2d4, x2). Ao agredir, pode gastar 1 PM para ataque extra com elas (se não estiver voando).",
+   "requirement": "Possuir asas",
+   "cost": 1
+  },
+  {
+   "id": "complication-geral-ingenuo",
+   "name": "Ingênuo",
+   "type": "Complicação",
+   "description": "Não há maldade em seu coração. Você sofre –5 em Enganação, Intuição, Investigação e Ladinagem.",
+   "requirement": "Nenhum",
+   "cost": null
+  },
+  {
+   "id": "complication-idade-catarata",
+   "name": "Catarata",
+   "type": "Complicação",
+   "description": "Seus olhos já não são os mesmos. Você sofre –5 em Percepção e Pontaria.",
+   "requirement": "Nenhum",
+   "cost": null
+  },
+  {
+   "id": "combat-geral-acuidade-com-arma",
+   "name": "Acuidade com Arma",
+   "type": "Combate",
+   "description": "Quando usa uma arma corpo a corpo leve ou uma arma de arremesso, você pode usar sua Destreza em vez de Força nos testes de ataque e rolagens de dano.",
+   "requirement": "Des 1",
+   "cost": null
+  },
+  {
+   "id": "conceded-azgher-thyatis-imolacao-sagrada",
+   "name": "Imolação Sagrada",
+   "type": "Concedido · Azgher, Thyatis",
+   "description": "Padrão e 1 PM (sustentada). Braços em chamas. Ataques corpo a corpo causam +1d6 fogo.",
+   "requirement": "Devoto de Azgher ou Thyatis",
+   "cost": null
+  },
+  {
+   "id": "pw-mur6qjt9-x0dzv",
+   "name": "Voto da probleza(homebrews)",
+   "type": "Classe",
+   "description": "Nao posso acumular mais de 1000 tibares em pertences e ganho o dobro de beneficios de alimentos"
+  },
+  {
+   "id": "conceded-azgher-espada-solar",
+   "name": "Espada Solar",
+   "type": "Concedido · Azgher",
+   "description": "Gaste 1 PM para fazer arma de corte causar +1d6 fogo (cena).",
+   "requirement": "Devoto de Azgher",
+   "cost": 1
+  },
+  {
+   "id": "destiny-geral-bom-de-garfo",
+   "name": "Bom de Garfo",
+   "type": "Destino",
+   "description": "Recebe +3 PV por patamar e pode comer até dois pratos especiais por dia, acumulando seus benefícios (bônus iguais não se acumulam).",
+   "requirement": "Con 1",
+   "cost": null
+  },
+  {
+   "id": "combat-geral-saque-rapido",
+   "name": "Saque rapido",
+   "type": "Combate",
+   "description": "Recebe +2 Iniciativa. Saca/guarda como livre. Recarga de armas de disparo diminui uma categoria (Completa>Padrão>Movimento>Livre).",
+   "requirement": "Treinado em Iniciativa",
+   "cost": null
+  }
+ ],
+ "spells": [],
+ "money": 644.5,
+ "equipment": [
+  {
+   "id": "eq-mur6qjrd-tumbt",
+   "equipped": true,
+   "name": "Gibão de peles",
+   "quantity": 1,
+   "slots": 2,
+   "price": 25,
+   "description": "Armadura feita de várias camadas de peles e couro de animais que oferece +4 na Defesa com penalidade de –3 na armadura. Ocupa 2 espaços. Favorita de bárbaros.",
+   "category": "Armadura",
+   "defenseBonus": 4,
+   "armorPenalty": -3
+  },
+  {
+   "id": "eq-mur6qjro-5s7ws",
+   "equipped": false,
+   "name": "Escudo vime(comprado ambos por (30)",
+   "quantity": 2,
+   "slots": 2,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur6qjs2-02q5l",
+   "equipped": false,
+   "name": "Corrente de espinhos comprado por 35 tibares",
+   "quantity": 1,
+   "slots": 2,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  }
+ ],
+ "languages": "Comum",
+ "xp": 3000,
+ "notes": "Herói do playtest (importado do JSON da ficha de origem).",
+ "createdAt": "2026-10-02T16:36:23.384Z",
+ "updatedAt": "2026-10-02T16:36:23.389Z",
+ "origin": "Nativo de midgard",
+ "deity": "Azgher",
+ "avatar": "/herois/kalop-token.webp"
+}

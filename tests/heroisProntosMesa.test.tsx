@@ -26,8 +26,8 @@ function mount(element: React.ReactElement) {
 describe("heróis prontos do playtest à disposição do Mestre", () => {
   it("são 3 fichas completas, que nunca entram na lista da conta", () => {
     const ready = loadReadyHeroSheets();
-    expect(ready.map((s) => s.name)).toEqual(["Renard", "Astolfo", "Lágrima desk"]);
-    expect(ready.map((s) => s.level)).toEqual([3, 6, 3]);
+    expect(ready.map((s) => s.name)).toEqual(["Renard", "Astolfo", "Kalop Sita", "Lágrima desk"]);
+    expect(ready.map((s) => s.level)).toEqual([3, 6, 3, 3]);
     for (const sheet of ready) {
       expect(getCharacterSheetById(sheet.id)?.name).toBe(sheet.name); // o token consegue achar a ficha
       expect(loadCharacterSheets().some((c) => c.id === sheet.id)).toBe(false);
@@ -43,7 +43,7 @@ describe("heróis prontos do playtest à disposição do Mestre", () => {
     await act(async () => (document.querySelector('[title="Meus personagens"]') as HTMLElement).click());
     const dialog = document.querySelector('[aria-label="Meus personagens"]')!;
     expect(dialog.textContent).toContain("Heróis prontos do playtest");
-    for (const name of ["Renard", "Astolfo", "Lágrima desk"]) expect(dialog.textContent).toContain(name);
+    for (const name of ["Renard", "Astolfo", "Kalop Sita", "Lágrima desk"]) expect(dialog.textContent).toContain(name);
     const renard = [...dialog.querySelectorAll(".mesa-char-pick")].find((b) => b.textContent?.includes("Renard")) as HTMLElement;
     await act(async () => renard.click());
     const token = getBoard().tokens.find((t) => t.modernRpgCharacterId === "pronto-renard");

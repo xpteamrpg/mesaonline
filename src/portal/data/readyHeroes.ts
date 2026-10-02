@@ -2,6 +2,7 @@ import type { CharacterSheet } from "../types/sheet";
 import { withBase } from "../../utils/assetUrl";
 import renardJson from "./ready/renard.json";
 import astolfoJson from "./ready/astolfo.json";
+import kalopJson from "./ready/kalop.json";
 import lagrimaJson from "./ready/lagrima.json";
 
 /**
@@ -24,7 +25,8 @@ const make = (json: unknown, portrait: string, pos: string): ReadyHero => {
 
 export const READY_HEROES: ReadyHero[] = [
   make(renardJson, "/herois/renard.webp", "50% 12%"),
-  make(astolfoJson, "/herois/kalop.webp", "50% 22%"),
+  make(astolfoJson, "/herois/astolfo.webp", "50% 40%"),
+  make(kalopJson, "/herois/kalop.webp", "50% 22%"),
   make(lagrimaJson, "/herois/m.webp", "50% 40%"),
 ];
 

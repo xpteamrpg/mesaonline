@@ -1,8 +1,9 @@
 import { it } from "vitest";
 import fs from "node:fs";
-import { T20_RACES, findRaceByName } from "../src/portal/lib/t20/compendium";
+import { T20_RACES, findRaceByName, norm } from "../src/portal/lib/t20/compendium";
+import { legacyFichaToSheet } from "../src/portal/lib/pdf/legacyFicha";
 import { heroJsonToDraft } from "../src/portal/lib/pdf/heroJson";
-import { attackTotal, defense, skillTotal } from "../src/portal/lib/t20/sheetRules";
+import { attackTotal, defense, racialAbilitiesFor, skillTotal } from "../src/portal/lib/t20/sheetRules";
 
 /**
  * Ferramenta de desenvolvimento (só roda com GERAR_HEROIS=1): monta src/portal/data/ready/*.json a partir das fichas
@@ -10,9 +11,9 @@ import { attackTotal, defense, skillTotal } from "../src/portal/lib/t20/sheetRul
  */
 const sp = process.env.HEROIS_TMP ?? "";
 const HEROIS = [
-  { key: "renard", pdf: "renard", id: "pronto-renard", name: "Renard", file: "renard" },
-  { key: "kalop", pdf: "astolfo", id: "pronto-astolfo", name: "Astolfo", file: "astolfo" },
-  { key: "m", pdf: "m", id: "pronto-lagrima", name: "Lágrima desk", file: "lagrima" },
+  { key: "renard", pdf: "renard", id: "pronto-renard", name: "Renard", file: "renard", img: "renard", variant: "base" },
+  { key: "kalop", pdf: "astolfo", id: "pronto-astolfo", name: "Astolfo", file: "astolfo", img: "astolfo", variant: "" },
+  { key: "m", pdf: "m", id: "pronto-lagrima", name: "Lágrima desk", file: "lagrima", img: "m", variant: "" },
 ];
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
@@ -31,7 +32,7 @@ it.runIf(process.env.GERAR_HEROIS === "1")("gera os heróis prontos", () => {
     sheet.id = h.id;
     sheet.name = h.name;
     sheet.campaign = "Campanha livre";
-    sheet.avatar = `/herois/${h.key}-token.webp`;
+    sheet.avatar = `/herois/${h.img}-token.webp`;
     delete sheet.avatarPos;
     const race = T20_RACES.find((r) => r.id === sheet.raceId);
     if (race && draft.raceId === sheet.raceId) sheet.race = race.nome;
@@ -42,6 +43,13 @@ it.runIf(process.env.GERAR_HEROIS === "1")("gera os heróis prontos", () => {
     const path = classExtra || (/^arcanista$/i.test(classText) ? "" : classText);
     if (path) sheet.path = cap(path);
     sheet.notes = [`Herói do playtest (importado de ${h.pdf}.pdf).`, sheet.notes && !/^Importado de/.test(sheet.notes) ? sheet.notes : ""].filter(Boolean).join("\n\n");
+    if (h.variant) {
+      // Raça com herança obrigatória: a opção "base" (Manual básico) dá as habilidades da raça básica (ex.: Sombras Profanas da Sulfure).
+      sheet.raceVariantId = h.variant;
+      sheet.racialAbilities = racialAbilitiesFor(sheet.raceId, undefined, h.variant);
+      const free = new Set(sheet.racialAbilities.map((a: { name: string }) => norm(a.name)));
+      sheet.powers = sheet.powers.filter((p: { name: string }) => !free.has(norm(p.name)));
+    }
     fs.mkdirSync("src/portal/data/ready", { recursive: true });
     fs.writeFileSync(`src/portal/data/ready/${h.file}.json`, JSON.stringify(sheet, null, 1));
 
@@ -58,6 +66,26 @@ it.runIf(process.env.GERAR_HEROIS === "1")("gera os heróis prontos", () => {
     report.push(`magias (${sheet.spells.length}): ${sheet.spells.map((s: { name: string; circle: number; cost: number }) => `${s.name} ${s.circle}º/${s.cost}PM`).join("; ")}`);
     report.push(`equipamento (${sheet.equipment.length}): ${sheet.equipment.map((e: { name: string; equipped: boolean }) => e.name + (e.equipped ? "*" : "")).join("; ")}`);
     report.push(`perícias treinadas: ${Object.entries(sheet.skills).filter(([, v]) => (v as { trained?: boolean }).trained).map(([k]) => k).join(", ")} | T$ ${sheet.money} | PE ${sheet.xp}`);
+  }
+  // Kalop Sita: vem do JSON da ficha de origem (importação por JSON), ligada à imagem do Kalop.
+  {
+    const json = JSON.parse(fs.readFileSync("C:/RPG/AI tste/Mesa de teste do Morden/Kalopjson.json", "utf8"));
+    const sheet = legacyFichaToSheet(json) as any;
+    sheet.id = "pronto-kalop";
+    sheet.campaign = "Campanha livre";
+    sheet.avatar = "/herois/kalop-token.webp";
+    delete sheet.avatarPos;
+    sheet.notes = ["Herói do playtest (importado do JSON da ficha de origem).", sheet.notes && !/^Importado de/.test(sheet.notes) ? sheet.notes : ""].filter(Boolean).join("\n\n");
+    fs.writeFileSync("src/portal/data/ready/kalop.json", JSON.stringify(sheet, null, 1));
+    report.push(`\n=== ${sheet.name} (JSON da ficha de origem) ===`);
+    report.push(`raça/classe/nível: ${sheet.race} (${sheet.raceId}) | ${sheet.class} (${sheet.classId}) | nv ${sheet.level} | origem ${sheet.origin} | divindade ${sheet.deity}`);
+    report.push(`atributos: ${JSON.stringify(Object.fromEntries(Object.entries(sheet.attributes).map(([k, v]) => [k, (v as { value: number }).value])))} | PV ${sheet.hp.max} PM ${sheet.mp.max} | defesa ${defense(sheet).total}`);
+    report.push(`ataques: ${sheet.attacks.map((a: any) => `${a.name} +${attackTotal(sheet, a).bonus} ${a.damage}${a.damageBonus ? "+" + a.damageBonus : ""} ${a.critical}`).join("; ")}`);
+    report.push(`raciais: ${sheet.racialAbilities.map((a: any) => a.name).join("; ")}`);
+    report.push(`classe (${sheet.classAbilities.length}): ${sheet.classAbilities.map((a: any) => a.name).join("; ")}`);
+    report.push(`poderes (${sheet.powers.length}): ${sheet.powers.map((p: any) => p.name).join("; ")}`);
+    report.push(`equipamento: ${sheet.equipment.map((e: any) => e.name + (e.equipped ? "*" : "") + (e.defenseBonus ? ` (def +${e.defenseBonus})` : "")).join("; ")} | T$ ${sheet.money} | PE ${sheet.xp}`);
+    report.push(`perícias treinadas: ${Object.entries(sheet.skills).filter(([, v]: any) => v.trained).map(([k]) => k).join(", ")}`);
   }
   fs.writeFileSync(`${sp}/relatorio-herois.txt`, report.join("\n"));
 });

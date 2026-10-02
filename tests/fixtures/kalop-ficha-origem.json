@@ -1,0 +1,491 @@
+{
+ "loadBonus": 0,
+ "armorLoadBonus": 0,
+ "armorHalfLevel": false,
+ "version": 15.4,
+ "charName": "Kalop Sita",
+ "playerName": "Napoleão Bonaparte",
+ "charRace": "Kallyanach (Ameaças)",
+ "charOrigin": "Nativo de midgard",
+ "charClass": "Paladino",
+ "charDistinction": "",
+ "charLevel": "3",
+ "charDeity": "Azgher",
+ "extras": {
+  "profs": "Marciais, escudos e armaduras pesadas, exoticas ",
+  "size": "0",
+  "speed": "",
+  "xp": "3000",
+  "cash": "644.5",
+  "cashTO": ""
+ },
+ "attrs": {
+  "FOR": "-1",
+  "DES": "4",
+  "CON": "2",
+  "INT": "2",
+  "SAB": "-1",
+  "CAR": "4"
+ },
+ "status": {
+  "pvM": "39",
+  "pvC": "39",
+  "pmM": "13",
+  "pmC": "13"
+ },
+ "defense": {
+  "config": {
+   "attr": "DES",
+   "apply": true
+  },
+  "armor": {
+   "name": "Gibao de peles",
+   "bonus": "4",
+   "penalty": "-3",
+   "type": "light",
+   "desc": ""
+  },
+  "shield": {
+   "name": "",
+   "bonus": "",
+   "penalty": "",
+   "type": "light",
+   "desc": ""
+  },
+  "other": [
+   {
+    "name": "Asas de aço",
+    "bonus": "2",
+    "note": ""
+   },
+   {
+    "name": "1/2 nivel",
+    "bonus": "1",
+    "note": ""
+   }
+  ]
+ },
+ "skills": [
+  {
+   "n": "Acrobacia",
+   "a": "DES",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Adestramento",
+   "a": "CAR",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Atletismo",
+   "a": "FOR",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Atuação",
+   "a": "CAR",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Cavalgar",
+   "a": "DES",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Conhecimento",
+   "a": "INT",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Cura",
+   "a": "SAB",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Diplomacia",
+   "a": "CAR",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Enganação",
+   "a": "CAR",
+   "trained": false,
+   "other": -5,
+   "specialty": ""
+  },
+  {
+   "n": "Fortitude",
+   "a": "CON",
+   "trained": true,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Furtividade",
+   "a": "DES",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Guerra",
+   "a": "INT",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Iniciativa",
+   "a": "DES",
+   "trained": true,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Intimidação",
+   "a": "CAR",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Intuição",
+   "a": "SAB",
+   "trained": false,
+   "other": -5,
+   "specialty": ""
+  },
+  {
+   "n": "Investigação",
+   "a": "INT",
+   "trained": false,
+   "other": -5,
+   "specialty": ""
+  },
+  {
+   "n": "Jogatina",
+   "a": "CAR",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Ladinagem",
+   "a": "DES",
+   "trained": false,
+   "other": -5,
+   "specialty": ""
+  },
+  {
+   "n": "Luta",
+   "a": "FOR",
+   "trained": true,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Misticismo",
+   "a": "INT",
+   "trained": true,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Nobreza",
+   "a": "INT",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Ofício",
+   "a": "INT",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Ofício",
+   "a": "INT",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Percepção",
+   "a": "SAB",
+   "trained": false,
+   "other": -5,
+   "specialty": ""
+  },
+  {
+   "n": "Pilotagem",
+   "a": "DES",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Pontaria",
+   "a": "DES",
+   "trained": false,
+   "other": -5,
+   "specialty": ""
+  },
+  {
+   "n": "Reflexos",
+   "a": "DES",
+   "trained": true,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Religião",
+   "a": "SAB",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Sobrevivência",
+   "a": "SAB",
+   "trained": false,
+   "other": 0,
+   "specialty": ""
+  },
+  {
+   "n": "Vontade",
+   "a": "SAB",
+   "trained": true,
+   "other": 0,
+   "specialty": ""
+  }
+ ],
+ "attacks": [
+  {
+   "name": "Corrente de espinhos",
+   "bonus": "2",
+   "dmg": "2d4+4",
+   "dmgExtra": "",
+   "diceExtra": "",
+   "critRange": "19",
+   "crit": "x2",
+   "skill": "Luta",
+   "mod": "",
+   "dmgAttr": "",
+   "type": "",
+   "range": "",
+   "desc": ""
+  },
+  {
+   "name": "Cauda",
+   "bonus": "2",
+   "dmg": "",
+   "dmgExtra": "",
+   "diceExtra": "",
+   "critRange": "20",
+   "crit": "x2",
+   "skill": "Luta",
+   "mod": "",
+   "dmgAttr": "",
+   "type": "",
+   "range": "",
+   "desc": ""
+  },
+  {
+   "name": "Asas",
+   "bonus": "2",
+   "dmg": "",
+   "dmgExtra": "",
+   "diceExtra": "",
+   "critRange": "20",
+   "crit": "x2",
+   "skill": "Luta",
+   "mod": "",
+   "dmgAttr": "",
+   "type": "",
+   "range": "",
+   "desc": ""
+  }
+ ],
+ "inventory": [
+  {
+   "equipped": true,
+   "name": "Gibão de peles",
+   "qtd": "1",
+   "slots": "2",
+   "note": "",
+   "combatData": null,
+   "defenseData": null
+  },
+  {
+   "equipped": false,
+   "name": "Escudo vime(comprado ambos por (30)",
+   "qtd": "2",
+   "slots": "2",
+   "note": "",
+   "combatData": null,
+   "defenseData": null
+  },
+  {
+   "equipped": false,
+   "name": "Corrente de espinhos comprado por 35 tibares",
+   "qtd": "1",
+   "slots": "2",
+   "note": "",
+   "combatData": null,
+   "defenseData": null
+  }
+ ],
+ "raceAbilities": [
+  {
+   "name": "Origem: Nativo de midgard",
+   "desc": ""
+  },
+  {
+   "name": "Proficiência(Armas exoticas)",
+   "desc": "Escolha uma proficiência: armas marciais, \narmas de fogo, armaduras pesadas ou escudos (se \nfor proficiente em armas marciais, você também \npode escolher armas exóticas). Você recebe essa \nproficiência. Você pode escolher este poder outras \nvezes para proficiências diferentes."
+  },
+  {
+   "name": "Estilo de duas armas",
+   "desc": "Se estiver empunhando duas armas (e pelo me-\nnos uma delas for leve) e fizer a ação agredir, você \npode fazer dois ataques, um com cada arma. Se fizer \nisso, sofre –2 em todos os testes de ataque até o \nseu próximo turno. Se possuir Ambidestria, em vez \ndisso não sofre penalidade para usá-lo. Pré-requisitos:\nDes 2, treinado em Luta."
+  }
+ ],
+ "classAbilities": [
+  {
+   "name": "Herança Dracônica (Fogo)",
+   "desc": "Você é uma criatura do tipo monstro e recebe redução 5 contra um tipo de dano a sua escolha entre ácido, eletricidade, fogo, frio, luz ou trevas."
+  },
+  {
+   "name": "Armamento Kallyanach(Cauda)",
+   "desc": "Ganha uma arma natural (1d6) de cauda (impacto), chifres (perfuração) ou mordida (corte). Pode gastar 1 PM para um ataque extra com ela ao usar a ação agredir."
+  },
+  {
+   "name": "Asas Dracônicas",
+   "desc": "Pode gastar 1 PM por rodada para voar (9m). Enquanto voa desta forma, você fica vulnerável."
+  },
+  {
+   "name": "Asas de Aço",
+   "desc": "Req: Possuir asas\nAsas dão +2 Defesa e contam como armas naturais (2d4, x2). Ao agredir, pode gastar 1 PM para ataque extra com elas (se não estiver voando)."
+  },
+  {
+   "name": "Ingênuo",
+   "desc": "Req: Nenhum\nNão há maldade em seu coração. Você sofre –5 em Enganação, Intuição, Investigação e Ladinagem."
+  },
+  {
+   "name": "Catarata",
+   "desc": "Req: Nenhum\nSeus olhos já não são os mesmos. Você sofre –5 em Percepção e Pontaria."
+  },
+  {
+   "name": "Acuidade com Arma",
+   "desc": "Req: Des 1\nQuando usa uma arma corpo a corpo leve ou uma arma de arremesso, você pode usar sua Destreza em vez de Força nos testes de ataque e rolagens de dano."
+  },
+  {
+   "name": "Abençoado",
+   "desc": "Req: Nível 1\nSoma Carisma no total de PM. Torna-se devoto de um deus (recebe 2 poderes) OU devoto do Bem (sem poderes, sem Obrigações exceto Código do Herói). (Santo não pode ser do Bem)."
+  },
+  {
+   "name": "Código do Herói",
+   "desc": "Req: Nível 1\nManter a palavra, nunca recusar ajuda a inocentes, não mentir/trapacear/roubar. Se violar: perde todos PM (recupera dia seguinte)."
+  },
+  {
+   "name": "Golpe Divino",
+   "desc": "Req: Nível 1\nAo atacar corpo a corpo, gaste 2 PM: Soma Carisma no ataque e +1d8 no dano. A cada 4 níveis, pode gastar +1 PM para aumentar dano em +1d8."
+  },
+  {
+   "name": "Cura pelas Mãos",
+   "desc": "Req: Nível 2\nAção movimento e 1 PM. Cura 1d8+1 (Luz) em alcance corpo a corpo. A cada 4 níveis, pode gastar +1 PM para aumentar em +1d8+1. (Causa dano em mortos-vivos). Nível 6: Gaste +1 PM para remover condição."
+  },
+  {
+   "name": "Aura Sagrada",
+   "desc": "Req: Nível 3\nGaste 1 PM (sustentada). Aura de 9m raio. Você e aliados na aura somam seu Carisma nos testes de resistência."
+  },
+  {
+   "name": "Imolação Sagrada",
+   "desc": "Req: Devoto de Azgher ou Thyatis\nPadrão e 1 PM (sustentada). Braços em chamas. Ataques corpo a corpo causam +1d6 fogo."
+  },
+  {
+   "name": "Voto da probleza(homebrews)",
+   "desc": "Nao posso acumular mais de 1000 tibares em pertences e ganho o dobro de beneficios de alimentos"
+  },
+  {
+   "name": "Espada Solar",
+   "desc": "Req: Devoto de Azgher\nGaste 1 PM para fazer arma de corte causar +1d6 fogo (cena)."
+  },
+  {
+   "name": "Bom de Garfo",
+   "desc": "Req: Con 1\nRecebe +3 PV por patamar e pode comer até dois pratos especiais por dia, acumulando seus benefícios (bônus iguais não se acumulam)."
+  },
+  {
+   "name": "Saque rapido",
+   "desc": "Você recebe +2 em Iniciativa e pode sacar ou \nguardar itens como uma ação livre (em vez de ação \nde movimento). Além disso, a ação que você gasta \npara recarregar armas de disparo diminui em uma \ncategoria (ação completa para padrão, padrão para \nmovimento, movimento para livre). Pré-requisito:\ntreinado em Iniciativa."
+  }
+ ],
+ "notes": "Kalop sita é um mulher que Cresceu em um plano espiritual chamado midgard criado por um mago louco de vestes brancas e detalhes dourados poderoso e devoto de azgher.\n\nNesse plano, o mago aparecia em tempos e tempos para cuidar como um diretor do campo de concentração que é usado pelos professores que são determinados por ele que são todos nativos do plano. Esses professores lecionavam as crianças daquele plano com o intuito de as treinar em diversos meio para as tornarem devotas das classes que melhor definiam elas. A Kalop foi escolhida como uma paladina, uma das melhores classes segundo eles.\n\nDepois de anos de aprendizado eles entram na chamada \"Grande aprovação\" onde são treinados em caçar criaturas malignas que apareciam em Midgard.\n\nKalop e diversos outros que a acomphava, passaram nesse teste, ao custo da vida de um dos grandes amigos dela. No fim da aprovação todos foram premiados com uma medalha feita de ouro puro, um feito do grande conflito entre azgher e a malvada tenebra o que era um dos itens mais incríveis que eles podiam ganhar ali devido ao seu valor simbólico e então, aqueles que sucederam foram mandados em uma missão, cada um foram peregrinar cada lugar de arton sozinhos e só com alguns itens básicos.\n\nKalop, caiu próximo de Vectoria o que a levou a se inscrever na guilda e a se tornar uma aventureira⅝\n",
+ "notesCampanha": "",
+ "notesOutros": "Dois arcos longos vendidos por 100 tibares\n2 escudos leves vendidos por 5 tibares\n1 besta leve vendida por 17.5 tibares\n\nSe eu tiver apenas menos tibares que o esperado tudo bem.",
+ "spells": {
+  "config": {
+   "attr": "DES",
+   "powers": "2",
+   "items": "4",
+   "other": ""
+  },
+  "list": []
+ },
+ "loadConfig": {
+  "attr": "FOR"
+ },
+ "tempMods": {
+  "globais": {
+   "attrFOR": "",
+   "attrDES": "",
+   "attrCON": "",
+   "attrINT": "",
+   "attrSAB": "",
+   "attrCAR": ""
+  },
+  "globaisListas": {
+   "rolagens": [],
+   "pericias": [],
+   "ataque": [],
+   "dano": [],
+   "defesa": [],
+   "attr-FOR": [],
+   "attr-DES": [],
+   "attr-CON": [],
+   "attr-INT": [],
+   "attr-SAB": [],
+   "attr-CAR": []
+  },
+  "skillAttrMods": {
+   "FOR": "",
+   "DES": "",
+   "CON": "",
+   "INT": "",
+   "SAB": "",
+   "CAR": ""
+  },
+  "periciasEspecificas": [],
+  "parceiros": [],
+  "condicoes": []
+ },
+ "charImage": "data:image/png;base64,iVBORw0KGgo=",
+ "charImagePos": "45.4% 0%"
+}

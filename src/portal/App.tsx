@@ -26,6 +26,8 @@ import { VIEW_HASH, viewFromHash, type View } from "./types/view";
 import { AuthProvider, useAuth } from "./lib/auth/AuthContext";
 import { STORAGE_KEY, loadInitialCharacters, useAccountCharacters } from "./lib/characters/accountSync";
 import { heroJsonToSheet, isHeroJson } from "./lib/pdf/heroJson";
+import { isLegacyFicha, legacyFichaToSheet } from "./lib/pdf/legacyFicha";
+import { shrinkDataUrl } from "./lib/imageFile";
 
 const HASH = VIEW_HASH;
 
@@ -202,11 +204,13 @@ function PortalApp() {
     setCharacters(rest);
     if (activeId === id) setActiveId(rest[0]?.id ?? "");
   };
-  const importJson = (text: string) => {
+  const importJson = async (text: string) => {
     try {
       const parsed = JSON.parse(text);
-      const list = (Array.isArray(parsed) ? parsed : [parsed]).map((x) => (isHeroJson(x) ? heroJsonToSheet(x) : normalize(x))).filter((x): x is CharacterSheet => !!x);
+      const list = (Array.isArray(parsed) ? parsed : [parsed]).map((x) => (isHeroJson(x) ? heroJsonToSheet(x) : isLegacyFicha(x) ? legacyFichaToSheet(x) : normalize(x))).filter((x): x is CharacterSheet => !!x);
       if (!list.length) throw new Error("nenhuma ficha válida encontrada.");
+      // Retrato de vários MB dentro do JSON: reduz antes de guardar na ficha e na conta.
+      await Promise.all(list.map(async (sheet) => { if (sheet.avatar?.startsWith("data:") && sheet.avatar.length > 300_000) sheet.avatar = await shrinkDataUrl(sheet.avatar); }));
       setCharacters((p) => [...list, ...p.filter((c) => !list.some((l) => l.id === c.id))]);
       setActiveId(list[0].id);
       navigate("sheet");

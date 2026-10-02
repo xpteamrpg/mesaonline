@@ -203,7 +203,7 @@
  ],
  "powers": [
   {
-   "id": "pw-mur4nva1-6ih81",
+   "id": "pw-mur6qjgo-9h6g9",
    "name": "Caminho do arcanista:sentinela",
    "type": "Classe",
    "description": ""
@@ -233,7 +233,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur4nvbh-0hox2",
+   "id": "pw-mur6qjiz-xp17u",
    "name": "Poderes de Arcanista: Estilo de arma longa",
    "type": "Classe",
    "description": ""
@@ -542,6 +542,6 @@
  "updatedAt": "2026-10-02T15:17:08.305Z",
  "origin": "Duplo feerico",
  "appearance": "gastei 15 tibares em lanca de falange",
- "avatar": "/herois/kalop-token.webp",
+ "avatar": "/herois/astolfo-token.webp",
  "path": "Sentinela"
 }

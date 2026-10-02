@@ -55,3 +55,24 @@ export function parsePos(pos?: string): [number, number] {
   const m = (pos ?? "").match(/(-?[\d.]+)%\s+(-?[\d.]+)%/);
   return m ? [Math.min(100, Math.max(0, Number(m[1]))), Math.min(100, Math.max(0, Number(m[2])))] : [50, 50];
 }
+
+/** Reduz uma imagem já em data URL (ex.: retrato de vários MB dentro de um JSON de ficha) para caber na ficha e na conta. */
+export function shrinkDataUrl(dataUrl: string, max = 640, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onerror = () => resolve(dataUrl);
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(dataUrl);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = dataUrl;
+  });
+}

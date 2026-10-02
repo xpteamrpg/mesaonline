@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { coveredCells, footprintOf, parseSize, sideOf, tokenCovers } from "./game/tokenSize";
 import { freshTurnResources, turnPlan } from "./tactics/engine/actionEconomy";
-import { loadCharacterSheets, loadReadyHeroSheets, setActiveCharacterId, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
+import { getCharacterSheetById, loadCharacterSheets, loadReadyHeroSheets, setActiveCharacterId, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
 import type { CharacterSheet } from "../ficha-modernrpg/sheet";
 import MesaSkinTable from "./components/mesaSkin/MesaSkinTable";
 import MesaSkinActionDialog from "./components/mesaSkin/MesaSkinActionDialog";
@@ -271,7 +271,8 @@ export default function App() {
       return;
     }
     if (link?.kind === "character") {
-      const sheet = loadCharacterSheets().find((candidate) => candidate.id === link.id);
+      // Ficha da conta ou herói pronto do playtest (o Mestre pode ligar token a qualquer um deles).
+      const sheet = getCharacterSheetById(link.id) ?? undefined;
       if (sheet) {
         const existing = getRuntimeSnapshot().board.tokens.find((token) => token.modernRpgCharacterId === sheet.id);
         if (existing) { updateToken(existing.id, { imageUrl: image, sprite: image }); selectToken(existing.id); return; }

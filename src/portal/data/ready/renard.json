@@ -167,7 +167,13 @@
    "id": "ra-suraggel-sulfure-0",
    "name": "Herança Divina",
    "description": "Você é uma criatura do tipo espírito e recebe visão no escuro.",
-   "source": "Suraggel - Sulfure"
+   "source": "Suraggel - Sulfure — Base (Manual básico)"
+  },
+  {
+   "id": "ra-suraggel-sulfure-1",
+   "name": "Sombras Profanas",
+   "description": "Você recebe +2 em Enganação e Furtividade. Além disso, pode lançar a magia Escuridão (como uma magia divina, atributo-chave Inteligência).",
+   "source": "Suraggel - Sulfure — Base (Manual básico)"
   }
  ],
  "classAbilities": [
@@ -204,7 +210,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur4nv33-x000w",
+   "id": "pw-mur6qjbu-jo4rl",
    "name": "Magias 1°",
    "type": "Classe",
    "description": ""
@@ -218,7 +224,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur4nv47-9junw",
+   "id": "pw-mur6qjcm-9alvc",
    "name": "Aumento de atributo - car",
    "type": "Classe",
    "description": ""
@@ -229,12 +235,6 @@
    "type": "Racial · Sulfure",
    "description": "Bônus racial Enganação/Furtividade aumenta para +5. Recebe RD Fogo e Trevas 5.",
    "cost": null
-  },
-  {
-   "id": "pw-mur4nv54-1z92a",
-   "name": "Sombras profanas",
-   "type": "Racial",
-   "description": ""
   },
   {
    "id": "class-clerigo-usurpar",
@@ -436,5 +436,6 @@
  "origin": "Duplo feerico",
  "deity": "Hynnim",
  "avatar": "/herois/renard-token.webp",
- "path": "Feiticeiro abençoado"
+ "path": "Feiticeiro abençoado",
+ "raceVariantId": "base"
 }
