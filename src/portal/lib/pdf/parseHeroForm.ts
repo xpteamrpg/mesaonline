@@ -6,7 +6,7 @@
  * Função pura (sem pdf.js): recebe o mapa nome→valor que `readPdf` extrai e completa o rascunho.
  */
 import type { AttrKey } from "../t20/compendium";
-import { ATTR_KEYS, T20_EQUIPMENT, T20_SKILLS, findClassByName, findPowerByName, findSpellByName, norm, T20_SPELLS, editDistance } from "../t20/compendium";
+import { ATTR_KEYS, T20_EQUIPMENT, T20_SKILLS, findClassByName, findPowerByName, findRaceByName, findSpellByName, norm, T20_POWERS, T20_SPELLS, editDistance } from "../t20/compendium";
 import type { AttackItem, EquipmentItem, PowerEntry, SpellItem } from "../../types/sheet";
 import { itemToEquipment, powerToEntry, spellToItem, uid } from "../t20/sheetRules";
 import { levelForXp } from "../t20/xp";
@@ -117,7 +117,49 @@ function matchSpell(name: string) {
   return undefined;
 }
 
+/**
+ * Campo "Habilidades de Raça e Origem": seções "=====Racial=====" e "=====Origem=====" com linhas "Poderes: a, b" / "habilidades: a, b"
+ * ou "Poderes:" seguido de um nome por linha. Devolve só os nomes de poderes (ignora Atributos, Visão, Itens, "+1 int", idade, desvantagens).
+ */
+function racialOriginPowers(text: string): Array<{ tag: string; name: string }> {
+  const out: Array<{ tag: string; name: string }> = [];
+  let section: "Racial" | "Origem" | null = null;
+  let collecting = false;
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    const head = line.match(/^=+\s*([^=]+?)\s*=+$/);
+    if (head) {
+      const h = norm(head[1]);
+      section = h.startsWith("racial") ? "Racial" : h.startsWith("origem") ? "Origem" : null;
+      collecting = false;
+      continue;
+    }
+    if (!section) continue;
+    if (/^[=\-\s]*$/.test(line)) { collecting = false; continue; }
+    const labeled = line.match(/^[-•*\s]*(poderes|habilidades|poder|habilidade)\s*:\s*(.*)$/i);
+    let body: string;
+    if (labeled) { body = labeled[2]; collecting = body.trim() === ""; }
+    else if (collecting) body = line.replace(/^[-•*\s]+/, "");
+    else continue;
+    for (const part of body.split(/[,;]/)) {
+      const name = part.replace(/:.*$/, "").replace(/\.$/, "").trim();
+      if (name && !/\d/.test(name)) out.push({ tag: section, name });
+      if (part.includes(":")) break; // "canção dos mares: Despedaçar, Amedrontar": o que vem depois dos dois pontos são as magias da habilidade
+    }
+  }
+  return out;
+}
+
 /** Rótulos soltos (origem da magia) que a pessoa deixa numa linha: não são magias. */
+/** Poder do catálogo para um nome com erro de digitação ("Redirecionar distino"): só se UM poder chega perto (1 letra, ou 2 em nomes longos). */
+function nearPower(name: string) {
+  const key = norm(name);
+  if (key.length < 6) return undefined;
+  const limit = key.length >= 12 ? 2 : 1;
+  const near = T20_POWERS.filter((p) => editDistance(key, norm(p.nome)) <= limit);
+  return near.length === 1 ? near[0] : undefined;
+}
+
 const SPELL_LABELS = /^(ra[cç]a|origem|classe|item|poder)$/i;
 
 /**
@@ -301,7 +343,7 @@ export function parseHeroForm(fields: Record<string, string>, draft: PdfDraft) {
     const key = norm(name);
     if (!key || seen.has(key)) return;
     seen.add(key);
-    const found = findPowerByName(name, cls?.id);
+    const found = findPowerByName(name, cls?.id) ?? nearPower(name);
     powers.push(found ? powerToEntry(found) : { id: uid("pw"), name: capitalize(raw.trim()), type: tag, description: "" });
   };
   const listed = powersFromText(f.get("Poderes") ?? "");
@@ -310,6 +352,11 @@ export function parseHeroForm(fields: Record<string, string>, draft: PdfDraft) {
     for (const [field, tag] of [["PoderConcedido1", "Concedido"], ["Poder1", "Classe"], ["Poder2", "Classe"], ["Poder3", "Classe"]] as const) {
       for (const part of (f.get(field) ?? "").split(/[,;]/)) if (part.trim()) addPower(tag, part.replace(/>>.*$/, "").trim());
     }
+  }
+  // Poderes de raça e de origem anotados à parte (o que a raça já dá de graça não é repetido).
+  const freeByRace = new Set((draft.race ? findRaceByName(draft.race)?.habilidades ?? [] : []).map((h) => norm(h.nome)));
+  for (const p of racialOriginPowers(f.get("Habilidades de Raça e Origem") ?? "")) {
+    if (!freeByRace.has(norm(p.name))) addPower(p.tag, p.name);
   }
   if (powers.length) draft.powers = powers;
   const spells = spellsFromText(f.get("Magias") ?? "");

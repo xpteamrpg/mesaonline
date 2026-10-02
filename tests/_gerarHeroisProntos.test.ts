@@ -25,6 +25,7 @@ it.runIf(process.env.GERAR_HEROIS === "1")("gera os heróis prontos", () => {
     const draft = heroJsonToDraft({ personagem: { nome: h.name }, campos_originais_pdf: fields });
     // magias: as do leitor corrigido (catálogo, com custo do catálogo)
     sheet.spells = draft.spells ?? [];
+    if (draft.powers?.length) sheet.powers = draft.powers; // inclui poderes de raça e origem do campo "Habilidades de Raça e Origem"
     const classExtra = String(fields.Classe ?? "").match(/\(([^)]*)\)/)?.[1]?.trim();
     const classText = String(fields.Classe ?? "").replace(/\([^)]*\)/g, "").trim();
     sheet.id = h.id;

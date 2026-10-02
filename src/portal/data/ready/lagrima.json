@@ -202,19 +202,21 @@
  ],
  "powers": [
   {
-   "id": "pw-mur3wsnp-dqa68",
-   "name": "Redirecionar distino",
-   "type": "Concedido",
-   "description": ""
+   "id": "conceded-thyatis-redirecionar-destino",
+   "name": "Redirecionar Destino",
+   "type": "Concedido · Thyatis",
+   "description": "Role d20 no início do dia (guarde). 1 vez/rodada, gaste 3 PM para substituir teste de criatura (curto) pelo valor guardado. Resultado substituído vira o novo guardado.",
+   "requirement": "Devoto de Thyatis",
+   "cost": 3
   },
   {
-   "id": "pw-mur3wsny-5h5c2",
+   "id": "pw-mur4nvfy-754rl",
    "name": "Caminho do arcanista: Feiticeiro abençoado",
    "type": "Classe",
    "description": ""
   },
   {
-   "id": "pw-mur3wso6-euc5m",
+   "id": "pw-mur4nvgn-3lgas",
    "name": "Familiar rato",
    "type": "Classe",
    "description": ""
@@ -228,7 +230,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur3wsog-os0nq",
+   "id": "pw-mur4nvhm-cr028",
    "name": "Aumento de atributo+1 sab",
    "type": "Classe",
    "description": ""

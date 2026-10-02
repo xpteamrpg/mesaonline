@@ -63,3 +63,30 @@ describe("raça com erro de digitação na ficha (Lágrima: 'Eiradan')", () => {
     expect(draft.raceId).toBe("eiradaan-herois");
   });
 });
+
+describe("poderes de raça e de origem do campo 'Habilidades de Raça e Origem'", () => {
+  const powersOf = (name: string, fields: Record<string, string>) => (heroJsonToDraft({ personagem: { nome: name }, campos_originais_pdf: fields }).powers ?? []).map((p) => p.name);
+
+  it("Renard: lê Criança das Trevas, Sombras Profanas e o poder de origem Usurpar, sem repetir Herança Divina (que a raça já dá)", () => {
+    const names = powersOf("Renard", renard);
+    // "Sombras Profanas" não está no catálogo: entra com o nome como a ficha escreve.
+    expect(names.map((n) => n.toLowerCase())).toEqual(expect.arrayContaining(["criança das trevas", "sombras profanas", "usurpar"]));
+    expect(names.some((n) => /heran[cç]a divina/i.test(n))).toBe(false);
+  });
+
+  it("Astolfo: lê Pirata Oceânico (raça) e Engenhosidade (origem), e não confunde as magias da Canção dos Mares com poderes", () => {
+    const names = powersOf("Astolfo", astolfo);
+    expect(names.some((n) => /pirata oce/i.test(n))).toBe(true);
+    expect(names.some((n) => /engenhosidade/i.test(n))).toBe(true);
+    expect(names.some((n) => /amendrontar|amedrontar|despeda/i.test(n))).toBe(false);
+  });
+
+  it("Lágrima: o que a raça já dá (Essência Feérica...) não vira poder repetido, e '+1 int' não vira poder", () => {
+    const names = powersOf("Lágrima", lagrima);
+    expect(names.some((n) => /^ess[eê]ncia f/i.test(n) || /^\+1 int$/i.test(n))).toBe(false);
+  });
+
+  it("Lágrima: poder escrito com erro de digitação ('Redirecionar distino') é reconhecido no catálogo", () => {
+    expect(powersOf("Lágrima", lagrima)).toContain("Redirecionar Destino");
+  });
+});

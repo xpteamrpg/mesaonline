@@ -204,7 +204,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur3wgna-zjicw",
+   "id": "pw-mur4nv33-x000w",
    "name": "Magias 1°",
    "type": "Classe",
    "description": ""
@@ -218,10 +218,31 @@
    "cost": null
   },
   {
-   "id": "pw-mur3wgne-rw6ts",
+   "id": "pw-mur4nv47-9junw",
    "name": "Aumento de atributo - car",
    "type": "Classe",
    "description": ""
+  },
+  {
+   "id": "raca-sulfure-crianca-das-trevas",
+   "name": "Criança das Trevas",
+   "type": "Racial · Sulfure",
+   "description": "Bônus racial Enganação/Furtividade aumenta para +5. Recebe RD Fogo e Trevas 5.",
+   "cost": null
+  },
+  {
+   "id": "pw-mur4nv54-1z92a",
+   "name": "Sombras profanas",
+   "type": "Racial",
+   "description": ""
+  },
+  {
+   "id": "class-clerigo-usurpar",
+   "name": "Usurpar",
+   "type": "Classe · Clerigo (Usurpador)",
+   "description": "Você pode lançar qualquer magia divina de um círculo a que tenha acesso. Para lançar uma magia dessa forma, deve passar em um teste de Enganação (CD 15 + custo em PM da magia). Se falhar, a magia é perdida, mas os PM são gastos mesmo assim. Você não pode escolher 10 nesse teste, mesmo que possua uma habilidade que permita isso, e sofre penalidade de armadura nele. Além disso, sofre uma penalidade de –5 se estiver em um local contendo um símbolo sagrado visível.",
+   "requirement": "—",
+   "cost": null
   }
  ],
  "spells": [

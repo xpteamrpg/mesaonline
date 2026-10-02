@@ -203,7 +203,7 @@
  ],
  "powers": [
   {
-   "id": "pw-mur3wmhe-16tq9",
+   "id": "pw-mur4nva1-6ih81",
    "name": "Caminho do arcanista:sentinela",
    "type": "Classe",
    "description": ""
@@ -233,7 +233,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur3wmhs-wcmhw",
+   "id": "pw-mur4nvbh-0hox2",
    "name": "Poderes de Arcanista: Estilo de arma longa",
    "type": "Classe",
    "description": ""
@@ -245,6 +245,21 @@
    "description": "Uma vez por rodada, se inimigo entrar voluntariamente no alcance da sua arma alongada: gaste 1 PM para atacá-lo. Se for investida, causa +2 dados de dano.",
    "requirement": "Estilo de Arma Longa",
    "cost": 1
+  },
+  {
+   "id": "raca-sereia-tritao-pirata-oceanico",
+   "name": "Pirata Oceânico",
+   "type": "Racial · Sereia/Tritão",
+   "description": "Mestre do Tridente afeta arpões. Recebe +2 ataque com essas armas e elas contam como ágeis.",
+   "cost": null
+  },
+  {
+   "id": "class-inventor-engenhosidade-2",
+   "name": "Engenhosidade",
+   "type": "Classe · Inventor (Alquimista)",
+   "description": "Quando faz um teste de perícia, você pode gastar 2 PM para somar a sua Inteligência no teste. Você não pode usar esta habilidade em testes de ataque.",
+   "requirement": "—",
+   "cost": 2
   }
  ],
  "spells": [
