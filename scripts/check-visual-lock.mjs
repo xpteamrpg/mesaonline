@@ -32,9 +32,19 @@ const files = [
   join(projectRoot, "src/index.css"),
   join(projectRoot, "src/mesa-theme.css"),
 ];
+/**
+ * Resumo do arquivo sem depender do fim de linha: no Windows o arquivo pode estar com CRLF e no repositório (Linux,
+ * GitHub Actions) com LF. Só o conteúdo conta; imagens e outros binários entram como estão.
+ */
+function digest(file) {
+  const raw = readFileSync(file);
+  const text = !raw.includes(0);
+  return createHash("sha256").update(text ? Buffer.from(raw.toString("utf8").replace(/\r\n/g, "\n"), "utf8") : raw).digest("hex");
+}
+
 const actual = Object.fromEntries(files
   .sort()
-  .map((file) => [relative(projectRoot, file).replaceAll("\\", "/"), createHash("sha256").update(readFileSync(file)).digest("hex")]));
+  .map((file) => [relative(projectRoot, file).replaceAll("\\", "/"), digest(file)]));
 
 const expectedPaths = Object.keys(manifest.files).sort();
 const actualPaths = Object.keys(actual).sort();

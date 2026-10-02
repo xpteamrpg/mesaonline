@@ -3,18 +3,18 @@
   "description": "Frozen supplied Mesa Online mask. Update only by explicit user replacement of the visual baseline.",
   "files": {
     "src/components/mesaSkin/MesaSkinActionDialog.tsx": "3a570279c72b6deeeb183e2d8bab81af013824010a2b48ab1ff4734b00de70f1",
-    "src/components/mesaSkin/MesaSkinTable.tsx": "b92ad8947c8486d1a057b8c14604b22f662880f723d7ad34e3b0540fe0f2d98f",
-    "src/components/mesaSkin/actionDialog.css": "a04ad0bc5f42653368c7ee39517b72e24c3a753f7efa24120e87e20fcef09051",
-    "src/components/mesaSkin/appearance.css": "733ee8588c6567c80d06b8b0950d4c295a12daad81e2f1b93fb6fc18b4d3e8b4",
+    "src/components/mesaSkin/MesaSkinTable.tsx": "9c3f63429e002c355a4a3b56d5d00d662062756c9b8b46ed7d0f2f3b92124e72",
+    "src/components/mesaSkin/actionDialog.css": "3f677279022c475226712b5e9b626b7c9c8e9c77db917cb033f9739ad5d4f949",
+    "src/components/mesaSkin/appearance.css": "8a9d2451726f26a43709069db200ac98f69addca129c92d3192d2eee7e9b24f3",
     "src/components/mesaSkin/assets.ts": "d437e6222520f35cf15b9d75ded08a86f5a62944f82a0adc885f28dbd6622db9",
-    "src/components/mesaSkin/components/ArmadaTitle.tsx": "fea0d545f1626118236453ddcd6055ed5bdb5aa831f08b85deda1001e689c8f1",
-    "src/components/mesaSkin/components/Chrome.tsx": "8cdf525c5a79dff254c329c12265ebb3d03167b8288641b734a1526c9ff99271",
-    "src/components/mesaSkin/components/ExpandedArt.tsx": "30df36c3c711e181fcb16d5605abb8cc75ad1bbc1ff0dd57e45a4d497fd043c0",
-    "src/components/mesaSkin/components/MapArea.tsx": "c63e500b7d587a6877f10040736270e7ab3b4ac503ded38ee3478402c1ce85a5",
-    "src/components/mesaSkin/components/Panels.tsx": "0d9d8c0d907c64fb4ed36f7a962776dbca1283deacb06bf3d55033457314427b",
-    "src/components/mesaSkin/components/ui.tsx": "194f984149d37a5bf49d44d6081e7fbe4f952629701ca842c8bb2bd39979382e",
-    "src/components/mesaSkin/config.ts": "a638e3b47186ba3bf3891020b27ca0cce90f6f97dc7490b0fbc3090510a80cd7",
-    "src/components/mesaSkin/data.ts": "a7834090bf4c23b1ab657e242843048396a1b211e867fb9872f5a07fe5de6b10",
+    "src/components/mesaSkin/components/ArmadaTitle.tsx": "bcbe9172e1ed0d09a4e885f22072b2f0c2721e09dab28c7efc907ffa53c785d2",
+    "src/components/mesaSkin/components/Chrome.tsx": "d12ab86d198f1d13f226af1469cea39fa2d9c84f25437f43c065aad3b7684f71",
+    "src/components/mesaSkin/components/ExpandedArt.tsx": "9f9d26b0b41811559967afdce74bf75f3c9389edfb6b49d77d86026809b28caa",
+    "src/components/mesaSkin/components/MapArea.tsx": "b113e1f44deb046eaa56d0c0a0a52ba9ff0ba3eca40575d3a4e88a0c681990ec",
+    "src/components/mesaSkin/components/Panels.tsx": "f363a0b545d8523ae853be43847b67e7cb3da31138f8250949871861cf5142e2",
+    "src/components/mesaSkin/components/ui.tsx": "e500a99bd6ecbd1a76a614463abaca04ee1507098743a0d55a9b5e946762b834",
+    "src/components/mesaSkin/config.ts": "01bcfe08702e57a2120eaecf4e836400560641797c90554ebe33d2586cfdd792",
+    "src/components/mesaSkin/data.ts": "9ded23cc9fb671131a39f94a7c8135981336784f15e6c1378328bf147e785def",
     "src/components/mesaSkin/images.d.ts": "785c1cbd0e260ff3b85f99a919e8a42f75bff3ce556fbc95eed9cf67acb9e9f3",
     "src/components/mesaSkin/images/map-bridge.jpg": "a1b2086dac40fb4ee9af9c25fd848b5c1dcfcbcaefe3184392395d9736364148",
     "src/components/mesaSkin/images/map-harbor.jpg": "9606b90f999e1eacbc04b882f2c8cb3aeffecbb320a876db7bec72ea2519ddf5",
@@ -22,9 +22,9 @@
     "src/components/mesaSkin/images/portrait-foe.jpg": "d3dff46f148bc3c3d11a6a0ec27a8ac5cfd1ed72cd18d7e8d7826e81cd00acdd",
     "src/components/mesaSkin/images/portrait-kael.jpg": "9c0bc665351a64a7887a4a32ab225877d80dde6627dfd0dd15ff679211ec473c",
     "src/components/mesaSkin/images/portrait-seraphine.jpg": "3ac7c89c9f1995c8ec74943a5c1a9d94fae19d08cd3ab0a7d84ffc393f87a3f3",
-    "src/components/mesaSkin/runtime.ts": "0c89cf6590178d5ecc3156649c9508bc28c5ac8ddc172b582a6dbfc458b7e3c5",
+    "src/components/mesaSkin/runtime.ts": "1e6847857bcee1bcb78c083b390d980b8a6a37ceb7cfc81199d026a09570c85a",
     "src/index.css": "93c769a0009c58d988f0db08cd98db95e8b4ec19585e106f63accd126a58ec57",
-    "src/mesa-theme.css": "2b0ed3908c3c91ca5c377e848539851a53cc6f7d8aec2aa838cba32f8092891f"
+    "src/mesa-theme.css": "7d74e578b7d7dccc2e8880cb355176a713c709b6af30456e4178794aa0596097"
   },
   "dataBindingUpdate": {
     "date": "2026-09-29",
@@ -67,8 +67,18 @@
     "autorizacao": "O usuário liberou mudar layout e botões da exploração, só nos itens da lista acordada (cabeçalho com botão Combate, barra esquerda, painel do personagem, d20 e mesinha de rolagem). Cores, fundos e imagens não mudaram.",
     "arquivosAlterados": [
       "src/components/mesaSkin/MesaSkinTable.tsx",
+      "src/components/mesaSkin/actionDialog.css",
+      "src/components/mesaSkin/appearance.css",
       "src/components/mesaSkin/components/ArmadaTitle.tsx",
-      "src/components/mesaSkin/components/ExpandedArt.tsx"
+      "src/components/mesaSkin/components/Chrome.tsx",
+      "src/components/mesaSkin/components/ExpandedArt.tsx",
+      "src/components/mesaSkin/components/MapArea.tsx",
+      "src/components/mesaSkin/components/Panels.tsx",
+      "src/components/mesaSkin/components/ui.tsx",
+      "src/components/mesaSkin/config.ts",
+      "src/components/mesaSkin/data.ts",
+      "src/components/mesaSkin/runtime.ts",
+      "src/mesa-theme.css"
     ]
   }
 }
