@@ -5,11 +5,13 @@
 import { supabase } from "../supabase/client";
 import type { TableEntry } from "../tables/client";
 import type { CharacterSheet } from "../../types/sheet";
+import { shrinkDataUrl } from "../imageFile";
 
 export interface MyTable { table: TableEntry; role: "mestre" | "jogador"; members: number }
 export interface TableInvite { inviteId: string; table: TableEntry; invitedBy: string; createdAt: string }
 export interface TableMember { userId: string; name: string; role: "mestre" | "jogador"; joinedAt: string }
-export interface CharacterSummary { name: string; race?: string; class?: string; level?: number }
+export interface CharacterSummary { name: string; race?: string; class?: string; level?: number; /** miniatura do retrato (data URL pequena) */ avatar?: string }
+export interface PartyMember { id: string; characterId: string; summary: CharacterSummary; ownerId: string; ownerName: string; hasSheet: boolean }
 export interface LinkRequest { id: string; characterId: string; summary: CharacterSummary; status: "solicitado" | "aceito" | "recusado"; ownerId: string; ownerName: string; createdAt: string }
 export interface MyCharacterLink { id: string; characterId: string; status: "solicitado" | "aceito" | "recusado"; tableId: string; tableName: string; kind: "campanha" | "oneshot"; code: string }
 
@@ -31,8 +33,26 @@ export const myInvites = () => rpc<TableInvite[]>("mrpg_my_invites");
 export const answerInvite = (inviteId: string, accept: boolean) => rpc<{ ok: boolean }>("mrpg_invite_answer", { p_invite: inviteId, p_accept: accept });
 export const kickMember = (id: string, userId: string) => rpc<boolean>("mrpg_table_kick", { p_id: id, p_user: userId });
 export const leaveTable = (id: string) => rpc<boolean>("mrpg_table_leave", { p_id: id });
-export const requestCharacter = (tableId: string, c: CharacterSheet) => rpc<{ id: string; status: string }>("mrpg_character_request", { p_table: tableId, p_character: c.id, p_summary: summaryOf(c) });
-export const linkCharacterByCode = (code: string, c: CharacterSheet) => rpc<{ id: string; status: string; table: TableEntry }>("mrpg_character_link_by_code", { p_code: code, p_character: c.id, p_summary: summaryOf(c) });
+/** Resumo com miniatura do retrato + cópia da ficha (sem retrato nem diário) que o Mestre e o dono podem abrir depois. */
+async function linkPayload(c: CharacterSheet) {
+  let avatar: string | undefined;
+  if (c.avatar) {
+    const thumb = await shrinkDataUrl(c.avatar, 96, 0.8);
+    avatar = thumb.startsWith("data:") ? thumb : undefined;
+  }
+  const { avatar: _drop, journal: _journal, ...snapshot } = c as CharacterSheet & { journal?: unknown };
+  return { summary: { ...summaryOf(c), avatar }, sheet: snapshot };
+}
+export async function requestCharacter(tableId: string, c: CharacterSheet) {
+  const { summary, sheet } = await linkPayload(c);
+  return rpc<{ id: string; status: string }>("mrpg_character_request", { p_table: tableId, p_character: c.id, p_summary: summary, p_sheet: sheet });
+}
+export async function linkCharacterByCode(code: string, c: CharacterSheet) {
+  const { summary, sheet } = await linkPayload(c);
+  return rpc<{ id: string; status: string; table: TableEntry }>("mrpg_character_link_by_code", { p_code: code, p_character: c.id, p_summary: summary, p_sheet: sheet });
+}
+export const tableParty = (id: string) => rpc<PartyMember[]>("mrpg_table_party", { p_id: id });
+export const characterSheetOf = (linkId: string) => rpc<CharacterSheet | null>("mrpg_character_sheet", { p_link: linkId });
 export const characterRequests = (id: string) => rpc<LinkRequest[]>("mrpg_character_requests", { p_id: id });
 export const decideCharacter = (linkId: string, accept: boolean) => rpc<{ ok: boolean }>("mrpg_character_decide", { p_link: linkId, p_accept: accept });
 export const unlinkCharacter = (linkId: string) => rpc<boolean>("mrpg_character_unlink", { p_link: linkId });

@@ -262,7 +262,7 @@ function PortalApp() {
         {view === "account" && <AccountOverview onNavigate={navigate} />}
         {view === "accountProfile" && <AccountProfile onNavigate={navigate} />}
         {view === "accountOrders" && <AccountOrders onNavigate={navigate} />}
-        {view === "online" && <OnlineTableView campaigns={campaigns} characters={characters} onManageCampaigns={() => navigate("campaigns")} />}
+        {view === "online" && <OnlineTableView campaigns={campaigns} characters={characters} onOpenCharacter={(id) => { setActiveId(id); navigate("sheet"); }} onManageCampaigns={() => navigate("campaigns")} />}
         {view === "homebrew" && <HomebrewView onNavigate={navigate} />}
         {view === "companions" && <RequireLogin what="os seus parceiros"><CompanionsView companions={companions} characters={characters} onChange={setCompanions} /></RequireLogin>}
         {view === "compendium" && <CompendiumView onNavigate={navigate} />}

@@ -9,7 +9,8 @@ import type { CampaignRecord } from "./CampaignsView";
 import { ImagePicker } from "../common/ImagePicker";
 import { SITE_ROOT } from "../../../utils/assetUrl";
 import type { CharacterSheet } from "../../types/sheet";
-import { ManageTableDialog, ParticipatingTables, ReceivedInvites } from "../campaigns/MesaAccountSections";
+import { ManageTableDialog, ParticipatingTables, PartyStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
+import { CopyButton } from "../common/CopyButton";
 import { claimTable } from "../../lib/campaigns/client";
 
 /** Arte própria da página (pintura do projeto). */
@@ -104,7 +105,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
         <div className="flex items-center justify-between gap-2"><h2 className="font-serif text-xl font-black text-[#b92b3a]">Mesa criada!</h2><MesaSeal kind={created.kind ?? kind} big /></div>
         <p className="mt-2 text-xs leading-5 text-[#726859]">Compartilhe o código ou o link abaixo com quem você quiser convidar.</p>
         <div className="mt-3 rounded border border-[#ded7c6] bg-[#fbf9f4] p-3 text-center"><div className="text-[10px] font-black uppercase text-[#726859]">Código</div><div className="font-mono text-2xl font-black tracking-widest text-[#b92b3a]">{created.code}</div></div>
-        <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}${window.location.pathname}#/mesa-online?codigo=${created.code}`)} className="mt-2 w-full rounded border border-[#ded7c6] bg-white py-2 text-xs font-bold text-[#726859] hover:bg-[#eae4d5]">📋 Copiar link de convite</button>
+        <CopyButton text={`${window.location.origin}${window.location.pathname}#/mesa-online?codigo=${created.code}`} label="📋 Copiar link de convite" className="mt-2 w-full rounded border border-[#ded7c6] bg-white py-2 text-xs font-bold text-[#726859] hover:bg-[#eae4d5]" />
         <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: created.name, host: created.liveRoomCode || created.code }); }} className="mt-2 w-full rounded bg-[#b92b3a] py-3 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">🎲 Entrar na mesa online agora</button>
         {notice && <p className="mt-3 rounded border border-[#e0c98c] bg-[#fff8e6] p-2 text-[11px] leading-4 text-[#7a5a14]">{notice}</p>}
         <button onClick={() => { setCreated(null); setNotice(""); }} className="mt-4 w-full text-center text-[11px] font-bold text-[#726859] hover:text-[#b92b3a]">← Criar outra mesa</button>
@@ -182,7 +183,7 @@ const JoinPrivateTable: React.FC = () => {
 };
 
 /** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
-const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (l: MyTableLink) => void }> = ({ link, fresh, onManage }) => {
+const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, onManage, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
   const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
   const code = link.liveRoomCode || fresh?.liveRoomCode || link.code;
@@ -201,8 +202,9 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (
         </div>
         <div className="mt-2 flex items-center gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-2 py-1 text-[11px]">
           <span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest text-[#2b261f]">{code}</b>
-          <button onClick={() => navigator.clipboard?.writeText(code)} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]">Copiar</button>
+          <CopyButton text={code} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]" />
         </div>
+        {!link.local && <PartyStrip tableId={link.id} characters={characters} onOpenOwn={onOpenCharacter} />}
         <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: link.name, host: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
         {!link.local && <button onClick={() => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) onManage(link); }} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Gerenciar jogadores e convites</button>}
       </div>
@@ -211,7 +213,7 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (
 };
 
 /** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
-const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void; onManageTable: (l: MyTableLink) => void }> = ({ kind, title, campaigns = [], onManage, onManageTable }) => {
+const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], onManage, onManageTable, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
   const [links] = useState<MyTableLink[]>(getMyTables());
   const [fresh, setFresh] = useState<Record<string, TableEntry>>({});
@@ -231,7 +233,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
         <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">{kind === "campanha" ? "Nenhuma campanha ainda. Crie uma acima escolhendo “Campanha”." : "Nenhum one-shot ainda. Crie uma acima escolhendo “One-shot”."}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} onManage={onManageTable} />)}
+          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} onManage={onManageTable} characters={characters} onOpenCharacter={onOpenCharacter} />)}
           {campaigns.map((c) => {
             const code = campaignRoomCode(c.id);
             return (
@@ -242,7 +244,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
                   <div className="mt-1 font-serif text-lg font-black leading-tight text-[#b92b3a]">{c.name}</div>
                   <div className="mt-2 flex items-center gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-2 py-1 text-[11px]">
                     <span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest text-[#2b261f]">{code}</b>
-                    <button onClick={() => navigator.clipboard?.writeText(code)} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]">Copiar</button>
+                    <CopyButton text={code} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]" />
                   </div>
                   <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: c.name, host: code }); }} className="mt-3 w-full rounded bg-[#1c5fb5] py-2 text-xs font-black uppercase text-white">Entrar na mesa online</button>
                 </div>
@@ -279,7 +281,7 @@ export function campaignRoomCode(id: string): string {
   return out.join("");
 }
 
-export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; characters?: CharacterSheet[]; onManageCampaigns?: () => void }> = ({ campaigns = [], characters = [], onManageCampaigns }) => {
+export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; characters?: CharacterSheet[]; onManageCampaigns?: () => void; onOpenCharacter?: (characterId: string) => void }> = ({ campaigns = [], characters = [], onManageCampaigns, onOpenCharacter = () => undefined }) => {
   const { requireLogin } = useAuth();
   const [managing, setManaging] = useState<MyTableLink | null>(null);
   const [refresh, setRefresh] = useState(0);
@@ -312,9 +314,9 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
       </div>
 
       <div className="mt-6"><ReceivedInvites onChanged={() => setRefresh((n) => n + 1)} /></div>
-      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} />
-      <MyTablesSection kind="oneshot" title="Meus one-shots" onManageTable={setManaging} />
-      <ParticipatingTables characters={characters} refreshKey={refresh} skipIds={getMyTables().map((l) => l.id)} onEnter={(name, code, asGm) => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(asGm ? { name, host: code } : { name, sala: code }); }} onManage={(t) => setManaging({ id: t.id, code: t.code, managementToken: "", name: t.name, kind: t.kind, liveRoomCode: t.liveRoomCode } as MyTableLink)} />
+      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      <MyTablesSection kind="oneshot" title="Meus one-shots" onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      <ParticipatingTables characters={characters} onOpenCharacter={onOpenCharacter} refreshKey={refresh} skipIds={getMyTables().map((l) => l.id)} onEnter={(name, code, asGm) => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(asGm ? { name, host: code } : { name, sala: code }); }} onManage={(t) => setManaging({ id: t.id, code: t.code, managementToken: "", name: t.name, kind: t.kind, liveRoomCode: t.liveRoomCode } as MyTableLink)} />
       {managing && <ManageTableDialog table={{ id: managing.id, name: managing.name, code: managing.liveRoomCode || managing.code }} token={managing.managementToken} onClose={() => setManaging(null)} />}
       <div className="mb-6 [&_h2]:!text-[#f2c572]"><OfficialCampaigns /></div>
 

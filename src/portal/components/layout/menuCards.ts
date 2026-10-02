@@ -47,4 +47,5 @@ export const HOME_CARDS: MenuCard[] = [
   { view: "equipment", label: "Equipamentos", img: imgEquip },
   { view: "spells", label: "Magias (Grimório)", img: imgMagias },
   { view: "bestiary", label: "Monstros & Inimigos", img: imgMonstros },
+  { view: "homebrew", label: "Homebrew", img: imgHomebrew },
 ];

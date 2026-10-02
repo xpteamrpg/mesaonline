@@ -3,7 +3,7 @@ import type { View } from "../../types/view";
 import { renderPdfCoverToDataUrl } from "../../lib/pdf/renderPdfCover";
 import { PublicBooksView } from "./PublicBooksView";
 import { PageBanner } from "../layout/PageBanner";
-import imgRacasNovo from "../../assets/menu/racas-novo.jpg";
+import imgRacasWide from "../../assets/menu/racas-wide.jpg";
 import imgClasses from "../../assets/menu/classes.jpg";
 import imgEquip from "../../assets/menu/equipamentos.jpg";
 import imgMagias from "../../assets/menu/magias.jpg";
@@ -42,9 +42,9 @@ import { XP_TABLE, formatXp } from "../../lib/t20/xp";
 
 /* ------------------------------- primitivas ---------------------------------- */
 
-export const PageHead: React.FC<{ icon: string; title: string; subtitle: string; right?: React.ReactNode; children?: React.ReactNode; image?: string; position?: string }> = ({ icon, title, subtitle, right, children, image, position }) => (
+export const PageHead: React.FC<{ icon: string; title: string; subtitle: string; right?: React.ReactNode; children?: React.ReactNode; image?: string; position?: string; wide?: boolean }> = ({ icon, title, subtitle, right, children, image, position, wide }) => (
   <>
-    {image && <PageBanner image={image} position={position} title={title} crumb={title} />}
+    {image && <PageBanner image={image} wide={wide} position={position} title={title} crumb={title} />}
     <div className="mb-4 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -108,7 +108,7 @@ export const RacesView: React.FC = () => {
   const list = T20_RACES.filter((r) => (!src || r.fonte === src) && hitIn(s, r.nome, r.fonte, ...r.habilidades.map((h) => h.nome), ...(r.variantes ?? []).map((v) => v.nome)));
   return (
     <Wrap>
-      <PageHead image={imgRacasNovo} position="50% 30%" icon="🧬" title="Raças de Arton" subtitle={`${T20_RACES.length} raças do Jogo Básico, Heróis de Arton, Ameaças de Arton, Ruff Ghanor e Duelo de Dragões.`} right={<Search value={q} onChange={setQ} />}>
+      <PageHead image={imgRacasWide} wide position="50% 50%" icon="🧬" title="Raças de Arton" subtitle={`${T20_RACES.length} raças do Jogo Básico, Heróis de Arton, Ameaças de Arton, Ruff Ghanor e Duelo de Dragões.`} right={<Search value={q} onChange={setQ} />}>
         <Pill active={!src} onClick={() => setSrc("")}>Todas as fontes</Pill>
         {sources.map((f) => <Pill key={f} active={src === f} onClick={() => setSrc(f)}>{f}</Pill>)}
       </PageHead>

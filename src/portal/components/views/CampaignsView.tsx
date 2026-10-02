@@ -11,7 +11,7 @@ import { AvatarZoom } from "../common/AvatarZoom";
 import { ImagePicker } from "../common/ImagePicker";
 import { PageBanner } from "../layout/PageBanner";
 import imgCampanhas from "../../assets/menu/campanhas.jpg";
-import imgMonstros from "../../assets/menu/monstros.jpg";
+import imgParceirosWide from "../../assets/menu/parceiros-wide.jpg";
 import { SITE_ROOT } from "../../../utils/assetUrl";
 
 /** "Ferramentas desta mesa" ficam desligadas por enquanto (decisão do usuário); o código é mantido para reativar depois. */
@@ -410,7 +410,7 @@ export const CompanionsView: React.FC<{ companions: Companion[]; characters: Cha
 
   return (
     <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
-      <PageBanner image={imgMonstros} position="50% 22%" title="Parceiros" crumb="Parceiros" count={companions.length} action={{ label: showForm ? "Fechar" : "Adicionar Parceiro", icon: showForm ? "✕" : "🐺", onClick: () => setShowForm((v) => !v) }} />
+      <PageBanner image={imgParceirosWide} wide position="50% 50%" title="Parceiros" crumb="Parceiros" count={companions.length} action={{ label: showForm ? "Fechar" : "Adicionar Parceiro", icon: showForm ? "✕" : "🐺", onClick: () => setShowForm((v) => !v) }} />
 
       {showForm && (
         <div className="mb-4 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">

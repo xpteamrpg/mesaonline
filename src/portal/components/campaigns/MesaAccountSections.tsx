@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth/AuthContext";
 import type { CharacterSheet } from "../../types/sheet";
+import { T20CharacterSheet } from "../sheet/T20CharacterSheet";
 import type { TableEntry } from "../../lib/tables/client";
 import {
-  answerInvite, characterRequests, claimTable, decideCharacter, inviteToTable, kickMember, leaveTable, myCharacterLinks, myInvites, myTables, requestCharacter, tableMembers, unlinkCharacter,
+  answerInvite, characterRequests, characterSheetOf, claimTable, tableParty, type PartyMember, decideCharacter, inviteToTable, kickMember, leaveTable, myCharacterLinks, myInvites, myTables, requestCharacter, tableMembers, unlinkCharacter,
   type LinkRequest, type MyCharacterLink, type MyTable, type TableInvite, type TableMember,
 } from "../../lib/campaigns/client";
 
@@ -83,7 +84,7 @@ const ImportCharacterDialog: React.FC<{ table: TableEntry; characters: Character
 };
 
 /** Campanhas e one-shots de que a pessoa participa como jogadora (ou como mestre em outro navegador). */
-export const ParticipatingTables: React.FC<{ characters: CharacterSheet[]; skipIds: string[]; refreshKey: number; onEnter: (name: string, code: string, asGm: boolean) => void; onManage: (t: TableEntry) => void }> = ({ characters, skipIds, refreshKey, onEnter, onManage }) => {
+export const ParticipatingTables: React.FC<{ characters: CharacterSheet[]; skipIds: string[]; refreshKey: number; onEnter: (name: string, code: string, asGm: boolean) => void; onManage: (t: TableEntry) => void; onOpenCharacter: (characterId: string) => void }> = ({ characters, skipIds, refreshKey, onEnter, onManage, onOpenCharacter }) => {
   const { user } = useAuth();
   const [list, setList] = useState<MyTable[]>([]);
   const [importing, setImporting] = useState<TableEntry | null>(null);
@@ -109,6 +110,7 @@ export const ParticipatingTables: React.FC<{ characters: CharacterSheet[]; skipI
               <div className="mt-1 font-serif text-lg font-black leading-tight text-[#b92b3a]">{t.name}</div>
               {t.gmName && <div className="text-[11px] text-[#9c9180]">Mestre: {t.gmName}</div>}
               <div className="mt-2 flex items-center gap-2 rounded border border-[#ded7c6] bg-white px-2 py-1 text-[11px]"><span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest">{code}</b></div>
+              <PartyStrip tableId={t.id} characters={characters} refreshKey={refreshKey} onOpenOwn={onOpenCharacter} />
               <button onClick={() => onEnter(t.name, code, m.role === "mestre")} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
               <div className="mt-2 flex gap-2">
                 {m.role === "jogador"
@@ -198,5 +200,58 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
         )}
       </section>
     </Modal>
+  );
+};
+
+/**
+ * Personagens que estão na mesa: só a cabeça (miniatura do retrato) e o nome. Clicar abre a ficha:
+ * o personagem é seu → vai para a ficha na Oficina; é de outra pessoa → o Mestre vê a cópia da ficha (só leitura).
+ */
+export const PartyStrip: React.FC<{ tableId: string; characters: CharacterSheet[]; refreshKey?: number; onOpenOwn: (characterId: string) => void }> = ({ tableId, characters, refreshKey = 0, onOpenOwn }) => {
+  const { user } = useAuth();
+  const [party, setParty] = useState<PartyMember[] | null>(null);
+  const [shown, setShown] = useState<{ name: string; sheet: CharacterSheet } | null>(null);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    if (!user) { setParty(null); return; }
+    tableParty(tableId).then(setParty).catch(() => setParty([]));
+  }, [tableId, user?.id, refreshKey]);
+  if (!user || party === null) return null;
+
+  const open = async (m: PartyMember) => {
+    setMsg("");
+    if (m.ownerId === user.id && characters.some((c) => c.id === m.characterId)) { onOpenOwn(m.characterId); return; }
+    try {
+      const sheet = await characterSheetOf(m.id);
+      if (sheet) setShown({ name: m.summary.name, sheet: { ...sheet, avatar: m.summary.avatar } });
+      else setMsg("Esta ficha ainda não foi enviada ao Mestre. Peça para o jogador ligar o personagem de novo.");
+    } catch (e) { setMsg(reason(e)); }
+  };
+
+  return (
+    <div className="mt-2 rounded border border-[#ded7c6] bg-white px-2 py-1.5">
+      <div className="text-[9px] font-black uppercase tracking-wide text-[#9c9180]">Personagens na mesa</div>
+      {party.length === 0 ? <p className="text-[11px] text-[#9c9180]">Nenhum personagem ainda.</p> : (
+        <div className="mt-1 flex flex-wrap gap-2">
+          {party.map((m) => (
+            <button key={m.id} type="button" onClick={() => void open(m)} title={`${m.summary.name} · ${[m.summary.race, m.summary.class, m.summary.level ? `${m.summary.level}º nível` : ""].filter(Boolean).join(" · ")} · de ${m.ownerName}`} className="flex w-[58px] flex-col items-center gap-0.5 text-center">
+              {m.summary.avatar
+                ? <img src={m.summary.avatar} alt="" className="h-10 w-10 rounded-full border-2 border-[#b92b3a]/60 object-cover" />
+                : <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#b92b3a]/60 bg-[#ece7d3] text-sm font-black text-[#7a705d]">{(m.summary.name || "?")[0]?.toUpperCase()}</span>}
+              <span className="w-full truncate text-[10px] font-bold leading-tight text-[#2b261f]">{m.summary.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {msg && <p className="mt-1 text-[10px] font-bold text-[#b92b3a]">{msg}</p>}
+      {shown && (
+        <div className="fixed inset-0 z-[90] overflow-y-auto bg-black/60 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={`Ficha de ${shown.name}`} onMouseDown={(e) => { if (e.target === e.currentTarget) setShown(null); }}>
+          <div className="mx-auto max-w-[1300px] rounded-lg bg-[#f5f2eb] p-3 shadow-2xl">
+            <div className="mb-2 flex items-center justify-between"><b className="font-serif text-lg">Ficha de {shown.name} (cópia, só leitura)</b><button onClick={() => setShown(null)} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-xs font-bold">Fechar</button></div>
+            <div className="pointer-events-none select-text"><T20CharacterSheet sheet={shown.sheet} onUpdate={() => undefined} onRoll={() => undefined} onEdit={() => undefined} onQuickEdit={() => undefined} onClone={() => undefined} onLevelUp={() => undefined} /></div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
