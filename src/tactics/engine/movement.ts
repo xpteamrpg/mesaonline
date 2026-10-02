@@ -1,3 +1,4 @@
+import { effectBonus } from "./effectBonuses";
 import { activeGrid, metersToCells, stepCost } from "../../game/distance";
 import { adjustedSpeedM } from "../../game/conditionEffects";
 import type { BoardState, BoardToken, BoardWall } from "../../game/types";
@@ -119,7 +120,7 @@ export interface ReachableOptions {
 export function reachableCells(board: BoardState, token: BoardToken, options: ReachableOptions = {}): Map<string, number> {
   const mode = options.mode || "walk";
   const flying = mode === "fly";
-  const budgetM = adjustedSpeedM(token.conditions, options.budgetM ?? (flying ? token.flyM || 0 : mode === "burrow" ? token.burrowM || 0 : token.movementM));
+  const budgetM = adjustedSpeedM(token.conditions, options.budgetM ?? (flying ? token.flyM || 0 : mode === "burrow" ? token.burrowM || 0 : Math.max(0, token.movementM + effectBonus(token, "speed"))));
   const budget = Math.max(0, metersToCells(budgetM, activeGrid()));
   const result = new Map<string, number>([[cellKey(token.gx, token.gy), 0]]);
   const queue = [{ x: token.gx, y: token.gy, cost: 0 }];
@@ -169,7 +170,7 @@ export function reachableWithPaths(
 ): Map<string, { cost: number; from: string | null }> {
   const mode = options.mode || "walk";
   const flying = mode === "fly";
-  const budgetM = adjustedSpeedM(token.conditions, options.budgetM ?? (flying ? token.flyM || 0 : mode === "burrow" ? token.burrowM || 0 : token.movementM));
+  const budgetM = adjustedSpeedM(token.conditions, options.budgetM ?? (flying ? token.flyM || 0 : mode === "burrow" ? token.burrowM || 0 : Math.max(0, token.movementM + effectBonus(token, "speed"))));
   const budget = Math.max(0, metersToCells(budgetM, activeGrid()));
   const inicio = cellKey(token.gx, token.gy);
   const resultado = new Map<string, { cost: number; from: string | null }>([[inicio, { cost: 0, from: null }]]);

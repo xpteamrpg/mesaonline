@@ -1,3 +1,4 @@
+import MasterAdjustments from "./MasterAdjustments";
 import { LIGHTING_LABEL, boardLighting, fogForVision, fogSettings, visionForTokens } from "../../game/vision";
 import { type AutoWallMode, MAX_AUTO_WALLS, detectWalls, loadRaster } from "../../game/autoWalls";
 import { DISTANCE_MODE_LABEL, type GridSettings, gridSettings } from "../../game/distance";
@@ -366,6 +367,7 @@ function RosterEditor({ snapshot, unit }: { snapshot: RuntimeSnapshot; unit: Tac
       <MoveModeSection snapshot={snapshot} unitId={unit.id}/>
       <AuraSection snapshot={snapshot} unitId={unit.id}/>
     </>}
+    <MasterAdjustments token={token}/>
   </div>;
 }
 

@@ -1,3 +1,4 @@
+import { effectBonus } from "../../tactics/engine/effectBonuses";
 import { MAX_HANDS, MAX_WORN, cargaOf, equippedCounts } from "../../game/carga";
 import { Backpack, FlaskConical, Shield, Swords, type LucideIcon } from "lucide-react";
 import type { ImgKey } from "../mesaSkin/assets";
@@ -128,7 +129,7 @@ function focusOf(token: BoardToken | undefined, sheet: CharacterSheet | null): S
     pmMax: token.pmMax,
     defense: token.defense,
     speed: {
-      walkM: Math.max(0, (sheet?.speed || token.movementM || 9) - (sheet ? cargaOf(sheet).speedPenaltyM : 0)),
+      walkM: Math.max(0, (sheet?.speed || token.movementM || 9) - (sheet ? cargaOf(sheet).speedPenaltyM : 0) + effectBonus(token, "speed")),
       penaltyM: sheet ? cargaOf(sheet).speedPenaltyM || undefined : undefined,
       flyM: sheet?.flySpeed ?? token.flyM,
       burrowM: sheet?.burrowSpeed ?? token.burrowM,

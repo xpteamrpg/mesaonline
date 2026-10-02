@@ -1,3 +1,4 @@
+import { effectBonus } from "./tactics/engine/effectBonuses";
 import { toggleEquipped } from "./game/carga";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { coveredCells, footprintOf, parseSize, sideOf, tokenCovers } from "./game/tokenSize";
@@ -519,7 +520,7 @@ export default function App() {
       appendChat({ author: "Sistema", text: "Esta perícia exige uma ficha oficial vinculada ao token selecionado.", kind: "system" });
       return false;
     }
-    return recordCheck(label, sheetSkillTotal(sheet, skill.id, skill.atributo) + conditionSkillPenalty(token.conditions, skill.atributo, skill.id), "system");
+    return recordCheck(label, sheetSkillTotal(sheet, skill.id, skill.atributo) + conditionSkillPenalty(token.conditions, skill.atributo, skill.id) + effectBonus(token, "skills", skill.id), "system");
   }
 
   function useEquipment(slot?: number, itemName?: string) {

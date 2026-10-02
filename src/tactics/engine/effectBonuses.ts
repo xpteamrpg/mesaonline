@@ -1,6 +1,6 @@
 import type { BoardToken, TacticalEffect } from "../../game/types";
 
-type Stat = "attack" | "damage" | "defense" | "saves";
+type Stat = "attack" | "damage" | "defense" | "saves" | "speed" | "skills";
 
 const fromSpell = (effect: TacticalEffect) => /^spell:/i.test(effect.sourceId || "") && !effect.stacks;
 
@@ -10,11 +10,12 @@ const fromSpell = (effect: TacticalEffect) => /^spell:/i.test(effect.sourceId ||
  * então entre as magias vale o maior bônus (e a pior penalidade); as demais fontes somam.
  * `weaponId`: o bônus preso a uma arma (Arma Mágica) só vale para ela.
  */
-export function effectBonus(token: Pick<BoardToken, "effects">, stat: Stat, weaponId?: string): number {
+export function effectBonus(token: Pick<BoardToken, "effects">, stat: Stat, scopeId?: string): number {
   const active = (token.effects || []).filter((effect) => {
     const value = effect.mods?.[stat];
     if (!value) return false;
-    return !effect.weaponId || effect.weaponId === weaponId;
+    // bônus preso a uma arma ou a uma perícia só vale para ela
+    return (!effect.weaponId || effect.weaponId === scopeId) && (!effect.skillId || effect.skillId === scopeId);
   });
   const spells = active.filter(fromSpell).map((effect) => effect.mods![stat] as number);
   const best = Math.max(0, ...spells);

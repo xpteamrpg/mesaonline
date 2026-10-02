@@ -374,7 +374,7 @@ export interface TacticalEffect {
   expiresRound?: number;
   /** quem conjurou: por padrão o efeito por rodadas termina no início do turno dele (regra do ModernRPG) */
   casterId?: string;
-  mods?: Partial<Record<"attack" | "damage" | "defense" | "rd" | "saves" | "tempHp", number>>;
+  mods?: Partial<Record<"attack" | "damage" | "defense" | "rd" | "saves" | "tempHp" | "speed" | "skills", number>>;
   damageType?: string;
   condition?: string | string[];
   reactiveKey?: string;
@@ -382,6 +382,8 @@ export interface TacticalEffect {
   saveDC?: number;
   /** o bônus vale só para esta arma (id da ação de ataque), como Arma Mágica */
   weaponId?: string;
+  /** o bônus de perícia vale só para esta perícia (id da perícia) */
+  skillId?: string;
   /** vale uma vez só: some depois de reduzir um dano (Instante Estoico, RD "contra o próximo dano") */
   once?: boolean;
   /** RD "/mágico": não reduz dano mágico (de magia ou de arma mágica), como no Instante Estoico */
