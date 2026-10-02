@@ -6,6 +6,7 @@ import imgLivros from "../../assets/menu/livros.jpg";
 import imgOficina from "../../assets/menu/oficina.jpg";
 import imgCompendio from "../../assets/menu/compendio.jpg";
 import imgHomebrew from "../../assets/menu/homebrew.jpg";
+import imgRacas from "../../assets/menu/racas-novo.jpg";
 import { HomeBanner } from "./HomeBanner";
 import { HOME_CARDS } from "../layout/menuCards";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -121,6 +122,11 @@ export const AboutView: React.FC<{ onNavigate: (view: View) => void }> = ({ onNa
       <Row icon="🗺️" title="Campanhas e Mesa online" img={imgCampanhas} pos="50% 40%" flip>
         <p>Crie campanhas e one-shots, convide os jogadores pelo código da mesa e ligue os personagens de cada um à campanha. A Mesa online reúne mapa, fichas, combate tático com as regras de Tormenta20 e jogo em grupo, tudo no navegador.</p>
         <p>A Mesa online foi construída <b>do zero</b>, com base em material do GitLab, em autorizações de amigos e em material encontrado em comunidades como o Discord e o GitHub. Também é de fãs, para fãs.</p>
+      </Row>
+
+      <Row icon="🏰" title="O cenário" img={imgRacas} pos="50% 30%">
+        <p>Este é um espaço reservado para apresentar o cenário de Tormenta20 criado por <b>Samararash</b>: o mundo, os lugares e as histórias que as mesas do ModernRPG vão explorar.</p>
+        <p className="text-sm italic text-[#9c9180]">Texto provisório: a apresentação completa do cenário entra aqui em breve.</p>
       </Row>
 
       <article className="rounded-lg border border-[#ded7c6] bg-[#efe9d6] p-6 text-sm leading-7 text-[#5c5446] shadow-sm sm:p-8">
