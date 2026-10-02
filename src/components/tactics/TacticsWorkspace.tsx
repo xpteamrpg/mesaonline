@@ -66,10 +66,11 @@ export default function TacticsWorkspace(props: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [moveMode, setMoveMode] = useState<"walk" | "fly" | "burrow">("walk");
   // Mesma regra de visibilidade da exploracao — o combate nao inventa a sua.
-  const fogCfg = fogSettings(board.fogSettings);
+  const fogCfg = useMemo(() => fogSettings(board.fogSettings), [board.fogSettings]);
   const vision = useMemo(() => {
     const owned = board.tokens.filter((token) => token.controlledBy && token.controlledBy === snapshot.multiplayer.peerId);
     const eyes = owned.length ? owned : board.tokens.filter((token) => token.side === "heroes");
+    if (!fogCfg.playerFogEnabled) return { visible: new Set<string>() } as ReturnType<typeof visionForTokens>; // neblina desligada: não calcula
     return visionForTokens(board, eyes, fogCfg);
   }, [board, fogCfg, snapshot.multiplayer.peerId]);
   const unitHidden = (unit: { x: number; y: number; side?: string }) => !tokenVisible(unit, {

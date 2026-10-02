@@ -80,6 +80,8 @@
 .mesa-move-path polyline { stroke: rgba(255, 224, 140, .85); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 7; filter: drop-shadow(0 0 3px rgba(255, 200, 80, .5)); }
 .mesa-move-path path { stroke: rgba(255, 150, 120, .8); stroke-width: 2.5; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(255, 130, 90, .5)); }
 [data-map-stage] [data-token-id] { transition: left var(--walk-ms, 1000ms) cubic-bezier(.45, .05, .35, 1), top var(--walk-ms, 1000ms) cubic-bezier(.45, .05, .35, 1); }
+/* Mapa 2D: o token já está na casa nova e o deslize é só um deslocamento (translate), feito pela placa de vídeo: animar left/top refazia o layout a cada quadro e travava. */
+.mesa-exploration-board [data-token-id] { transition: translate var(--walk-ms, 1000ms) cubic-bezier(.45, .05, .35, 1); }
 
 /* Cursor: seta comum no mapa; a mira só aparece quando uma ferramenta de clique no mapa está ativa. */
 [data-map-stage] .next-grid > button { cursor: default; }

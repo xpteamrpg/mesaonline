@@ -205,7 +205,7 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
 
 /**
  * Personagens que estão na mesa: só a cabeça (miniatura do retrato) e o nome. Clicar abre a ficha:
- * o personagem é seu → vai para a ficha na Oficina; é de outra pessoa → o Mestre vê a cópia da ficha (só leitura).
+ * o personagem é seu → vai para a ficha no site; é de outra pessoa da mesa → abre a cópia da ficha (só leitura: não rola nem edita).
  */
 export const PartyStrip: React.FC<{ tableId: string; characters: CharacterSheet[]; refreshKey?: number; onOpenOwn: (characterId: string) => void }> = ({ tableId, characters, refreshKey = 0, onOpenOwn }) => {
   const { user } = useAuth();
@@ -224,7 +224,7 @@ export const PartyStrip: React.FC<{ tableId: string; characters: CharacterSheet[
     try {
       const sheet = await characterSheetOf(m.id);
       if (sheet) setShown({ name: m.summary.name, sheet: { ...sheet, avatar: m.summary.avatar } });
-      else setMsg("Esta ficha ainda não foi enviada ao Mestre. Peça para o jogador ligar o personagem de novo.");
+      else setMsg("Esta ficha ainda não foi compartilhada na mesa. Peça para o jogador ligar o personagem de novo.");
     } catch (e) { setMsg(reason(e)); }
   };
 
@@ -247,7 +247,7 @@ export const PartyStrip: React.FC<{ tableId: string; characters: CharacterSheet[
       {shown && (
         <div className="fixed inset-0 z-[90] overflow-y-auto bg-black/60 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={`Ficha de ${shown.name}`} onMouseDown={(e) => { if (e.target === e.currentTarget) setShown(null); }}>
           <div className="mx-auto max-w-[1300px] rounded-lg bg-[#f5f2eb] p-3 shadow-2xl">
-            <div className="mb-2 flex items-center justify-between"><b className="font-serif text-lg">Ficha de {shown.name} (cópia, só leitura)</b><button onClick={() => setShown(null)} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-xs font-bold">Fechar</button></div>
+            <div className="mb-2 flex items-center justify-between"><b className="font-serif text-lg">Ficha de {shown.name} (só leitura)</b><button onClick={() => setShown(null)} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-xs font-bold">Fechar</button></div>
             <div className="pointer-events-none select-text"><T20CharacterSheet sheet={shown.sheet} onUpdate={() => undefined} onRoll={() => undefined} onEdit={() => undefined} onQuickEdit={() => undefined} onClone={() => undefined} onLevelUp={() => undefined} /></div>
           </div>
         </div>

@@ -671,7 +671,8 @@ export default function App() {
   /** All controls from the supplied source are routed only to existing Mesa actions. */
   function handleSkinAction(action: string) {
     if (action === "brand") { goToPortal(); return; }
-    if (["scenario", "home", "scenes"].includes(action)) { openSkinPanel("scenes"); return; }
+    if (action === "home") { goToPortal(); return; } // a casinha volta ao site; as cenas ficam no botão de cenários
+    if (["scenario", "scenes"].includes(action)) { openSkinPanel("scenes"); return; }
     // O ícone já existente é literalmente rotulado "Iluminação da mesa".
     // Ele abre o submenu de ambiente já disponível, sem alterar a máscara.
     if (action === "theme") { openSkinPanel("environment"); return; }

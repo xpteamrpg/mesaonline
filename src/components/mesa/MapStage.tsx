@@ -2,7 +2,7 @@ import { Lightbulb, PackageOpen, Ruler } from "lucide-react";
 import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Token } from "../mesaSkin/components/MapArea";
 import type { SkinMapToken } from "../mesaSkin/runtime";
-import type { RuntimeSnapshot } from "../../game/types";
+import type { BoardToken, RuntimeSnapshot } from "../../game/types";
 import { canControlToken } from "../../game/permissions";
 import { activeGrid, distanceBetween, formatDistance } from "../../game/distance";
 import { conditionBadges, hiddenConditionCount } from "../../game/conditionBadges";
@@ -61,7 +61,8 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
   const [camera, setCamera] = useState({ scale: 1, x: 0, y: 0 });
   const zoneRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ pointerId: number; x: number; y: number; cameraX: number; cameraY: number } | null>(null);
-  const fogCfg = fogSettings(board.fogSettings);
+  // Guardada: um objeto novo a cada renderização refazia a visão (a parte mais cara do mapa) a cada casa que o mouse cruzava.
+  const fogCfg = useMemo(() => fogSettings(board.fogSettings), [board.fogSettings]);
   const andar = activeFloor(board);
   const selectedId = board.selectedTokenIds[0] || "";
   const selectedToken = board.tokens.find((token) => token.id === selectedId);
@@ -102,8 +103,8 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
     && canControlToken(snapshot.multiplayer, selectedToken) && !selectedToken.locked ? selectedToken : undefined;
   const previewToken = moveFor
     ? board.tokens.find((token) => token.id === moveFor)
-    : dragToken ? board.tokens.find((token) => token.id === dragToken)
-      : stageControl.tool === "move" && !intentActive ? selectedToken : explorationMover;
+    : dragToken && snapshot.combat.active ? board.tokens.find((token) => token.id === dragToken)
+      : stageControl.tool === "move" && !intentActive ? selectedToken : undefined;
   // Andar, voar ou escavar: o modo escolhido na gaveta vale para o token que tem esse deslocamento.
   const moveMode = effectiveMoveMode(previewToken, stageControl.moveMode);
   // O par anda pelo bloco da montaria: alcance, ocupação e deslocamento são os dela.
@@ -111,6 +112,7 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
   const reach = useMemo(() => (moverToken ? reachableWithPaths(board, moverToken, { mode: moveMode }) : null), [board, moverToken, moveMode]);
   // O token anda devagar até o destino: a duração do deslize cresce com a distância (de ~1 a ~2,4 s).
   const lastPositions = useRef(new Map<string, [number, number]>());
+  const slideFrom = useRef(new Map<string, [number, number]>());
   useLayoutEffect(() => {
     let farthest = 0;
     for (const token of board.tokens) {
@@ -119,7 +121,30 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
       lastPositions.current.set(token.id, [token.gx, token.gy]);
     }
     if (farthest > 0) zoneRef.current?.style.setProperty("--walk-ms", `${Math.min(2400, Math.max(1000, Math.round(farthest * 280)))}ms`);
+    // Deslize (mapa 2D): o token já foi para a casa nova; aqui ele "volta" visualmente para a casa antiga e desliza até a nova só com translate.
+    if (!iso && farthest > 0) {
+      for (const token of board.tokens) {
+        const before = slideFrom.current.get(token.id);
+        if (!before || (before[0] === token.gx && before[1] === token.gy)) continue;
+        const el = zoneRef.current?.querySelector<HTMLElement>(`[data-token-id="${CSS.escape(token.id)}"]`);
+        const parent = el?.offsetParent as HTMLElement | null;
+        if (!el || !parent) continue;
+        const dx = (before[0] - token.gx) * (parent.clientWidth / map.cols);
+        const dy = (before[1] - token.gy) * (parent.clientHeight / map.rows);
+        el.style.transition = "none";
+        el.style.translate = `${dx}px ${dy}px`;
+        void el.offsetWidth; // fixa o ponto de partida antes de animar
+        el.style.transition = "";
+        el.style.translate = "0px 0px";
+      }
+    }
+    slideFrom.current = new Map(board.tokens.map((token) => [token.id, [token.gx, token.gy] as [number, number]]));
   }, [board.tokens]);
+  // Na exploração não há alcance desenhado: o destino é conferido só na hora de clicar ou soltar o token.
+  const landableFor = (token: BoardToken, x: number, y: number) => {
+    const mover = moverOf(board, token);
+    return Boolean(reachableWithPaths(board, mover, { mode: effectiveMoveMode(token, stageControl.moveMode) }).has(`${x},${y}`)) && !footprintOccupied(board, mover, { x, y });
+  };
   // Casa de destino válida: alcançável e com o bloco inteiro livre (Grande 2x2, Enorme 3x3, Colossal 6x6).
   const landable = (x: number, y: number) => Boolean(reach?.has(`${x},${y}`)) && !(moverToken && footprintOccupied(board, moverToken, { x, y }));
   useEffect(() => { setPendingMove(null); }, [moveFor, stageControl.tool, previewToken?.id, previewToken?.gx, previewToken?.gy]);
@@ -148,6 +173,8 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
   const vision = useMemo(() => {
     const owned = board.tokens.filter((token) => token.controlledBy && token.controlledBy === snapshot.multiplayer.peerId);
     const eyes = owned.length ? owned : board.tokens.filter((token) => token.side === "heroes");
+    // Sem neblina ligada ninguém usa a visão: nem calcula (era o gargalo, mesmo com a neblina desligada).
+    if (!fogCfg.playerFogEnabled) return { visible: new Set<string>() } as ReturnType<typeof visionForTokens>;
     return visionForTokens(board, eyes, fogCfg);
   }, [board, fogCfg, snapshot.multiplayer.peerId]);
   const fog = useMemo(() => {
@@ -231,7 +258,7 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
     if (!canControlToken(snapshot.multiplayer, token)) { say("Você não controla este personagem."); return; }
     if (token.locked) { say(`${token.name} está travado pelo Mestre.`); return; }
     if (token.gx === x && token.gy === y) return;
-    if (!landable(x, y)) { say("Destino fora do deslocamento ou bloqueado."); return; }
+    if (!(previewToken?.id === token.id ? landable(x, y) : landableFor(token, x, y))) { say("Destino fora do deslocamento ou bloqueado."); return; }
     try {
       if (snapshot.combat.active) {
         if (snapshot.combat.activeTokenId !== token.id) { say("Aguarde o turno do seu personagem."); return; }
@@ -333,7 +360,8 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
     }
     if (intentActive) { onIntentPoint({ x: (x + .5) / map.cols, y: (y + .5) / map.rows }); return; }
     if (tool === "select") {
-      if (explorationMover && landable(x, y) && !(explorationMover.gx === x && explorationMover.gy === y)) {
+      if (explorationMover && !(explorationMover.gx === x && explorationMover.gy === y)) {
+        if (!landableFor(explorationMover, x, y)) { say("Destino fora do deslocamento ou bloqueado."); return; }
         try {
           executeExplorationMove(explorationMover.id, x, y, effectiveMoveMode(explorationMover, stageControl.moveMode));
           if (fogCfg.exploreOnMove) markExplored(visionForTokens(board, [{ ...explorationMover, gx: x, gy: y }], fogCfg).visible);

@@ -2,7 +2,7 @@
 -- Acrescenta a coluna `sheet` (cópia da ficha no momento em que o personagem entra na mesa, sem o retrato e sem o diário),
 -- troca duas funções MINHAS para aceitarem essa cópia e cria 2 funções novas:
 --   mrpg_table_party(mesa)        → qualquer membro vê quem está na mesa (nome, raça, classe, nível e miniatura do retrato)
---   mrpg_character_sheet(ligação) → só o dono do personagem e o mestre da mesa leem a cópia da ficha
+--   mrpg_character_sheet(ligação) → quem faz parte da mesma mesa (jogadores e mestre) lê a cópia da ficha, só para leitura
 -- Desfazer: db/supabase-campanhas-2-rollback.sql
 begin;
 
@@ -59,13 +59,15 @@ begin
   ), '[]'::jsonb);
 end $$;
 
--- A cópia da ficha: só o dono do personagem e o mestre da mesa.
+-- A cópia da ficha: qualquer membro da mesa lê (só leitura); quem está de fora não.
 create or replace function mrpg_character_sheet(p_link uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare l mrpg_character_links;
 begin
   select * into l from mrpg_character_links where id = p_link;
-  if not found or (l.owner_id <> auth.uid() and not mrpg_is_gm(l.table_id)) then raise exception 'Sem permissão para ver esta ficha.'; end if;
+  if not found or not exists (select 1 from mrpg_table_members m where m.table_id = l.table_id and m.user_id = auth.uid()) then
+    raise exception 'Sem permissão para ver esta ficha.';
+  end if;
   return l.sheet;
 end $$;
 

@@ -52,12 +52,13 @@ export default function ArmadaNextTable(props: Props) {
   const { snapshot, units } = props;
   const board = snapshot.board;
   const map = board.map;
-  const fogCfg = fogSettings(board.fogSettings);
+  const fogCfg = useMemo(() => fogSettings(board.fogSettings), [board.fogSettings]);
   // CADEIA LUZ -> VISAO -> FOG (game/vision.ts). O jogador so enxerga o que sua
   // visao alcanca; o Mestre ve o fog manual, ou a previa do jogador se pedir.
   const vision = useMemo(() => {
     const owned = board.tokens.filter((token) => token.controlledBy && token.controlledBy === snapshot.multiplayer.peerId);
     const eyes = owned.length ? owned : board.tokens.filter((token) => token.side === "heroes");
+    if (!fogCfg.playerFogEnabled) return { visible: new Set<string>() } as ReturnType<typeof visionForTokens>; // neblina desligada: não calcula
     return visionForTokens(board, eyes, fogCfg);
   }, [board, fogCfg, snapshot.multiplayer.peerId]);
   const fog = useMemo(() => {
