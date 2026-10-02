@@ -388,6 +388,14 @@ export interface TacticalEffect {
   notMagical?: boolean;
   /** a descrição da magia diz que acumula com outras magias (Armadura Arcana): soma em vez de valer só o maior */
   stacks?: boolean;
+  /** quem carrega o efeito rola o d20 dos próprios ataques duas vezes e usa o melhor (Concentração de Combate) */
+  attackRoll?: "best";
+  /** quem ataca o portador rola o d20 duas vezes e usa o pior (Concentração de Combate, 3º círculo) */
+  incomingAttackRoll?: "worst";
+  /** dano extra de energia nos ataques da arma (Arma Mágica: +1d6 de ácido, eletricidade, fogo ou frio) */
+  extraDamage?: { formula: string; type: string };
+  /** Imagem Espelhada: cada ataque que erra desfaz uma cópia (−2 na Defesa) */
+  mirrorImages?: boolean;
 }
 
 export interface ChatMessage {

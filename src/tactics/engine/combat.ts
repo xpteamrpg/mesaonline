@@ -1,9 +1,9 @@
-import { effectBonus } from "./effectBonuses";
+import { attackDiceMode, effectBonus } from "./effectBonuses";
 import type { BoardToken, DiceResolution, GameAction } from "../../game/types";
 import { appendCombatLog, appendRoll, getBoard, updateToken } from "../../game/vttBridge";
 import { rollFormula } from "./spellEffects";
 import { spendCombatAction } from "./actionEconomy";
-import { emitTacticalEvent, mitigateDamage, resolveIncomingAttackReaction } from "./reactiveTriggers";
+import { emitTacticalEvent, mitigateDamage, resolveIncomingAttackReaction, loseMirrorImage } from "./reactiveTriggers";
 import { resolveSave } from "./saves";
 import { isFlanking, targetDefense } from "./targeting";
 import { conditionMods } from "../../game/conditionEffects";
@@ -49,7 +49,9 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
     let hit = true;
     let critical = false;
     if (action.attackSkill && !action.autoHit) {
-      const natural = die(20);
+      const mode = attackDiceMode(actor, target);
+      const dice = mode === "normal" ? [die(20)] : [die(20), die(20)];
+      const natural = mode === "best" ? Math.max(...dice) : mode === "worst" ? Math.min(...dice) : dice[0];
       const ranged = action.attackSkill === "pontaria";
       const attackMods = conditionMods(actor.conditions);
       const modifier = actor[action.attackSkill] + (action.attackBonus || 0) + effectBonus(actor, "attack", action.id) + (isFlanking(board, actor, target) ? 2 : 0)
@@ -60,11 +62,12 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
       critical = hit && natural >= (action.crit || 20);
       const roll: DiceResolution = {
         id: `attack-${crypto.randomUUID()}`, actor: actor.name, target: target.name, action: action.name, kind: "attack",
-        natural, modifier, total, dc: defense, formula: `1d20 [${natural}] + ${modifier}`, rolls: [natural],
+        natural, modifier, total, dc: defense, formula: `1d20 [${dice.length > 1 ? `${dice.join(", ")} → ${natural}` : natural}] + ${modifier}`, rolls: dice,
         outcome: hit ? critical ? "ACERTO CRÍTICO" : "ACERTO" : "ERRO", success: hit, timestamp: Date.now(),
       };
       appendRoll(roll); rolls.push(roll);
       emitTacticalEvent("onAttackResolved", { attacker: actor, target, action, hit });
+      if (!hit) loseMirrorImage(target.id);
     }
     if (!hit) { results.push({ tokenId: target.id, hit: false }); continue; }
 
@@ -77,6 +80,14 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
       const rolled = sharedDamage || rollFormula(action.damage || "0", critical ? action.critMultiplier || 2 : 1);
       damage += rolled.total + effectDamage;
       damageRolls.push(...rolled.rolls);
+      // Dano extra de energia da arma (Arma Mágica): dados extras não são multiplicados no crítico.
+      for (const effect of actor.effects || []) {
+        if (effect.extraDamage && effect.weaponId === action.id) {
+          const extra = rollFormula(effect.extraDamage.formula);
+          damage += extra.total;
+          damageRolls.push(...extra.rolls);
+        }
+      }
       if (action.extraDamage) {
         const extra = rollFormula(action.extraDamage);
         damage += extra.total;

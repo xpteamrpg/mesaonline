@@ -8,7 +8,7 @@ import { appendChat, updateToken } from "../../game/vttBridge";
 import { runAiTurn } from "../../tactics/engine/ai";
 import { hasLineOfEffect, rangeM } from "../../tactics/engine/targeting";
 import { executeTacticalAction } from "../../tactics/engine/runtimeCommands";
-import { type AugmentChoice, type CastPlan, buildCastInfo, computeCastPlan, findSpellEntry, normalizeAugments, spellKeyOf } from "../../tactics/interpretation/spellCasting";
+import { type AugmentChoice, type CastPlan, ELEMENTS, buildCastInfo, computeCastPlan, findSpellEntry, normalizeAugments, spellKeyOf } from "../../tactics/interpretation/spellCasting";
 import { parseRangeM } from "../../tactics/interpretation/modernRpgRules";
 import { castCircleContext, isRacialSpell } from "../../tactics/interpretation/castContext";
 import { spellAllowsTarget } from "../../tactics/interpretation/spellTargeting";
@@ -44,7 +44,7 @@ export default function MesaSkinActionDialog({ mode, snapshot, units, onClose, o
   const actor = snapshot.board.tokens.find((token) => token.id === actorId);
   const actorUnit = units.find((unit) => unit.id === actorId);
   const [targeting, setTargeting] = useState<{ action: GameAction; augment?: AugmentChoice; maxTargets: number } | null>(null);
-  const [cast, setCast] = useState<{ action: GameAction; counts: Record<number, number>; weaponId?: string } | null>(null);
+  const [cast, setCast] = useState<{ action: GameAction; counts: Record<number, number>; weaponId?: string; element?: string } | null>(null);
   const [pending, setPending] = useState<{ action: GameAction; targetIds: string[]; augment?: AugmentChoice } | null>(null);
   const [condition, setCondition] = useState("");
   const canControl = Boolean(actor && canControlToken(snapshot.multiplayer, actor));
@@ -169,7 +169,7 @@ export default function MesaSkinActionDialog({ mode, snapshot, units, onClose, o
         ) : targeting ? (
           <TargetChooser actor={actorUnit} action={targeting.action} units={units} board={snapshot.board} maxTargets={targeting.maxTargets} onBack={() => setTargeting(null)} onPick={(targetIds) => setPending({ action: targeting.action, targetIds, augment: targeting.augment })}/>
         ) : cast && actor ? (
-          <CastStep actor={actor} action={cast.action} counts={cast.counts} weaponId={cast.weaponId} onChange={(counts, weaponId) => setCast({ action: cast.action, counts, weaponId })} onBack={() => setCast(null)} onContinue={(augment, plan, weaponSpell) => {
+          <CastStep actor={actor} action={cast.action} counts={cast.counts} weaponId={cast.weaponId} element={cast.element} onChange={(counts, weaponId, element) => setCast({ action: cast.action, counts, weaponId, element })} onBack={() => setCast(null)} onContinue={(augment, plan, weaponSpell) => {
             // Com os aprimoramentos, a ação, o alcance e o limite de alvos podem ter mudado.
             const shown: GameAction = { ...cast.action, kind: plan.kind ?? cast.action.kind, rangeM: plan.alcance ? parseRangeM(plan.alcance, cast.action.rangeM) : cast.action.rangeM };
             setCast(null);
@@ -251,7 +251,7 @@ function IconForAction({ action }: { action: GameAction }) {
 }
 
 /** Página "cast" do V3: aprimoramentos da magia, com o custo final calculado pelo motor. */
-function CastStep({ actor, action, counts, weaponId, onChange, onBack, onContinue }: { actor: BoardState["tokens"][number]; action: GameAction; counts: Record<number, number>; weaponId?: string; onChange: (counts: Record<number, number>, weaponId?: string) => void; onBack: () => void; onContinue: (augment: AugmentChoice, plan: CastPlan, weaponSpell: boolean) => void }) {
+function CastStep({ actor, action, counts, weaponId, element, onChange, onBack, onContinue }: { actor: BoardState["tokens"][number]; action: GameAction; counts: Record<number, number>; weaponId?: string; element?: string; onChange: (counts: Record<number, number>, weaponId?: string, element?: string) => void; onBack: () => void; onContinue: (augment: AugmentChoice, plan: CastPlan, weaponSpell: boolean) => void }) {
   const entry = findSpellEntry(action);
   if (!entry) return null;
   const [racial, setRacial] = useState(() => isRacialSpell(actor, spellKeyOf(action.sourceId || action.name)));
@@ -260,7 +260,7 @@ function CastStep({ actor, action, counts, weaponId, onChange, onBack, onContinu
   // Magia cujo alvo é uma arma (Arma Mágica): escolhe uma das armas equipadas do personagem.
   const weaponSpell = /^\s*1 arma/i.test(entry.alvo || "");
   const weapons = weaponSpell ? actionsForToken(actor).filter((candidate) => candidate.category === "weapon") : [];
-  const choice: AugmentChoice = { counts, racial, ...(weaponSpell && weaponId ? { weaponId } : {}) };
+  const choice: AugmentChoice = { counts, racial, ...(weaponSpell && weaponId ? { weaponId } : {}), ...(element ? { element } : {}) };
   const plan = computeCastPlan(info, choice);
   const cycle = (index: number) => {
     const current = counts[index] || 0;
@@ -269,16 +269,22 @@ function CastStep({ actor, action, counts, weaponId, onChange, onBack, onContinu
     const proposed = { ...counts, [index]: next };
     // Se passar do limite de PM, volta a zero (o ciclo recomeça) em vez de travar o clique.
     if (computeCastPlan(info, { counts: proposed, racial }).cost > Math.max(1, info.level)) proposed[index] = 0;
-    onChange(Object.fromEntries(Object.entries(proposed).filter(([, times]) => times > 0)) as Record<number, number>, weaponId);
+    onChange(Object.fromEntries(Object.entries(proposed).filter(([, times]) => times > 0)) as Record<number, number>, weaponId, element);
   };
   return <div className="mesa-skin-target-picker mesa-skin-cast">
     <p><small>APRIMORAMENTOS DE</small><strong>{action.name}</strong></p>
     {weaponSpell && <div>
-      {weapons.map((weapon) => <button type="button" key={weapon.id} className={weaponId === weapon.id ? "selected" : undefined} aria-pressed={weaponId === weapon.id} onClick={() => onChange(counts, weapon.id)}>
+      {weapons.map((weapon) => <button type="button" key={weapon.id} className={weaponId === weapon.id ? "selected" : undefined} aria-pressed={weaponId === weapon.id} onClick={() => onChange(counts, weapon.id, element)}>
         <span className="cast-count">{weaponId === weapon.id ? "✓" : "+"}</span>
         <strong className="cast-text">{weapon.name}<i>Arma que recebe a magia</i></strong>
       </button>)}
       {!weapons.length && <em className="cast-error">Este personagem não tem arma equipada.</em>}
+    </div>}
+    {plan.mods.elemental > 0 && <div>
+      {ELEMENTS.map((name) => <button type="button" key={name} className={element === name ? "selected" : undefined} aria-pressed={element === name} onClick={() => onChange(counts, weaponId, name)}>
+        <span className="cast-count">{element === name ? "✓" : "+"}</span>
+        <strong className="cast-text">{name}<i>Energia do dano extra da arma</i></strong>
+      </button>)}
     </div>}
     <div>{augments.map((option, index) => <button type="button" key={index} className={counts[index] ? "selected" : undefined} aria-pressed={Boolean(counts[index])} onClick={() => cycle(index)}>
       <span className="cast-count">{counts[index] ? `×${counts[index]}` : "+"}</span>

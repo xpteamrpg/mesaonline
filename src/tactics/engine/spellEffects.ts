@@ -33,6 +33,10 @@ interface KnownSpellEffect {
   stacks?: boolean;
   /** lançada como reação, os PV temporários viram RD contra o próximo dano (Campo de Força) */
   reactionTempHpAsRd?: boolean;
+  /** quem carrega rola o d20 dos ataques duas vezes e usa o melhor (Concentração de Combate) */
+  attackRoll?: "best";
+  /** Imagem Espelhada */
+  mirrorImages?: boolean;
   /** vale uma vez só apenas quando a magia foi lançada como reação (Campo de Força: "RD 30 contra o próximo dano") */
   onceAsReaction?: boolean;
   /** o bônus fica preso à arma escolhida (Arma Mágica) */
@@ -49,6 +53,8 @@ export const SPELL_EFFECTS: Record<string, KnownSpellEffect> = {
   "arma-magica": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene", weaponBound: true },
   "armadura-arcana": { cost: 1, effect: { defense: 5 }, duration: "scene", stacks: true },
   "protecao-divina": { cost: 1, effect: { saves: 2 }, duration: "scene" },
+  "imagem-espelhada": { cost: 1, effect: { defense: 6 }, duration: "scene", mirrorImages: true },
+  "concentracao-de-combate": { cost: 1, effect: {}, duration: "rounds", rounds: 1, attackRoll: "best" },
   "arsenal-de-allihanna": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene" },
   "escudo-da-fe": { cost: 1, effect: { defense: 2 }, duration: "rounds", rounds: 1 },
   "percepcao-rubra": { cost: 1, effect: { attack: 1, defense: 1 }, duration: "scene" },
@@ -81,6 +87,8 @@ export interface ResolveSpellEffectRequest {
   augmentMods?: Record<string, number>;
   /** arma escolhida para magias que afetam uma arma (Arma Mágica) */
   weapon?: { id: string; name: string };
+  /** energia escolhida (ácido, eletricidade, fogo ou frio) para o dano extra da Arma Mágica */
+  element?: string;
 }
 
 export interface SpellTargetResult {
@@ -184,6 +192,12 @@ function resolveKnown(request: ResolveSpellEffectRequest, key: string, known: Kn
       let once = known.once || undefined;
       let duration = known.duration || "scene";
       let rounds = known.rounds || 1;
+      // Aprimoramento que muda a duração (Concentração de Combate: cena; 1 dia atravessa os combates).
+      if (request.augmentMods?.cena) duration = "scene";
+      if (request.augmentMods?.dia) duration = "long";
+      // Aprimoramento de Arma Mágica: +1d6 (ou +2d6) de energia escolhida nos ataques da arma.
+      const elemental = request.augmentMods?.elemental;
+      const extraDamage = known.weaponBound && elemental && request.element ? { formula: `${elemental}d6`, type: request.element } : undefined;
       // Campo de Força em reação: em vez dos PV temporários, RD contra o próximo dano.
       if (known.reactionTempHpAsRd && action.kind === "reaction" && mods?.tempHp) {
         mods = { rd: mods.tempHp };
@@ -201,6 +215,10 @@ function resolveKnown(request: ResolveSpellEffectRequest, key: string, known: Kn
         id: `spell:${key}:${request.caster.id}`,
         name: known.weaponBound && request.weapon ? `${request.spell.name} (${request.weapon.name})` : request.spell.name,
         weaponId: known.weaponBound ? request.weapon?.id : undefined,
+        extraDamage,
+        attackRoll: known.attackRoll,
+        incomingAttackRoll: request.augmentMods?.inimigoPior ? "worst" : undefined,
+        mirrorImages: known.mirrorImages || undefined,
         once,
         notMagical: known.notMagical || undefined,
         stacks: known.stacks || undefined,

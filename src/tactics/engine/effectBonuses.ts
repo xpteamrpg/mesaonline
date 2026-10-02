@@ -22,3 +22,13 @@ export function effectBonus(token: Pick<BoardToken, "effects">, stat: Stat, weap
   const others = active.filter((effect) => !fromSpell(effect)).reduce((sum, effect) => sum + (effect.mods![stat] as number), 0);
   return best + worst + others;
 }
+
+/**
+ * Como rolar o d20 de um ataque: Concentração de Combate (do atacante) rola dois dados e usa o melhor;
+ * a versão de 3º círculo faz o inimigo rolar dois dados e usar o pior. Os dois juntos se anulam.
+ */
+export function attackDiceMode(attacker: Pick<BoardToken, "effects">, target: Pick<BoardToken, "effects">): "normal" | "best" | "worst" {
+  const best = (attacker.effects || []).some((effect) => effect.attackRoll === "best");
+  const worst = (target.effects || []).some((effect) => effect.incomingAttackRoll === "worst");
+  return best && worst ? "normal" : best ? "best" : worst ? "worst" : "normal";
+}

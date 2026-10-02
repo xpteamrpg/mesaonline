@@ -68,6 +68,8 @@ interface CuratedEnhancement {
   altera?: string[];
   requerCirculo?: number;
   manual?: boolean;
+  /** índice de outro aprimoramento que este exige */
+  exige?: number;
   /** muda a execução da magia (ex.: Campo de Força, +1 PM: reação) */
   execucao?: GameAction["kind"];
   /** muda o alcance da magia ("curto", "toque"...) */
@@ -107,11 +109,13 @@ export interface NormalizedAugment {
   todosOsAlvos?: boolean;
   /** valores que o aprimoramento troca no efeito ("muda a RD para 20") */
   define?: Record<string, number>;
+  /** só vale junto de outro aprimoramento (índice): "muda o bônus de dano do aprimoramento acima" */
+  exige?: number;
 }
 
 const EXECUTION_WORDS: Record<string, GameAction["kind"]> = { padrao: "standard", reacao: "reaction", livre: "free", movimento: "movement", completa: "full" };
 
-type ParsedAugment = Pick<NormalizedAugment, "execucao" | "addHealing" | "addDamage" | "alcance" | "todosOsAlvos" | "define">;
+type ParsedAugment = Pick<NormalizedAugment, "execucao" | "addHealing" | "addDamage" | "alcance" | "todosOsAlvos" | "define" | "requerCirculo">;
 
 /** O que um aprimoramento de texto livre sabe fazer sozinho (o resto é cobrado em PM e aplicado à mão). */
 function parseAugmentEffects(desc: string): ParsedAugment {
@@ -131,6 +135,13 @@ function parseAugmentEffects(desc: string): ParsedAugment {
   const rd = text.match(/muda (?:os pv temporarios ou )?a rd para (\d+)/);
   if (rd) out.define = { rd: Number(rd[1]) };
   if (/apavorados? por \d+d\d+ ?\+ ?\d+ rodadas/.test(text)) out.define = { ...(out.define || {}), apavorado: 1 };
+  // duração que o aprimoramento muda: cena ou 1 dia (efeito do tipo "define", lido pelo motor da magia)
+  const duration = /^\s*muda/.test(text) ? text.match(/a duracao para (cena|1 dia)/)?.[1] : undefined;
+  if (duration) out.define = { ...(out.define || {}), [duration === "cena" ? "cena" : "dia"]: 1 };
+  // o inimigo que ataca rola dois dados e usa o pior (Concentração de Combate, 3º círculo)
+  if (/inimigo deve rolar dois dados e usar o pior/.test(text)) out.define = { ...(out.define || {}), inimigoPior: 1 };
+  const circle = text.match(/requer (\d)\D{0,2} circulo/);
+  if (circle) out.requerCirculo = Number(circle[1]);
   return out;
 }
 
@@ -165,6 +176,7 @@ export function normalizeAugments(entry: CanonicalSpellEntry): NormalizedAugment
         requerCirculo: option.requerCirculo,
         execucao: option.execucao,
         alcance: option.alcance,
+        exige: option.exige,
       };
     });
   }
@@ -269,7 +281,11 @@ export interface AugmentChoice {
   racial: boolean;
   /** arma escolhida, para magias cujo alvo é uma arma (Arma Mágica) */
   weaponId?: string;
+  /** energia escolhida para o dano extra da Arma Mágica */
+  element?: string;
 }
+
+export const ELEMENTS = ["Ácido", "Eletricidade", "Fogo", "Frio"] as const;
 
 /** Sanitiza uma escolha vinda da rede antes de qualquer cálculo. */
 export function sanitizeAugmentChoice(value: unknown): AugmentChoice {
@@ -285,7 +301,9 @@ export function sanitizeAugmentChoice(value: unknown): AugmentChoice {
   }
   const rawWeapon = (raw as { weaponId?: unknown }).weaponId;
   const weaponId = typeof rawWeapon === "string" && rawWeapon ? rawWeapon.slice(0, 160) : undefined;
-  return { counts, racial: raw.racial === true, ...(weaponId ? { weaponId } : {}) };
+  const rawElement = (raw as { element?: unknown }).element;
+  const element = typeof rawElement === "string" && (ELEMENTS as readonly string[]).includes(rawElement) ? rawElement : undefined;
+  return { counts, racial: raw.racial === true, ...(weaponId ? { weaponId } : {}), ...(element ? { element } : {}) };
 }
 
 /**
@@ -336,6 +354,7 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
         changed.add(feature);
       }
     }
+    if (option.exige !== undefined && !(choice.counts[option.exige] > 0)) fail(`"${option.rotulo}" só vale junto do aprimoramento ${option.exige + 1}.`);
     if (option.execucao) kind = option.execucao;
     if (option.alcance) alcance = option.alcance;
     if (option.todosOsAlvos) allTargets = true;
@@ -357,6 +376,7 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
     cost = 0;
   }
 
+  if ((mods.elemental || 0) > 0 && !choice.element) fail("Escolha a energia do dano extra: ácido, eletricidade, fogo ou frio.");
   const pmLimit = Math.max(1, info.level);
   if (cost > pmLimit) fail(`Limite de PM em uma magia: ${pmLimit} (seu nível). Este lançamento custaria ${cost}.`);
   else if (cost > info.currentPm) fail(`PM insuficientes: precisa de ${cost}, você tem ${info.currentPm}.`);

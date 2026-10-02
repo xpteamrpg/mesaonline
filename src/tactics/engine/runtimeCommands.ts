@@ -245,6 +245,7 @@ function resolveAction(actorId: string, actionId: string, targetIds: string[], t
         combatState: getCombatState(),
         augmentMods,
         weapon,
+        element: augment?.element,
       });
     } else {
       resolveTacticalAction(caster.id, resolved, fresh.map((token) => token.id));

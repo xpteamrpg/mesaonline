@@ -163,6 +163,19 @@ export function mitigateDamage(token: BoardToken, amount: number, damageType?: s
   return { amount: remaining, reduced };
 }
 
+/** Imagem Espelhada: um ataque que erra desfaz uma cópia e o bônus de Defesa cai 2; sem cópias, o efeito acaba. */
+export function loseMirrorImage(tokenId: string): void {
+  const token = getBoard().tokens.find((entry) => entry.id === tokenId);
+  const effect = token?.effects?.find((entry) => entry.mirrorImages);
+  if (!token || !effect) return;
+  const defense = Math.max(0, (effect.mods?.defense || 0) - 2);
+  const effects = defense > 0
+    ? (token.effects || []).map((entry) => entry === effect ? { ...entry, mods: { ...entry.mods, defense } } : entry)
+    : (token.effects || []).filter((entry) => entry !== effect);
+  updateToken(token.id, { effects });
+  appendCombatLog({ type: "spell", title: `${token.name}: Imagem Espelhada`, detail: defense > 0 ? `Uma cópia desapareceu (Defesa +${defense}).` : "A última cópia desapareceu.", tone: "neutral" });
+}
+
 export function addTacticalEffect(tokenId: string, effect: TacticalEffect): BoardToken {
   const token = getBoard().tokens.find((entry) => entry.id === tokenId);
   if (!token) throw new Error("Alvo do efeito não encontrado.");

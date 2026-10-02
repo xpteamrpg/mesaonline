@@ -2,7 +2,7 @@
   "algorithm": "sha256",
   "description": "Frozen supplied Mesa Online mask. Update only by explicit user replacement of the visual baseline.",
   "files": {
-    "src/components/mesaSkin/MesaSkinActionDialog.tsx": "8b5606678bd0f1a8a4eda0be4771dfe4b9687c26598305d8bf650680284d31c8",
+    "src/components/mesaSkin/MesaSkinActionDialog.tsx": "e71dd8f8622c8a2e47b1c65c70f5f0c95e90071aec5eab183ddf72855b0ec121",
     "src/components/mesaSkin/MesaSkinTable.tsx": "9c3f63429e002c355a4a3b56d5d00d662062756c9b8b46ed7d0f2f3b92124e72",
     "src/components/mesaSkin/actionDialog.css": "3f677279022c475226712b5e9b626b7c9c8e9c77db917cb033f9739ad5d4f949",
     "src/components/mesaSkin/appearance.css": "8a9d2451726f26a43709069db200ac98f69addca129c92d3192d2eee7e9b24f3",
