@@ -1,0 +1,419 @@
+{
+ "id": "pronto-renard",
+ "name": "Renard",
+ "race": "Suraggel - Sulfure",
+ "raceId": "suraggel-sulfure",
+ "class": "Arcanista",
+ "classId": "arcanista",
+ "level": 3,
+ "campaign": "Campanha livre",
+ "attributes": {
+  "for": {
+   "key": "for",
+   "short": "FOR",
+   "name": "Força",
+   "value": 0
+  },
+  "des": {
+   "key": "des",
+   "short": "DES",
+   "name": "Destreza",
+   "value": 2
+  },
+  "con": {
+   "key": "con",
+   "short": "CON",
+   "name": "Constituição",
+   "value": 1
+  },
+  "int": {
+   "key": "int",
+   "short": "INT",
+   "name": "Inteligência",
+   "value": 3
+  },
+  "sab": {
+   "key": "sab",
+   "short": "SAB",
+   "name": "Sabedoria",
+   "value": 0
+  },
+  "car": {
+   "key": "car",
+   "short": "CAR",
+   "name": "Carisma",
+   "value": 4
+  }
+ },
+ "hp": {
+  "max": 18,
+  "current": 18
+ },
+ "mp": {
+  "max": 22,
+  "current": 22
+ },
+ "defenseOther": 1,
+ "speed": 9,
+ "skills": {
+  "acr": {
+   "trained": false
+  },
+  "ade": {
+   "trained": false
+  },
+  "atl": {
+   "trained": false
+  },
+  "atu": {
+   "trained": false
+  },
+  "cav": {
+   "trained": false
+  },
+  "con": {
+   "trained": false
+  },
+  "cur": {
+   "trained": false
+  },
+  "dip": {
+   "trained": false
+  },
+  "eng": {
+   "trained": true,
+   "other": 11
+  },
+  "for": {
+   "trained": true,
+   "other": 2
+  },
+  "fur": {
+   "trained": true,
+   "other": 7
+  },
+  "gue": {
+   "trained": false
+  },
+  "ini": {
+   "trained": true
+  },
+  "int": {
+   "trained": false
+  },
+  "intu": {
+   "trained": false,
+   "other": 2
+  },
+  "inv": {
+   "trained": false
+  },
+  "jog": {
+   "trained": false,
+   "other": 2
+  },
+  "lad": {
+   "trained": true,
+   "other": 2
+  },
+  "lut": {
+   "trained": false
+  },
+  "mis": {
+   "trained": true
+  },
+  "nob": {
+   "trained": false
+  },
+  "ofi": {
+   "trained": false
+  },
+  "per": {
+   "trained": false
+  },
+  "pil": {
+   "trained": false
+  },
+  "pon": {
+   "trained": false
+  },
+  "ref": {
+   "trained": false
+  },
+  "rel": {
+   "trained": false
+  },
+  "sob": {
+   "trained": false
+  },
+  "von": {
+   "trained": true
+  }
+ },
+ "attacks": [
+  {
+   "id": "atk-mur3wgvu-ni4tp",
+   "name": "Desarmado",
+   "skill": "Luta",
+   "damage": "1d3",
+   "damageAttr": "for",
+   "critical": "x2",
+   "damageType": "Impacto",
+   "properties": "Ataque desarmado"
+  }
+ ],
+ "racialAbilities": [
+  {
+   "id": "ra-suraggel-sulfure-0",
+   "name": "Herança Divina",
+   "description": "Você é uma criatura do tipo espírito e recebe visão no escuro.",
+   "source": "Suraggel - Sulfure"
+  }
+ ],
+ "classAbilities": [
+  {
+   "id": "ca-arcanista-0",
+   "name": "Caminho do Arcanista",
+   "description": "Escolha um caminho: Bruxo, Feiticeiro, Mago ou Necromante. Define seus PM iniciais, atributo-chave e mecânica de recuperação/preparação de magias.",
+   "level": 1,
+   "source": "Arcanista"
+  },
+  {
+   "id": "ca-arcanista-1",
+   "name": "Magias (1º Círculo)",
+   "description": "Você inicia com 3 magias de 1º círculo. Limite de PM por magia: igual ao seu nível. Atributo-chave define CD (10 + metade do nível + Atributo).",
+   "level": 1,
+   "source": "Arcanista"
+  }
+ ],
+ "powers": [
+  {
+   "id": "conceded-hyninn-golpista-divino",
+   "name": "Golpista Divino",
+   "type": "Concedido · Hyninn",
+   "description": "Recebe +2 em Enganação, Jogatina e Ladinagem.",
+   "requirement": "Devoto de Hyninn",
+   "cost": null
+  },
+  {
+   "id": "class-arcanista-caminho-do-arcanista",
+   "name": "Caminho do Arcanista",
+   "type": "Classe · Arcanista",
+   "description": "Escolha um caminho: Bruxo, Feiticeiro, Mago ou Necromante. Define seus PM iniciais, atributo-chave e mecânica de recuperação/preparação de magias.",
+   "requirement": "Nível 1",
+   "cost": null
+  },
+  {
+   "id": "pw-mur3wgna-zjicw",
+   "name": "Magias 1°",
+   "type": "Classe",
+   "description": ""
+  },
+  {
+   "id": "class-arcanista-envolto-em-misterio",
+   "name": "Envolto em Mistério",
+   "type": "Classe · Arcanista",
+   "description": "Sua aparência e postura assombrosas o permitem manipular e assustar pessoas ignorantes ou supersticiosas. Como regra geral, você recebe +5 em Enganação e Intimidação contra pessoas não treinadas em Conhecimento ou Misticismo.",
+   "requirement": "Arcanista",
+   "cost": null
+  },
+  {
+   "id": "pw-mur3wgne-rw6ts",
+   "name": "Aumento de atributo - car",
+   "type": "Classe",
+   "description": ""
+  }
+ ],
+ "spells": [
+  {
+   "id": "escuridao",
+   "name": "Escuridão",
+   "circle": 1,
+   "school": "Necromancia",
+   "type": "Universal",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Curto",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "O alvo emana sombras em uma área com 6m de raio. Criaturas dentro da área recebem camuflagem por escuridão. As sombras não podem ser iluminadas por nenhuma fonte de luz natural. O objeto pode ser guardado (em um bolso, por exemplo) para interromper a escuridão, que voltará a funcionar caso o objeto seja revelado. Se lançar a magia num objeto de uma criatura involuntária, ela tem direito a um teste de Vontade para anulá-la. Escuridão anula Luz.\n\nAprimoramentos: +1 PM: aumenta a área da escuridão em +1,5m de raio. +2 PM: muda o efeito para fornecer camuflagem total por escuridão. +2 PM: muda a duração para 1 dia. +2 PM: muda o alvo para 1 criatura e a resistência para Fortitude parcial. Você lança a magia nos olhos do alvo, que fica cego pela cena. Se passar na resistência, fica cego por uma rodada. Requer 2º círculo. +5 PM: muda o alcance para pessoal e o alvo para você. Em vez do normal, você é coberto por sombras, recebendo +10 em testes de Furtividade e camuflagem por escuridão. Requer 2º círculo."
+  },
+  {
+   "id": "curar-ferimentos",
+   "name": "Curar Ferimentos",
+   "circle": 1,
+   "school": "Evocação",
+   "type": "Divina",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Toque",
+   "duration": "Instantânea",
+   "resistance": "Nenhuma",
+   "effect": "2d8+2",
+   "description": "Você canaliza luz que recupera 2d8+2 pontos de vida na criatura tocada. Curar Ferimentos anula Infligir Ferimentos.\n\nAprimoramentos: +1 PM: aumenta a cura em +1d8+1. +2 PM: também remove uma condição de fadiga do alvo. +2 PM: muda o alcance para curto. +5 PM: muda o alcance para curto e o alvo para criaturas escolhidas."
+  },
+  {
+   "id": "disfarce-ilusorio",
+   "name": "Disfarce Ilusório",
+   "circle": 1,
+   "school": "Ilusão",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Pessoal",
+   "duration": "Cena",
+   "resistance": "Vontade desacredita",
+   "description": "Você muda a aparência do alvo, incluindo seu equipamento. Isso inclui altura, peso, tom de pele, cor de cabelo, timbre de voz etc. O alvo recebe +10 em testes de Enganação para disfarce. O alvo não recebe novas habilidades (você pode ficar parecido com outra raça, mas não ganhará as habilidades dela), nem modifica o equipamento (uma espada longa disfarçada de bordão continua funcionando e causando dano como uma espada). Truque: muda o alcance para toque, o alvo para 1 criatura e a duração para 1 semana. Em vez do normal, você faz uma pequena alteração na aparência do alvo, como deixar o nariz vermelho ou fazer brotar um gerânio no alto da cabeça. A mudança é inofensiva, mas persistente — se a flor for arrancada, por exemplo, outra nascerá no local.\n\nAprimoramentos: +1 PM: muda o alcance para curto e o alvo para 1 criatura. Uma criatura involuntária pode anular o efeito com um teste de Vontade. +1 PM: muda o alcance para curto e o alvo para 1 objeto. Você pode, por exemplo, transformar pedaços de ferro em moedas de ouro. Você recebe +10 em testes de Enganação para falsificação. +2 PM: a ilusão também inclui odores e sensações. Isso muda o bônus em testes de Enganação para disfarce para +20. +3 PM: muda o alcance para curto e o alvo para criaturas escolhidas. Cada criatura pode ter uma aparência diferente. Criaturas involuntárias podem anular o efeito com um teste de Vontade. Requer 2º círculo."
+  },
+  {
+   "id": "seta-infalivel",
+   "name": "Seta Infalível",
+   "circle": 1,
+   "school": "Evocação",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Médio",
+   "duration": "Instantânea",
+   "resistance": "Nenhuma",
+   "effect": "1d4+1",
+   "description": "Favorita entre arcanistas iniciantes, esta magia lança duas setas de energia que causam 1d4+1 pontos de dano de essência cada. Você pode lançar as setas em alvos diferentes ou concentrá-las num mesmo alvo. Caso você possua um bônus no dano de magias, como pelo poder Arcano de Batalha, ele é aplicado em apenas uma seta (o bônus vale para a magia, não cada alvo)."
+  },
+  {
+   "id": "flecha-de-luz",
+   "name": "Flecha de Luz",
+   "circle": 1,
+   "school": "Evocação",
+   "type": "Universal",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Médio",
+   "duration": "Instantânea",
+   "resistance": "Reflexos parcial",
+   "effect": "2d8+2",
+   "description": "Esta magia lança uma flecha luminosa contra o alvo, que sofre 2d8+2 pontos de dano de luz e fica ofuscado por 1 rodada. Passar no teste de resistência reduz o dano à metade e evita a condição.\n\nAprimoramentos: +1 PM: muda o alvo para uma criatura que tenha causado dano a você ou a seus aliados na última rodada e os dados de dano da magia para d10. +2 PM: aumenta o dano em +1d8+1. +2 PM: aumenta o número de alvos em +1 (número de alvos adicionais limitado pelo círculo máximo de magia que você pode lançar). +2 PM: alvos que falhem na resistência ficam cegos por 1 rodada e então ofuscados. Requer 2º círculo. Apenas Arcanos. +2 PM: além do normal, para cada alvo que falhar na resistência, o próximo aliado que causar dano a ele recebe uma quantidade de PV temporários igual à metade do dano causado pela magia. Requer 2º círculo. Apenas Divinos."
+  }
+ ],
+ "money": 5,
+ "equipment": [
+  {
+   "id": "eq-mur3wgmo-cm8f1",
+   "equipped": false,
+   "name": "tomo de guerra harmonizado - curar ferimentos (comprado)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgmp-dvx83",
+   "equipped": false,
+   "name": "essencia de mana (vendida 25$)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgms-e8fd9",
+   "equipped": false,
+   "name": "6 dedos nas mãos (não é item)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgmu-qz0sf",
+   "equipped": false,
+   "name": "arco curto (vendida por 15$)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgmx-nav9l",
+   "equipped": false,
+   "name": "armadura de couro (vendida por 10$)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgmz-5ib6c",
+   "equipped": false,
+   "name": "capa esvoaçante - enganação (comprado)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgn0-gf2d0",
+   "equipped": true,
+   "name": "mascara completa (comprado)",
+   "quantity": 1,
+   "slots": 1,
+   "price": 15,
+   "description": "Cobre totalmente o rosto. Escolha uma perícia baseada em Carisma; a máscara concede +1 em testes dessa perícia (Intimidação, Atuação, etc.).",
+   "category": "Vestuário"
+  },
+  {
+   "id": "eq-mur3wgn0-vy3x2",
+   "equipped": false,
+   "name": "saco de dormir",
+   "quantity": 1,
+   "slots": 1,
+   "price": 1,
+   "description": "Saco de dormir que fornece +2 em testes de Sobrevivência para descansar.",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgn0-b08wk",
+   "equipped": false,
+   "name": "simbolo sagrado (comprado)",
+   "quantity": 1,
+   "slots": 1,
+   "price": 5,
+   "description": "Símbolo de uma divindade. Necessário para lançar magias divinas.",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wgn1-l3uhd",
+   "equipped": false,
+   "name": "traje de viajante",
+   "quantity": 1,
+   "slots": 0,
+   "price": 10,
+   "description": "Roupa padrão de aventureiros. Não ocupa espaço. (p. 159)",
+   "category": "Vestuário"
+  },
+  {
+   "id": "eq-mur3wgn1-1rges",
+   "equipped": false,
+   "name": "mochila",
+   "quantity": 1,
+   "slots": 0,
+   "price": 2,
+   "description": "Mochila de viagem que aumenta a capacidade de carga em 5 espaços.",
+   "category": "Item Geral"
+  }
+ ],
+ "languages": "Comum",
+ "xp": 3000,
+ "notes": "Herói do playtest (importado de renard.pdf).",
+ "createdAt": "2026-10-02T15:17:00.666Z",
+ "updatedAt": "2026-10-02T15:17:00.668Z",
+ "origin": "Duplo feerico",
+ "deity": "Hynnim",
+ "avatar": "/herois/renard-token.webp",
+ "path": "Feiticeiro abençoado"
+}

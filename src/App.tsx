@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { coveredCells, footprintOf, parseSize, sideOf, tokenCovers } from "./game/tokenSize";
 import { freshTurnResources, turnPlan } from "./tactics/engine/actionEconomy";
-import { loadCharacterSheets, setActiveCharacterId, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
+import { loadCharacterSheets, loadReadyHeroSheets, setActiveCharacterId, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
 import type { CharacterSheet } from "../ficha-modernrpg/sheet";
 import MesaSkinTable from "./components/mesaSkin/MesaSkinTable";
 import MesaSkinActionDialog from "./components/mesaSkin/MesaSkinActionDialog";
@@ -836,7 +836,7 @@ export default function App() {
     <DoorDialog snapshot={snapshot}/>
     <ChestReveal snapshot={snapshot}/>
     <LootClaimer snapshot={snapshot}/>
-    {profileOpen && <CharacterPickerDialog sheets={loadCharacterSheets()} tokens={snapshot.board.tokens} isMaster={snapshot.multiplayer.role !== "player"} currentId={focusedToken()?.modernRpgCharacterId} onPick={pickCharacter} onOpenPortalSheet={(sheet) => openCharacter(sheet.id)} onOpenPortalList={() => openPortalRoute("personagens")} onClose={() => setProfileOpen(false)}/>}
+    {profileOpen && <CharacterPickerDialog sheets={loadCharacterSheets()} readySheets={snapshot.multiplayer.role !== "player" ? loadReadyHeroSheets() : []} tokens={snapshot.board.tokens} isMaster={snapshot.multiplayer.role !== "player"} currentId={focusedToken()?.modernRpgCharacterId} onPick={pickCharacter} onOpenPortalSheet={(sheet) => openCharacter(sheet.id)} onOpenPortalList={() => openPortalRoute("personagens")} onClose={() => setProfileOpen(false)}/>}
     <CharacterLibraryDialog open={charactersOpen} onClose={() => setCharactersOpen(false)} onAdd={addCharacterToBoard}/>
     <ThreatLibraryDialog open={threatsOpen} templates={threats} onClose={() => setThreatsOpen(false)} onSpawn={spawnThreat} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} onDelete={(id) => { removeCustomThreat(id); setCatalogRevision((value) => value + 1); }}/>
   </>;

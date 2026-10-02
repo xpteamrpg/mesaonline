@@ -61,7 +61,7 @@ import TriggerList from "./TriggerList";
 import TokenEditorDialog from "./TokenEditorDialog";
 import { OBJECT_KIND_LABEL, freeObjectSpot, newBoardObject } from "../../game/objectPlacement";
 import { linkFromJson } from "../../game/tokenJson";
-import { loadCharacterSheets } from "../../../ficha-modernrpg/characterRoute";
+import { loadCharacterSheets, loadReadyHeroSheets } from "../../../ficha-modernrpg/characterRoute";
 
 export type MesaPanelId = "scenes" | "roster" | "combat" | "environment" | "history" | "jukebox" | "automation" | "map-context" | "compendium" | "undo" | "online" | "settings" | "tokens" | "master";
 
@@ -1354,7 +1354,8 @@ function TokensPanel({ onAddLibraryToken }: Props) {
     setBusy(false);
   }
   const [catalogRevision, setCatalogRevision] = useState(0);
-  const sheets = useMemo(() => loadCharacterSheets(), [catalogRevision]);
+  // O Mestre também pode ligar um token aos heróis prontos do playtest, mesmo fora da campanha.
+  const sheets = useMemo(() => [...loadCharacterSheets(), ...(getRuntimeSnapshot().multiplayer.role !== "player" ? loadReadyHeroSheets() : [])], [catalogRevision]);
   const threatList = useMemo(() => listThreats().filter((threat) => !threat.hidden), [catalogRevision]);
   /** Guarda o token vindo da janela (novo ou editado). Editar troca o antigo, na conta também. */
   async function saveFromDialog(next: LibraryToken, place: boolean) {

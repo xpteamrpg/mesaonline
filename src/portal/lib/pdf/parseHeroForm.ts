@@ -6,7 +6,7 @@
  * Função pura (sem pdf.js): recebe o mapa nome→valor que `readPdf` extrai e completa o rascunho.
  */
 import type { AttrKey } from "../t20/compendium";
-import { ATTR_KEYS, T20_EQUIPMENT, T20_SKILLS, findClassByName, findPowerByName, findSpellByName, norm } from "../t20/compendium";
+import { ATTR_KEYS, T20_EQUIPMENT, T20_SKILLS, findClassByName, findPowerByName, findSpellByName, norm, T20_SPELLS, editDistance } from "../t20/compendium";
 import type { AttackItem, EquipmentItem, PowerEntry, SpellItem } from "../../types/sheet";
 import { itemToEquipment, powerToEntry, spellToItem, uid } from "../t20/sheetRules";
 import { levelForXp } from "../t20/xp";
@@ -79,19 +79,66 @@ function powersFromText(text: string): { tag: string; name: string }[] {
 
 const capitalize = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
-/** Linhas "[nível] | Nome | Escola" sob cabeçalhos "(N° Círculo)"; ignora o texto-modelo entre "<...>". */
+/** Tira o que a pessoa escreve em volta do nome: [nível 1- Arcanista], {Escola}, <>, (anotação), "-1PM", "nível 4- ". */
+function cleanSpellName(raw: string): string {
+  return raw
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\{[^}]*\}/g, " ")
+    .replace(/[<>]/g, " ")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[-–]\s*\d+\s*PM\b/gi, " ")
+    .replace(/^\s*n[ií]vel\s*\d+\s*[-–:]?\s*/i, " ")
+    .replace(/\.$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Acha a magia no catálogo: nome limpo, depois tolerando 1-2 letras erradas, depois sem a(s) primeira(s) palavra(s) (ex.: origem "Arcanista Imagem espelhada"). */
+function matchSpell(name: string) {
+  const exact = findSpellByName(name);
+  if (exact) return exact;
+  const key = norm(name);
+  if (key.length >= 5) {
+    const limit = key.length >= 10 ? 2 : 1;
+    let best: { spell: (typeof T20_SPELLS)[number]; d: number } | undefined;
+    let tie = false;
+    for (const spell of T20_SPELLS) {
+      const d = editDistance(key, norm(spell.nome));
+      if (d > limit) continue;
+      if (!best || d < best.d) { best = { spell, d }; tie = false; } else if (d === best.d) tie = true;
+    }
+    if (best && !tie) return best.spell;
+  }
+  const words = name.split(" ");
+  for (let drop = 1; drop <= 2 && words.length - drop >= 1; drop += 1) {
+    const found = findSpellByName(words.slice(drop).join(" "));
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/** Rótulos soltos (origem da magia) que a pessoa deixa numa linha: não são magias. */
+const SPELL_LABELS = /^(ra[cç]a|origem|classe|item|poder)$/i;
+
+/**
+ * Magias da ficha: linhas "[nível] | Nome | Escola" ou listas "Origem: magia, magia", sob separadores de círculo
+ * "(N° Círculo)" ou "=====N° Círculo=====". Ignora o texto-modelo "<Nome da Magia>", custos soltos ("3 PM") e rótulos.
+ */
 function spellsFromText(text: string): SpellItem[] {
   const out: SpellItem[] = [];
   let circle = 1;
   for (const raw of text.split(/\r?\n/)) {
-    const head = raw.match(/\((\d)\s*[°ºo]?\s*c[ií]rculo\)/i);
+    const head = raw.match(/\((\d)\s*[°ºo]?\s*c[ií]rculo\)/i) ?? raw.match(/^[\s=\-]*(\d)\s*[°ºo]?\s*c[ií]rculo[\s=\-]*$/i);
     if (head) { circle = Number(head[1]); continue; }
-    if (/^[\s=]*$/.test(raw) || raw.includes("<")) continue;
+    if (/^\s*\d+\s*PM\s*$/i.test(raw) || /^[\s=]*$/.test(raw) || /<\s*Nome da Magia\s*>/i.test(raw)) continue;
     const cols = raw.split("|").map((c) => c.trim());
-    const names = cols.length >= 2 ? [(cols.length >= 3 ? cols[1] : cols[0]).replace(/^\[.*?\]\s*/, "").trim()] : raw.replace(/^[^:]*:/, "").split(/[,;]/).map((x) => x.replace(/\.$/, "").trim());
-    for (const name of names) {
-      if (!name || name.startsWith("[") || out.some((x) => norm(x.name) === norm(name))) continue;
-      const found = findSpellByName(name);
+    const nameCol = cols.length >= 3 ? cols[1] : cols[0].startsWith("[") ? cols[1] : cols[0];
+    const candidates = cols.length >= 2 ? [nameCol] : raw.replace(/^[^:\[]*:/, "").split(/[,;]/);
+    for (const candidate of candidates) {
+      const name = cleanSpellName(candidate);
+      if (!name || SPELL_LABELS.test(name) || out.some((x) => norm(x.name) === norm(name))) continue;
+      const found = matchSpell(name);
+      if (found && out.some((x) => norm(x.name) === norm(found.nome))) continue;
       out.push(found ? spellToItem(found) : { id: uid("sp"), name: capitalize(name), circle, school: cols[2] || undefined, cost: 0 });
     }
   }

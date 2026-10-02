@@ -20,6 +20,7 @@
  *     fallback silencioso. Sem `characterId`, comportamento normal.
  */
 import type { CharacterSheet } from "./sheet";
+import { READY_HEROES, isReadyHeroId } from "../src/portal/data/readyHeroes";
 
 export const CHARACTERS_STORAGE_KEY = "tormenta20_online_characters_v2";
 export const ACTIVE_CHARACTER_STORAGE_KEY = `${CHARACTERS_STORAGE_KEY}:active`;
@@ -49,13 +50,19 @@ export function saveCharacterSheets(list: CharacterSheet[]): void {
   }
 }
 
+/** Heróis prontos do playtest: à disposição do Mestre na Mesa, mesmo fora de qualquer campanha. Nunca entram na lista da conta. */
+export function loadReadyHeroSheets(): CharacterSheet[] {
+  return READY_HEROES.map((hero) => hero.sheet as unknown as CharacterSheet);
+}
+
 export function getCharacterSheetById(id: string): CharacterSheet | null {
   if (!id) return null;
-  return loadCharacterSheets().find((c) => c.id === id) ?? null;
+  return loadCharacterSheets().find((c) => c.id === id) ?? loadReadyHeroSheets().find((c) => c.id === id) ?? null;
 }
 
 /** Insere ou substitui (por id) um personagem na lista oficial. */
 export function upsertCharacterSheet(sheet: CharacterSheet): void {
+  if (isReadyHeroId(sheet.id)) return; // herói pronto: o token guarda PV/PM; a ficha-modelo não vai para a conta
   const list = loadCharacterSheets();
   const idx = list.findIndex((c) => c.id === sheet.id);
   const next = { ...sheet, updatedAt: new Date().toISOString() };

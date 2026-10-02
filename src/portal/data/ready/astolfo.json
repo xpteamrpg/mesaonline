@@ -1,0 +1,532 @@
+{
+ "id": "pronto-astolfo",
+ "name": "Astolfo",
+ "race": "Sereia/Tritão",
+ "raceId": "sereia-tritao",
+ "class": "Arcanista",
+ "classId": "arcanista",
+ "level": 6,
+ "campaign": "Campanha livre",
+ "attributes": {
+  "for": {
+   "key": "for",
+   "short": "FOR",
+   "name": "Força",
+   "value": 1
+  },
+  "des": {
+   "key": "des",
+   "short": "DES",
+   "name": "Destreza",
+   "value": -1
+  },
+  "con": {
+   "key": "con",
+   "short": "CON",
+   "name": "Constituição",
+   "value": 3
+  },
+  "int": {
+   "key": "int",
+   "short": "INT",
+   "name": "Inteligência",
+   "value": 5
+  },
+  "sab": {
+   "key": "sab",
+   "short": "SAB",
+   "name": "Sabedoria",
+   "value": 3
+  },
+  "car": {
+   "key": "car",
+   "short": "CAR",
+   "name": "Carisma",
+   "value": -2
+  }
+ },
+ "hp": {
+  "max": 50,
+  "current": 50
+ },
+ "mp": {
+  "max": 35,
+  "current": 35
+ },
+ "defenseOther": 18,
+ "speed": 9,
+ "skills": {
+  "acr": {
+   "trained": false
+  },
+  "ade": {
+   "trained": false
+  },
+  "atl": {
+   "trained": false
+  },
+  "atu": {
+   "trained": false
+  },
+  "cav": {
+   "trained": true
+  },
+  "con": {
+   "trained": true
+  },
+  "cur": {
+   "trained": false
+  },
+  "dip": {
+   "trained": false
+  },
+  "eng": {
+   "trained": false
+  },
+  "for": {
+   "trained": true,
+   "other": 2
+  },
+  "fur": {
+   "trained": false
+  },
+  "gue": {
+   "trained": false
+  },
+  "ini": {
+   "trained": true,
+   "other": -1
+  },
+  "int": {
+   "trained": false
+  },
+  "intu": {
+   "trained": false,
+   "other": -2
+  },
+  "inv": {
+   "trained": false
+  },
+  "jog": {
+   "trained": false
+  },
+  "lad": {
+   "trained": false
+  },
+  "lut": {
+   "trained": true,
+   "other": 4,
+   "attr": "int"
+  },
+  "mis": {
+   "trained": true
+  },
+  "nob": {
+   "trained": false
+  },
+  "ofi": {
+   "trained": false
+  },
+  "per": {
+   "trained": false,
+   "other": -2
+  },
+  "pil": {
+   "trained": false
+  },
+  "pon": {
+   "trained": false
+  },
+  "ref": {
+   "trained": true,
+   "other": -1
+  },
+  "rel": {
+   "trained": false
+  },
+  "sob": {
+   "trained": true
+  },
+  "von": {
+   "trained": true
+  }
+ },
+ "attacks": [
+  {
+   "id": "atk-mur3wmh5-mnu88",
+   "name": "Lança de falange",
+   "skill": "Pontaria",
+   "damage": "1d8",
+   "damageAttr": null,
+   "critical": "x3",
+   "range": "3 metros",
+   "damageType": "perfurante",
+   "damageBonus": 9,
+   "bonus": 13
+  }
+ ],
+ "racialAbilities": [
+  {
+   "id": "ra-sereia-tritao-0",
+   "name": "Canção dos Mares",
+   "description": "Você pode lançar duas das magias a seguir: Amedrontar, Comando, Despedaçar, Enfeitiçar, Hipnotismo ou Sono (atributo-chave Carisma).",
+   "source": "Sereia/Tritão"
+  },
+  {
+   "id": "ra-sereia-tritao-1",
+   "name": "Mestre do Tridente",
+   "description": "Para você, o tridente é uma arma simples. Além disso, você recebe +2 em rolagens de dano com azagaias, lanças e tridentes.",
+   "source": "Sereia/Tritão"
+  },
+  {
+   "id": "ra-sereia-tritao-2",
+   "name": "Transformação Anfíbia",
+   "description": "Pode respirar debaixo d’água e possui deslocamento de natação 12m. Fora d’água, possui pernas (9m). Precisa de contato diário com água para recuperar PM.",
+   "source": "Sereia/Tritão"
+  }
+ ],
+ "classAbilities": [
+  {
+   "id": "ca-arcanista-0",
+   "name": "Caminho do Arcanista",
+   "description": "Escolha um caminho: Bruxo, Feiticeiro, Mago ou Necromante. Define seus PM iniciais, atributo-chave e mecânica de recuperação/preparação de magias.",
+   "level": 1,
+   "source": "Arcanista"
+  },
+  {
+   "id": "ca-arcanista-1",
+   "name": "Magias (1º Círculo)",
+   "description": "Você inicia com 3 magias de 1º círculo. Limite de PM por magia: igual ao seu nível. Atributo-chave define CD (10 + metade do nível + Atributo).",
+   "level": 1,
+   "source": "Arcanista"
+  }
+ ],
+ "powers": [
+  {
+   "id": "pw-mur3wmhe-16tq9",
+   "name": "Caminho do arcanista:sentinela",
+   "type": "Classe",
+   "description": ""
+  },
+  {
+   "id": "class-arcanista-magias",
+   "name": "Magias",
+   "type": "Classe · Arcanista (Sentinela)",
+   "description": "Você pode lançar magias arcanas de 1º círculo. A cada quatro níveis, pode lançar magias de um círculo maior (2º círculo no 5º nível, 3º círculo no 9º nível e assim por diante). Você começa com três magias de 1º círculo. A cada nível, aprende uma magia de qualquer círculo que possa lançar. Seu atributo-chave para lançar magias é definido pelo seu Caminho (veja acima) e você soma o bônus do atributo-chave no seu total de PM.",
+   "requirement": "Nível 1",
+   "cost": null
+  },
+  {
+   "id": "class-arcanista-gladiomancia",
+   "name": "Gladiomancia",
+   "type": "Classe · Arcanista (Sentinela)",
+   "description": "Você pode gastar uma ação de movimento e 2 PM para evocar palavras de poder mágico e imbuir essência arcana em uma arma corpo a corpo leve ou ágil que esteja empunhando. Enquanto empunhar esta arma ou até o fim da cena (o que acontecer primeiro), você pode somar sua Inteligência em vez de Destreza na Defesa. Além disso, você usa Inteligência em testes de Luta, em vez de Força, e pode somar sua Inteligência em rolagens de dano usando esta arma (limitado pelo seu nível).",
+   "requirement": "Nível 1",
+   "cost": null
+  },
+  {
+   "id": "class-arcanista-mago-de-combate",
+   "name": "Mago de Combate",
+   "type": "Classe · Arcanista (Sentinela)",
+   "description": "Quando faz um ataque usando uma arma sob efeito de Gladiomancia, você soma o círculo máximo de magias que pode lançar à rolagem de dano. Além disso, a mão da arma é considerada livre para lançar magias.",
+   "requirement": "Nível 3",
+   "cost": null
+  },
+  {
+   "id": "pw-mur3wmhs-wcmhw",
+   "name": "Poderes de Arcanista: Estilo de arma longa",
+   "type": "Classe",
+   "description": ""
+  },
+  {
+   "id": "combat-geral-piqueiro",
+   "name": "Piqueiro",
+   "type": "Combate",
+   "description": "Uma vez por rodada, se inimigo entrar voluntariamente no alcance da sua arma alongada: gaste 1 PM para atacá-lo. Se for investida, causa +2 dados de dano.",
+   "requirement": "Estilo de Arma Longa",
+   "cost": 1
+  }
+ ],
+ "spells": [
+  {
+   "id": "armadura-arcana",
+   "name": "Armadura Arcana",
+   "circle": 1,
+   "school": "Abjuração",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Pessoal",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "Esta magia cria uma película protetora invisível, mas tangível, fornecendo +5 na Defesa. Esse bônus é cumulativo com outras magias, mas não com bônus fornecido por armaduras.\n\nAprimoramentos: +1 PM: muda a execução para reação. Em vez do normal, quando sofre um ataque, você cria um escudo mágico que fornece +5 na Defesa contra esse ataque (cumulativo com o bônus do efeito básico desta magia e de armaduras). +2 PM: aumenta o bônus na Defesa em +1 +2 PM: muda a duração para 1 dia"
+  },
+  {
+   "id": "arma-magica",
+   "name": "Arma Mágica",
+   "circle": 1,
+   "school": "Transmutação",
+   "type": "Universal",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Toque",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "A arma é considerada mágica e fornece +1 nos testes de ataque e rolagens de dano (isso conta como um bônus de encanto). Caso você esteja empunhando a arma, pode usar seu atributo-chave em vez do atributo original nos testes de ataque (não cumulativo com efeitos que somam este atributo).\n\nAprimoramentos: +2 PM: aumenta o bônus em +1 (bônus máximo limitado pelo círculo máximo de magia que você pode lançar). +2 PM: a arma causa +1d6 de dano de ácido, eletricidade, fogo ou frio, escolhido quando a magia é lançada. Este aprimoramento só pode ser usado uma vez. +3 PM: muda o bônus de dano do aprimoramento acima para +2d6."
+  },
+  {
+   "id": "toque-chocante",
+   "name": "Toque Chocante",
+   "circle": 1,
+   "school": "Evocação",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Toque",
+   "duration": "Instantânea",
+   "resistance": "Fortitude reduz à metade",
+   "effect": "2d8+2",
+   "description": "Arcos elétricos envolvem sua mão, causando 2d8+2 pontos de dano de eletricidade. Se o alvo usa de metal (ou carrega muito metal, a critério do mestre), sofre uma penalidade de –5 no teste de resistência.\n\nAprimoramentos: +1 PM: aumenta o dano em 1d8+1. +2 PM: como parte da execução da magia, você pode fazer um ataque corpo a corpo contra o alvo. Se acertar, causa o dano do ataque e da magia. +2 PM: muda o alcance para pessoal e o alvo para área de explosão com 6m de raio. Você dispara raios pelas pontas dos dedos que afetam todas as criaturas na área."
+  },
+  {
+   "id": "primor-atletico",
+   "name": "Primor Atlético",
+   "circle": 1,
+   "school": "Transmutação",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Toque",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "Você modifica os limites físicos do alvo, que recebe deslocamento +9m e +10 em testes de Atletismo.\n\nAprimoramentos: +1 PM: além do normal, o alvo recebe um bônus adicional de +20 em testes de Atletismo para saltar (para um bônus total de +30). +1 PM: além do normal, o alvo pode escalar paredes e tetos sem precisar fazer testes de Atletismo. Para isso, precisa estar com as mãos livres, mas pode usar uma única mão se ficar parado no lugar. O alvo não fica desprevenido enquanto escala. +1 PM: muda a execução para ação de movimento, o alcance para pessoal, o alvo para você e a duração para instantânea. Você salta muito alto e pousa em alcance corpo a corpo de uma criatura em alcance curto. Se fizer um ataque corpo a corpo contra essa criatura nesta rodada, recebe os benefícios e penalidades de uma investida e sua arma tem o dano aumentado em um dado do mesmo tipo durante este ataque. +3 PM: além do normal, ao fazer testes de perícias baseadas em Força, Destreza ou Constituição, o alvo pode rolar dois dados e escolher o melhor. Não afeta testes de ataque ou resistência. Requer 2º círculo."
+  },
+  {
+   "id": "concentracao-de-combate",
+   "name": "Concentração de Combate",
+   "circle": 1,
+   "school": "Adivinhação",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Livre",
+   "range": "Pessoal",
+   "duration": "1 rodada",
+   "resistance": "Nenhuma",
+   "description": "Você amplia sua percepção, antecipando movimentos dos inimigos e achando brechas em sua defesa. Quando faz um ataque, você rola dois dados e usa o melhor resultado.\n\nAprimoramentos: +2 PM: muda a execução para padrão e a duração para cena. Requer 2° círculo. +5 PM: além do normal, ao atacar você, um inimigo deve rolar dois dados e usar o pior resultado. Requer 3° círculo. +9 PM: muda a execução para padrão, o alcance para curto, o alvo para criaturas escolhidas e a duração para cena. Requer 4° círculo. +14 PM: muda a execução para padrão e a duração para 1 dia. Além do normal, você recebe um sexto sentido que o avisa de qualquer perigo ou ameaça. Você fica imune às condições surpreendido e desprevenido e recebe +10 em Defesa e Reflexos. Requer 5º círculo."
+  },
+  {
+   "id": "imagem-espelhada",
+   "name": "Imagem Espelhada",
+   "circle": 1,
+   "school": "Ilusão",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Pessoal",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "Três cópias ilusórias suas aparecem. As duplicatas ficam ao seu redor e imitam suas ações, tornando difícil para um inimigo saber quem atacar. Você recebe +6 na Defesa. Cada vez que um ataque contra você erra, uma das imagens desaparece e o bônus na Defesa diminui em 2. Um oponente deve ver as cópias para ser confundido. Se você estiver invisível, ou o atacante fechar os olhos, você não recebe o bônus (mas o atacante ainda sofre penalidades normais por não enxergar).\n\nAprimoramentos: +2 PM: aumenta o número de cópias em +1 (e o bônus na Defesa em +2). +5 PM: além do normal, toda vez que uma cópia é destruída, emite um clarão de luz. A criatura que destruiu a cópia fica ofuscada por uma rodada. Requer 2º círculo."
+  },
+  {
+   "id": "campo-de-forca",
+   "name": "Campo de Força",
+   "circle": 2,
+   "school": "Abjuração",
+   "type": "Arcana",
+   "cost": 3,
+   "execution": "Padrão",
+   "range": "Pessoal",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "Esta magia cria uma película protetora sobre você. Você recebe 30 PV temporários, mas apenas contra dano de corte, impacto ou perfuração.\n\nAprimoramentos: +1 PM: muda a execução para reação e a duração para instantânea. Em vez do normal, você recebe RD 30 contra o próximo dano que sofrer. +3 PM: muda os PV temporários ou a RD para 50. Requer 3º círculo. +7 PM: muda os PV temporários ou a RD para 70. Requer 4º círculo. +7 PM: muda o alcance para curto, o alvo para outra criatura ou objeto solto Enorme ou menor e a duração para sustentada. Em vez do normal, cria uma esfera imóvel e tremeluzente ao redor do alvo. Nenhuma criatura, objeto ou efeito de dano pode passar pela esfera, embora criaturas possam respirar normalmente. Criaturas na área podem fazer um teste de Reflexos para evitar serem aprisionadas e sempre que você se concentrar. Requer 4º círculo. +9 PM: como o aprimoramento acima, mas tudo dentro da esfera fica praticamente sem peso. Uma vez por rodada, você pode gastar uma ação livre para flutuar a esfera e seu conteúdo 9m em uma direção. Requer 4º círculo."
+  },
+  {
+   "id": "bola-de-fogo",
+   "name": "Bola de Fogo",
+   "circle": 2,
+   "school": "Evocação",
+   "type": "Arcana",
+   "cost": 3,
+   "execution": "Padrão",
+   "range": "Médio",
+   "duration": "Instantânea",
+   "resistance": "Reflexos reduz à metade",
+   "effect": "6d6",
+   "description": "Esta famosa magia de ataque cria uma poderosa explosão, causando 6d6 pontos de dano de fogo em todas as criaturas e objetos livres na área.\n\nAprimoramentos: +2 PM: aumenta o dano em +2d6. +2 PM: muda a área para efeito de esfera flamejante com tamanho Médio e a duração para cena. Em vez do normal, cria uma esfera flamejante com 1,5m de diâmetro que causa 3d6 pontos de dano a qualquer criatura no mesmo espaço. Você pode gastar uma ação de movimento para fazer a esfera voar 9m em qualquer direção. Ela é imune a dano, mas pode ser apagada com água. Uma criatura só pode sofrer dano da esfera uma vez por rodada. +3 PM: muda a duração para 1 dia ou até ser descarregada. Em vez do normal, você cria uma pequena pedra flamejante, que pode detonar como uma reação, descarregando a magia. A pedra pode ser usada como uma arma de arremesso com alcance curto. Uma vez detonada, causa o dano da magia numa área de esfera de 6m de raio."
+  },
+  {
+   "id": "despedacar",
+   "name": "Despedaçar",
+   "circle": 1,
+   "school": "Evocação",
+   "type": "Divina",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Curto",
+   "duration": "Instantânea",
+   "resistance": "Fortitude parcial ou Reflexos anula",
+   "effect": "1d8+2",
+   "description": "Esta magia emite um som alto e agudo. O alvo sofre 1d8+2 pontos de dano de impacto (ou o dobro disso e ignora RD se for um construto ou objeto mundano) e fica atordoado por uma rodada (apenas uma vez por cena). Um teste de Fortitude reduz o dano à metade e evita o atordoamento.\n\nAprimoramentos: +2 PM: aumenta o dano em +1d8+2. +2 PM: muda o alvo para objeto mundano Médio. Requer 2º círculo. +5 PM: muda o alvo para objeto mundano Grande. Requer 3º círculo. +9 PM: muda o alvo para objeto mundano Enorme. Requer 4º círculo. +14 PM: muda o alvo para objeto mundano Colossal. Requer 5º círculo. +5 PM: muda o alcance para pessoal e a área para explosão de 6m de raio. Todas as criaturas e objetos na área são afetados."
+  },
+  {
+   "id": "amedrontar",
+   "name": "Amedrontar",
+   "circle": 1,
+   "school": "Necromancia",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Curto",
+   "duration": "Cena",
+   "resistance": "Vontade parcial",
+   "effect": "1d4",
+   "description": "O alvo é envolvido por energias sombrias e assustadoras. Se falhar na resistência, fica apavorado por 1 rodada, depois abalado. Se passar, fica abalado por 1d4 rodadas.\n\nAprimoramentos: +2 PM: alvos que falhem na resistência ficam apavorados por 1d4+1 rodadas, em vez de apenas 1. +2 PM: muda o alvo para 1 criatura. +5 PM: afeta todos os alvos válidos a sua escolha dentro do alcance."
+  }
+ ],
+ "money": 2180,
+ "equipment": [
+  {
+   "id": "eq-mur3wmgu-xx8tk",
+   "equipped": false,
+   "name": "Saco de Dormir, Mochila, Traje de Viajante",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmgv-65wjs",
+   "equipped": false,
+   "name": "essencia de mana(origem)",
+   "quantity": 1,
+   "slots": 0.5,
+   "price": 50,
+   "description": "Poção de ervas raras. Recupera 1d4 pontos de mana. (p. 160)",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmgv-hvspa",
+   "equipped": false,
+   "name": "lança de falange",
+   "quantity": 1,
+   "slots": 2,
+   "price": 15,
+   "description": "Exótica · Uma Mão · Lança de infantaria. É uma arma alongada que pode ser arremessada. Pode ser usada como uma arma marcial de duas mãos.",
+   "category": "Arma"
+  },
+  {
+   "id": "eq-mur3wmgw-9ei42",
+   "equipped": false,
+   "name": "poção de velocidade x2",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmgw-25i9i",
+   "equipped": false,
+   "name": "porrete",
+   "quantity": 1,
+   "slots": 1,
+   "price": 2,
+   "description": "Simples · Leve · Um pedaço sólido de madeira, coberto por uma camada grossa de lã. Um porrete causa dano não letal.",
+   "category": "Arma"
+  },
+  {
+   "id": "eq-mur3wmgx-fji94",
+   "equipped": false,
+   "name": "Acolchoada",
+   "quantity": 1,
+   "slots": 2,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmgy-fafe7",
+   "equipped": false,
+   "name": "essências de mana próximas da validade x2",
+   "quantity": 1,
+   "slots": 2,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmh0-e500c",
+   "equipped": true,
+   "name": "estola(vigilante)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmh1-3o900",
+   "equipped": false,
+   "name": "Luva de ferro(Material especial:Prata))",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmh2-css41",
+   "equipped": false,
+   "name": "trobo com sela",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmh3-okmhs",
+   "equipped": false,
+   "name": "Atadura alcochoada injetora",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wmh4-v879n",
+   "equipped": true,
+   "name": "escudo leve(Ajustado)",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Escudo",
+   "defenseBonus": 1,
+   "armorPenalty": -1
+  },
+  {
+   "id": "eq-mur3wmh5-lx5wj",
+   "equipped": true,
+   "name": "Armadura acolchoada",
+   "quantity": 1,
+   "slots": 2,
+   "price": 5,
+   "description": "Túnica almofadada que oferece +1 na Defesa sem penalidade de armadura. Ocupa 2 espaços. A mais leve das armaduras, ideal para personagens que precisam de mobilidade.",
+   "category": "Armadura",
+   "defenseBonus": 0,
+   "armorPenalty": 0
+  }
+ ],
+ "languages": "Comum",
+ "xp": 15280,
+ "notes": "Herói do playtest (importado de astolfo.pdf).",
+ "createdAt": "2026-10-02T15:17:08.304Z",
+ "updatedAt": "2026-10-02T15:17:08.305Z",
+ "origin": "Duplo feerico",
+ "appearance": "gastei 15 tibares em lanca de falange",
+ "avatar": "/herois/kalop-token.webp",
+ "path": "Sentinela"
+}

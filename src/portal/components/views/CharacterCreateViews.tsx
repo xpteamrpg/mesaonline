@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { PageBanner } from "../layout/PageBanner";
+import type { CharacterSheet } from "../../types/sheet";
+import { useAuth } from "../../lib/auth/AuthContext";
+import { READY_HEROES, type ReadyHero } from "../../data/readyHeroes";
+import { T20CharacterSheet } from "../sheet/T20CharacterSheet";
 import imgPersonagens from "../../assets/menu/personagens.jpg";
 import imgOficina from "../../assets/menu/oficina.jpg";
 import imgClasses from "../../assets/menu/classes.jpg";
-import imgRacas from "../../assets/menu/racas-novo.jpg";
-import imgParceiros from "../../assets/menu/parceiros.jpg";
 
 /** "Criar personagem": escolher entre a ficha em branco (vai à Oficina) e os personagens prontos. */
 export const CreateCharacterView: React.FC<{ onBlank: () => void; onReady: () => void }> = ({ onBlank, onReady }) => (
@@ -28,49 +30,47 @@ export const CreateCharacterView: React.FC<{ onBlank: () => void; onReady: () =>
   </div>
 );
 
-interface ReadyExample { id: string; name: string; subtitle: string; text: string; img: string; pos: string }
-
-/** Exemplos de vitrine: ainda não levam a ficha nenhuma (as fichas reais entram no lugar deles depois). */
-const EXAMPLES: ReadyExample[] = [
-  { id: "ex1", name: "Herói de Exemplo 1", subtitle: "Humano · Guerreiro", text: "Espaço reservado para um personagem pronto. A ficha, a história e o retrato reais entram aqui depois.", img: imgClasses, pos: "30% 40%" },
-  { id: "ex2", name: "Herói de Exemplo 2", subtitle: "Elfo · Arcanista", text: "Espaço reservado para um personagem pronto. A ficha, a história e o retrato reais entram aqui depois.", img: imgRacas, pos: "50% 30%" },
-  { id: "ex3", name: "Herói de Exemplo 3", subtitle: "Anão · Clérigo", text: "Espaço reservado para um personagem pronto. A ficha, a história e o retrato reais entram aqui depois.", img: imgParceiros, pos: "50% 40%" },
-];
-
-const LEVELS = [1, 3, 5];
-
-/** Galeria de personagens prontos (por enquanto só a vitrine, com 3 exemplos). */
-export const ReadyCharactersView: React.FC = () => {
-  const [levels, setLevels] = useState<Record<string, number>>({});
+/** Galeria de personagens prontos: os heróis do playtest, com ficha de verdade (Clonar leva para Meus Personagens). */
+export const ReadyCharactersView: React.FC<{ onClone: (sheet: CharacterSheet) => Promise<void> | void }> = ({ onClone }) => {
+  const { requireLogin } = useAuth();
   const [notice, setNotice] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const preview = READY_HEROES.find((hero) => hero.id === previewId);
+
+  const clone = async (hero: ReadyHero) => {
+    setBusy(true);
+    try { await onClone(hero.sheet); } catch (e) { setNotice(e instanceof Error ? e.message : "Não foi possível copiar a ficha."); } finally { setBusy(false); setConfirmId(null); }
+  };
 
   return (
     <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
       <PageBanner image={imgClasses} position="50% 35%" title="Personagens Prontos" crumb="Personagens Prontos" />
       {notice && <div role="status" className="mb-3 rounded border border-[#c2892c]/60 bg-[#fff6dc] px-3 py-2 text-xs font-semibold text-[#6b4a12]">{notice}</div>}
-      <h2 className="font-serif text-2xl font-black text-[#b92b3a] underline">Bando de Exemplo</h2>
-      <p className="mb-3 mt-1 text-sm text-[#2b261f]">Estes são personagens de exemplo, só para a vitrine não ficar vazia. As fichas prontas de verdade entram no lugar deles em breve.</p>
+      <h2 className="font-serif text-2xl font-black text-[#b92b3a] underline">Heróis do Playtest</h2>
+      <p className="mb-3 mt-1 text-sm text-[#2b261f]">Os três heróis do playtest, com a ficha pronta. Pré-visualize ou clone para a sua conta e edite como quiser.</p>
       <div className="grid gap-0 border-t border-[#ddd5bb] md:grid-cols-3">
-        {EXAMPLES.map((c) => (
-          <div key={c.id} className="border-b border-[#ddd5bb] bg-[#ece7d3] p-3 md:border-r md:last:border-r-0">
-            <div className="flex gap-3">
-              <img src={c.img} alt="" style={{ objectPosition: c.pos }} className="h-[84px] w-[84px] shrink-0 rounded border border-[#2b261f] bg-white object-cover" />
-              <div className="min-w-0">
-                <h3 className="font-serif text-xl font-black">{c.name}</h3>
-                <div className="text-sm">{c.subtitle}</div>
-                <select value={levels[c.id] ?? 1} onChange={(e) => setLevels({ ...levels, [c.id]: Number(e.target.value) })} aria-label={`Nível de ${c.name}`} className="mt-1 rounded border border-[#ccc3a6] bg-white px-2 py-1 text-xs font-semibold">
-                  {LEVELS.map((n) => <option key={n} value={n}>{n}º nível</option>)}
-                </select>
+        {READY_HEROES.map((hero) => {
+          const c = hero.sheet;
+          return (
+            <div key={hero.id} className="border-b border-[#ddd5bb] bg-[#ece7d3] p-3 md:border-r md:last:border-r-0">
+              <div className="flex gap-3">
+                <img src={hero.portrait} alt="" style={{ objectPosition: hero.pos }} className="h-[84px] w-[84px] shrink-0 rounded border border-[#2b261f] bg-white object-cover" />
+                <div className="min-w-0">
+                  <h3 className="font-serif text-xl font-black">{c.name}</h3>
+                  <div className="text-sm">{c.race} · {c.class}{c.path ? ` (${c.path})` : ""}</div>
+                  <div className="mt-1 text-xs font-bold text-[#7a705d]">Nível {c.level}</div>
+                </div>
+              </div>
+              <p className="mt-2 text-[13px] leading-5 text-[#7a705d]">{c.origin ? `Origem: ${c.origin}. ` : ""}PV {c.hp.max} · PM {c.mp.max}.</p>
+              <div className="mt-3 flex justify-center gap-2">
+                <button onClick={() => setPreviewId(hero.id)} className="rounded border border-[#b92b3a] bg-white px-3 py-1 text-xs font-bold text-[#b92b3a] hover:bg-[#fbebee]">📄 Pré-visualizar Ficha</button>
+                <button onClick={() => { if (requireLogin("Para copiar um personagem para a sua conta você precisa estar logado.")) setConfirmId(hero.id); }} className="rounded bg-[#b92b3a] px-3 py-1 text-xs font-bold text-white hover:bg-[#9c1f2d]">⧉ Clonar</button>
               </div>
             </div>
-            <p className="mt-2 text-[13px] leading-5 text-[#7a705d]">{c.text}</p>
-            <div className="mt-3 flex justify-center gap-2">
-              <button onClick={() => setNotice("Este é um personagem de exemplo, ainda sem ficha para visualizar.")} className="rounded border border-[#b92b3a] bg-white px-3 py-1 text-xs font-bold text-[#b92b3a] hover:bg-[#fbebee]">📄 Pré-visualizar Ficha</button>
-              <button onClick={() => setConfirmId(c.id)} className="rounded bg-[#b92b3a] px-3 py-1 text-xs font-bold text-white hover:bg-[#9c1f2d]">⧉ Clonar</button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {confirmId && (
@@ -79,8 +79,17 @@ export const ReadyCharactersView: React.FC = () => {
             <p className="text-sm font-semibold">Tem certeza que você quer copiar essa ficha de personagem para a sua conta?</p>
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => setConfirmId(null)} className="rounded border border-[#ded7c6] px-4 py-1.5 text-xs font-bold text-[#726859]">Cancelar</button>
-              <button onClick={() => { setConfirmId(null); setNotice("Este é um personagem de exemplo, ainda sem ficha para copiar. Quando as fichas prontas entrarem, o Clonar leva a cópia para Meus Personagens."); }} className="rounded bg-[#b92b3a] px-4 py-1.5 text-xs font-bold text-white">OK</button>
+              <button disabled={busy} onClick={() => { const hero = READY_HEROES.find((h) => h.id === confirmId); if (hero) void clone(hero); }} className="rounded bg-[#b92b3a] px-4 py-1.5 text-xs font-bold text-white disabled:opacity-50">OK</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {preview && (
+        <div className="fixed inset-0 z-[90] overflow-y-auto bg-black/60 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label={`Ficha de ${preview.sheet.name}`} onMouseDown={(e) => { if (e.target === e.currentTarget) setPreviewId(null); }}>
+          <div className="mx-auto max-w-[1300px] rounded-lg bg-[#f5f2eb] p-3 shadow-2xl">
+            <div className="mb-2 flex items-center justify-between"><b className="font-serif text-lg">Pré-visualização: {preview.sheet.name}</b><button onClick={() => setPreviewId(null)} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-xs font-bold">Fechar</button></div>
+            <div className="pointer-events-none select-text"><T20CharacterSheet sheet={preview.sheet} onUpdate={() => undefined} onRoll={() => undefined} onEdit={() => undefined} onQuickEdit={() => undefined} onClone={() => undefined} onLevelUp={() => undefined} /></div>
           </div>
         </div>
       )}

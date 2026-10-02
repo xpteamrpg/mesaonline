@@ -230,13 +230,32 @@ export function raceChoicesDone(race: T20Race, extra: Record<string, string[]> =
 
 export const T20_RACES: T20Race[] = [...(racasRaw as T20Race[]), ...(racasDragoBrasilRaw as T20Race[])].map((r) => ({ ...r }));
 export const RACE_BY_ID = new Map(T20_RACES.map((r) => [r.id, r]));
+/** Distância de edição entre dois textos (erros de digitação: "Eiradan" por "Eiradaan"). */
+export function editDistance(a: string, b: string): number {
+  const prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diag = prev[0];
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const tmp = prev[j];
+      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diag = tmp;
+    }
+  }
+  return prev[b.length];
+}
+
 export const findRaceByName = (name: string) => {
   const n = norm(name);
-  return (
+  const sure =
     T20_RACES.find((r) => norm(r.nome) === n) ??
     T20_RACES.find((r) => norm(r.nome).split(/[\/ ]/)[0] === n.split(/[\/ ]/)[0]) ??
-    T20_RACES.find((r) => n.includes(norm(r.nome)) || norm(r.nome).includes(n))
-  );
+    T20_RACES.find((r) => n.includes(norm(r.nome)) || norm(r.nome).includes(n));
+  if (sure || n.length < 5) return sure;
+  // Erro de digitação: aceita 1 letra errada (2 em nomes longos), se só uma raça chegar perto.
+  const limit = n.length >= 10 ? 2 : 1;
+  const near = T20_RACES.filter((r) => editDistance(n, norm(r.nome).split(/[\/ ]/)[0]) <= limit || editDistance(n, norm(r.nome)) <= limit);
+  return near.length === 1 ? near[0] : undefined;
 };
 export const RACE_SOURCES = [...new Set(T20_RACES.map((r) => r.fonte))];
 

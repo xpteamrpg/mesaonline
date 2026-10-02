@@ -1,0 +1,393 @@
+{
+ "id": "pronto-lagrima",
+ "name": "Lágrima desk",
+ "race": "Eiradaan",
+ "raceId": "eiradaan-herois",
+ "class": "Arcanista",
+ "classId": "arcanista",
+ "level": 3,
+ "campaign": "Campanha livre",
+ "attributes": {
+  "for": {
+   "key": "for",
+   "short": "FOR",
+   "name": "Força",
+   "value": -2
+  },
+  "des": {
+   "key": "des",
+   "short": "DES",
+   "name": "Destreza",
+   "value": 2
+  },
+  "con": {
+   "key": "con",
+   "short": "CON",
+   "name": "Constituição",
+   "value": 0
+  },
+  "int": {
+   "key": "int",
+   "short": "INT",
+   "name": "Inteligência",
+   "value": 2
+  },
+  "sab": {
+   "key": "sab",
+   "short": "SAB",
+   "name": "Sabedoria",
+   "value": 8
+  },
+  "car": {
+   "key": "car",
+   "short": "CAR",
+   "name": "Carisma",
+   "value": 1
+  }
+ },
+ "hp": {
+  "max": 56,
+  "current": 56
+ },
+ "mp": {
+  "max": 32,
+  "current": 32
+ },
+ "defenseOther": -1,
+ "speed": 6,
+ "skills": {
+  "acr": {
+   "trained": false
+  },
+  "ade": {
+   "trained": false
+  },
+  "atl": {
+   "trained": false
+  },
+  "atu": {
+   "trained": false
+  },
+  "cav": {
+   "trained": false
+  },
+  "con": {
+   "trained": false
+  },
+  "cur": {
+   "trained": false
+  },
+  "dip": {
+   "trained": false
+  },
+  "eng": {
+   "trained": false
+  },
+  "for": {
+   "trained": true,
+   "other": 8
+  },
+  "fur": {
+   "trained": false
+  },
+  "gue": {
+   "trained": false
+  },
+  "ini": {
+   "trained": true
+  },
+  "int": {
+   "trained": false
+  },
+  "intu": {
+   "trained": false
+  },
+  "inv": {
+   "trained": false
+  },
+  "jog": {
+   "trained": false
+  },
+  "lad": {
+   "trained": false
+  },
+  "lut": {
+   "trained": false
+  },
+  "mis": {
+   "trained": true,
+   "attr": "sab"
+  },
+  "nob": {
+   "trained": false
+  },
+  "ofi": {
+   "trained": false
+  },
+  "per": {
+   "trained": true
+  },
+  "pil": {
+   "trained": false
+  },
+  "pon": {
+   "trained": false
+  },
+  "ref": {
+   "trained": true
+  },
+  "rel": {
+   "trained": false
+  },
+  "sob": {
+   "trained": false
+  },
+  "von": {
+   "trained": true
+  }
+ },
+ "attacks": [
+  {
+   "id": "atk-mur3wsy7-a0gvj",
+   "name": "Desarmado",
+   "skill": "Luta",
+   "damage": "1d3",
+   "damageAttr": "for",
+   "critical": "x2",
+   "damageType": "Impacto",
+   "properties": "Ataque desarmado"
+  }
+ ],
+ "racialAbilities": [
+  {
+   "id": "ra-eiradaan-herois-0",
+   "name": "Essência Feérica",
+   "description": "Tipo espírito. Visão na penumbra e pode falar com animais livremente.",
+   "source": "Eiradaan"
+  },
+  {
+   "id": "ra-eiradaan-herois-1",
+   "name": "Magia Instintiva",
+   "description": "Usa Sabedoria para magias arcanas/Misticismo. Ganha +1 PM para aprimoramentos ao lançar magias (não cumulativo).",
+   "source": "Eiradaan"
+  },
+  {
+   "id": "ra-eiradaan-herois-2",
+   "name": "Sentidos Místicos",
+   "description": "Sempre sob efeito básico da magia Visão Mística.",
+   "source": "Eiradaan"
+  },
+  {
+   "id": "ra-eiradaan-herois-3",
+   "name": "Canção da Melancolia",
+   "description": "Em testes de Vontade contra efeitos mentais, rola dois dados e usa o pior resultado.",
+   "source": "Eiradaan"
+  }
+ ],
+ "classAbilities": [
+  {
+   "id": "ca-arcanista-0",
+   "name": "Caminho do Arcanista",
+   "description": "Escolha um caminho: Bruxo, Feiticeiro, Mago ou Necromante. Define seus PM iniciais, atributo-chave e mecânica de recuperação/preparação de magias.",
+   "level": 1,
+   "source": "Arcanista"
+  },
+  {
+   "id": "ca-arcanista-1",
+   "name": "Magias (1º Círculo)",
+   "description": "Você inicia com 3 magias de 1º círculo. Limite de PM por magia: igual ao seu nível. Atributo-chave define CD (10 + metade do nível + Atributo).",
+   "level": 1,
+   "source": "Arcanista"
+  }
+ ],
+ "powers": [
+  {
+   "id": "pw-mur3wsnp-dqa68",
+   "name": "Redirecionar distino",
+   "type": "Concedido",
+   "description": ""
+  },
+  {
+   "id": "pw-mur3wsny-5h5c2",
+   "name": "Caminho do arcanista: Feiticeiro abençoado",
+   "type": "Classe",
+   "description": ""
+  },
+  {
+   "id": "pw-mur3wso6-euc5m",
+   "name": "Familiar rato",
+   "type": "Classe",
+   "description": ""
+  },
+  {
+   "id": "conceded-marah-dom-da-esperanca",
+   "name": "Dom da Esperança",
+   "type": "Concedido · Marah",
+   "description": "Soma Sabedoria nos PV (em vez de Con). Imune a alquebrado, esmorecido e frustrado.",
+   "requirement": "Devoto de Marah",
+   "cost": null
+  },
+  {
+   "id": "pw-mur3wsog-os0nq",
+   "name": "Aumento de atributo+1 sab",
+   "type": "Classe",
+   "description": ""
+  }
+ ],
+ "spells": [
+  {
+   "id": "instante-estoico",
+   "name": "Instante Estoico",
+   "circle": 1,
+   "school": "Abjuração",
+   "type": "Divina",
+   "cost": 1,
+   "execution": "Reação",
+   "range": "Pessoal",
+   "duration": "Instantânea",
+   "resistance": "Nenhuma",
+   "description": "Invocando a proteção de Khalmyr, você resiste a agressões potencialmente perigosas. Quando sofre dano não mágico, você recebe RD 10 contra esse dano.\n\nAprimoramentos: +1 PM: muda a RD para 20. Requer 2° círculo. +2 PM: além do normal, para cada 10 pontos de dano que a magia reduzir em um turno, sua próxima rolagem de dano feita até a próxima rodada causa +1d6 pontos de dano de essência. +1 PM: muda a execução para padrão e a duração para cena, até ser descarregada. Em vez do normal, quando sofre dano não mágico, você pode receber RD 10 contra esse dano. A magia é descarregada após você usar este efeito pela terceira vez. Requer 3º círculo. Apenas Devotos de Khalmyr. +2 PM: muda o alcance para toque e o alvo para 1 criatura. Apenas Devotos de Khalmyr."
+  },
+  {
+   "id": "queda-suave",
+   "name": "Queda Suave",
+   "circle": 1,
+   "school": "Transmutação",
+   "type": "Arcana",
+   "cost": 1,
+   "execution": "Reação",
+   "range": "Curto; '''Alvos''': 1 criatura ou objeto Grande ou menor",
+   "duration": "Até chegar ao solo ou cena, o que vier primeiro",
+   "resistance": "Nenhuma",
+   "description": "O alvo cai lentamente. A velocidade da queda é reduzida para 18m por rodada — o suficiente para não causar dano. Como lançar esta magia é uma reação, você pode lançá-la rápido o bastante para salvar a si ou um aliado de quedas inesperadas. Lançada sobre um projétil — como uma flecha ou uma rocha largada do alto de um penhasco —, a magia faz com que ele cause metade do dano normal, devido à lentidão. Queda Suave só funciona em criaturas e objetos em queda livre; a magia não vai frear um golpe de espada ou o mergulho rasante de um atacante voador.\n\nAprimoramentos: +2 PM: muda o alvo para até 10 criaturas ou objetos adequados. +2 PM: aumenta a categoria de tamanho do alvo em uma."
+  },
+  {
+   "id": "bencao",
+   "name": "Bênção",
+   "circle": 1,
+   "school": "Encantamento",
+   "type": "Divina",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Curto; '''Alvos''': criaturas escolhidas",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "Abençoa os alvos, que recebem +1 em testes de ataque e rolagens de dano. Bênção anula Perdição.\n\nAprimoramentos: +1 PM: muda o alvo para 1 cadáver e a duração para 1 semana. O cadáver não se decompõe nem pode ser transformado em morto-vivo pela duração da magia. +2 PM: aumenta os bônus em +1, limitado pelo círculo máximo de magia que você pode lançar."
+  },
+  {
+   "id": "arma-magica",
+   "name": "Arma Mágica",
+   "circle": 1,
+   "school": "Transmutação",
+   "type": "Universal",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Toque",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "A arma é considerada mágica e fornece +1 nos testes de ataque e rolagens de dano (isso conta como um bônus de encanto). Caso você esteja empunhando a arma, pode usar seu atributo-chave em vez do atributo original nos testes de ataque (não cumulativo com efeitos que somam este atributo).\n\nAprimoramentos: +2 PM: aumenta o bônus em +1 (bônus máximo limitado pelo círculo máximo de magia que você pode lançar). +2 PM: a arma causa +1d6 de dano de ácido, eletricidade, fogo ou frio, escolhido quando a magia é lançada. Este aprimoramento só pode ser usado uma vez. +3 PM: muda o bônus de dano do aprimoramento acima para +2d6."
+  },
+  {
+   "id": "protecao-divina",
+   "name": "Proteção Divina",
+   "circle": 1,
+   "school": "Abjuração",
+   "type": "Divina",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Toque",
+   "duration": "Cena",
+   "resistance": "Nenhuma",
+   "description": "Esta magia cria uma barreira mística invisível que fornece ao alvo +2 em testes de resistência.\n\nAprimoramentos: +2 PM: aumenta o bônus concedido em +1. +2 PM: muda a execução para reação, o alcance para curto e a duração para 1 rodada. +2 PM: muda o alvo para área de círculo com 3m de raio. Todos os aliados dentro do círculo recebem o bônus da magia. Requer 2º círculo. +5 PM: também torna o alvo imune a efeitos de encantamento. Requer 3º círculo."
+  },
+  {
+   "id": "curar-ferimentos",
+   "name": "Curar Ferimentos",
+   "circle": 1,
+   "school": "Evocação",
+   "type": "Divina",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Toque",
+   "duration": "Instantânea",
+   "resistance": "Nenhuma",
+   "effect": "2d8+2",
+   "description": "Você canaliza luz que recupera 2d8+2 pontos de vida na criatura tocada. Curar Ferimentos anula Infligir Ferimentos.\n\nAprimoramentos: +1 PM: aumenta a cura em +1d8+1. +2 PM: também remove uma condição de fadiga do alvo. +2 PM: muda o alcance para curto. +5 PM: muda o alcance para curto e o alvo para criaturas escolhidas."
+  },
+  {
+   "id": "caminhos-da-natureza",
+   "name": "Caminhos da Natureza",
+   "circle": 1,
+   "school": "Convocação",
+   "type": "Divina",
+   "cost": 1,
+   "execution": "Padrão",
+   "range": "Curto",
+   "duration": "1 dia",
+   "resistance": "Nenhuma",
+   "description": "Você invoca espíritos da natureza, pedindo que eles abram seu caminho. As criaturas afetadas recebem deslocamento +3m e ignoram penalidades por terreno difícil se estiverem em terrenos naturais. Truque: muda o alcance para pessoal e o alvo para você. Em vez do normal, você sabe onde fica o norte, e recebe +5 em testes de Sobrevivência para orientar-se.\n\nAprimoramentos: +1 PM: além do normal, a CD para rastrear os alvos em terreno natural aumenta em +10. +2 PM: aumenta o bônus de deslocamento em +3m."
+  }
+ ],
+ "money": 420,
+ "equipment": [
+  {
+   "id": "eq-mur3wsnd-wtkr7",
+   "equipped": false,
+   "name": "Saco de Dormir, Mochila, Traje de Viajante",
+   "quantity": 1,
+   "slots": 1,
+   "price": null,
+   "description": "",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wsnd-0g9o7",
+   "equipped": false,
+   "name": "Besta leve",
+   "quantity": 1,
+   "slots": 1,
+   "price": 35,
+   "description": "Simples · Uma Mão · Arco montado com gatilho que causa 1d8 de dano de perfuração (crítico 19). Alcance médio. Recarregar é ação de movimento.",
+   "category": "Arma"
+  },
+  {
+   "id": "eq-mur3wsne-xsj8e",
+   "equipped": false,
+   "name": "Essência de mana",
+   "quantity": 1,
+   "slots": 0.5,
+   "price": 50,
+   "description": "Poção de ervas raras. Recupera 1d4 pontos de mana. (p. 160)",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wsne-0pkzl",
+   "equipped": false,
+   "name": "Mochila de aventureiro",
+   "quantity": 1,
+   "slots": 0,
+   "price": 50,
+   "description": "Feita de couro resistente, esta mochila é repleta de bolsos. Aumenta sua capacidade de carga em 2 espaços. (p. 161)",
+   "category": "Item Geral"
+  },
+  {
+   "id": "eq-mur3wsnf-bykgp",
+   "equipped": false,
+   "name": "Medalhão afiado",
+   "quantity": 1,
+   "slots": 1,
+   "price": 900,
+   "description": "Quando lança magia que dá bônus de ataque, ela também fornece +1 na margem de ameaça.",
+   "category": "Item Geral"
+  }
+ ],
+ "languages": "Comum",
+ "xp": 3000,
+ "notes": "Herói do playtest (importado de m.pdf).",
+ "createdAt": "2026-10-02T15:17:16.303Z",
+ "updatedAt": "2026-10-02T15:17:16.304Z",
+ "origin": "Aspirante a herói",
+ "deity": "Thyates",
+ "avatar": "/herois/m-token.webp",
+ "path": "Feiticeiro abençoada"
+}

@@ -184,6 +184,19 @@ function PortalApp() {
     if (!src) return;
     add({ ...JSON.parse(JSON.stringify(src)), id: uid("pj"), name: `${src.name} (cópia)` });
   };
+  /** Copia um herói pronto para a conta (o retrato vira dado na própria ficha, para não depender do endereço do site). */
+  const cloneReady = async (src: CharacterSheet) => {
+    let avatar = src.avatar;
+    try {
+      const blob = await (await fetch(src.avatar as string)).blob();
+      avatar = await new Promise<string>((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.onerror = () => reject(new Error("avatar")); r.readAsDataURL(blob); });
+    } catch { /* fica com o endereço do retrato */ }
+    const now = new Date().toISOString();
+    const copy: CharacterSheet = { ...JSON.parse(JSON.stringify(src)), id: uid("pj"), avatar, createdAt: now, updatedAt: now };
+    setCharacters([copy, ...characters]);
+    setActiveId(copy.id);
+    navigate("characters");
+  };
   const remove = (id: string) => {
     const rest = characters.filter((c) => c.id !== id);
     setCharacters(rest);
@@ -241,7 +254,7 @@ function PortalApp() {
         )}
         {view === "campaigns" && <RequireLogin what="as suas campanhas"><CampaignsView characters={characters} campaigns={campaigns} onChangeCampaigns={setCampaigns} onSelect={(id) => { setActiveId(id); navigate("sheet"); }} onOpenWorkshop={() => navigate("workshop")} onOpenVtt={() => setVttOpen(true)} onRoll={rollDice} /></RequireLogin>}
         {view === "createChar" && <CreateCharacterView onBlank={() => navigate("workshop")} onReady={() => navigate("readyChars")} />}
-        {view === "readyChars" && <ReadyCharactersView />}
+        {view === "readyChars" && <ReadyCharactersView onClone={cloneReady} />}
         {view === "account" && <AccountOverview onNavigate={navigate} />}
         {view === "accountProfile" && <AccountProfile onNavigate={navigate} />}
         {view === "accountOrders" && <AccountOrders onNavigate={navigate} />}
