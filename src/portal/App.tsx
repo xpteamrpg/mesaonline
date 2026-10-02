@@ -23,10 +23,10 @@ import { RequireLogin } from "./components/auth/RequireLogin";
 import { classAbilitiesFor, recalc, uid } from "./lib/t20/sheetRules";
 import { levelForXp } from "./lib/t20/xp";
 import { VIEW_HASH, viewFromHash, type View } from "./types/view";
-import { AuthProvider } from "./lib/auth/AuthContext";
+import { AuthProvider, useAuth } from "./lib/auth/AuthContext";
+import { STORAGE_KEY, loadInitialCharacters, useAccountCharacters } from "./lib/characters/accountSync";
 import { heroJsonToSheet, isHeroJson } from "./lib/pdf/heroJson";
 
-const STORAGE_KEY = "tormenta20_online_characters_v2";
 const HASH = VIEW_HASH;
 
 function usePersisted<T>(key: string, initial: T): [T, (v: T) => void] {
@@ -109,25 +109,15 @@ function normalize(raw: Partial<CharacterSheet> & Record<string, unknown>): Char
   return s;
 }
 
-function loadInitial(): CharacterSheet[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length) {
-        const list = parsed.map(normalize).filter((x): x is CharacterSheet => !!x);
-        if (list.length) return list;
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  return INITIAL_CHARACTERS;
+export default function App() {
+  return <AuthProvider><PortalApp /></AuthProvider>;
 }
 
-export default function App() {
-  const [characters, setCharacters] = useState<CharacterSheet[]>(loadInitial);
-  const [activeId, setActiveId] = useState<string>(() => localStorage.getItem(STORAGE_KEY + ":active") || characters[0]?.id);
+function PortalApp() {
+  const { user, loading: authLoading } = useAuth();
+  const [characters, setCharacters] = useState<CharacterSheet[]>(loadInitialCharacters);
+  const [activeId, setActiveId] = useState<string>(() => localStorage.getItem(STORAGE_KEY + ":active") || "");
+  const sync = useAccountCharacters({ userId: user?.id ?? null, authLoading, characters, setCharacters });
   const [view, setView] = useState<View>(viewFromHash);
   const [jsonOpen, setJsonOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -143,7 +133,7 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
-      localStorage.setItem(STORAGE_KEY + ":active", activeId);
+      localStorage.setItem(STORAGE_KEY + ":active", activeId || "");
     } catch {
       /* storage cheio */
     }
@@ -161,7 +151,9 @@ export default function App() {
     if (window.location.hash !== HASH[v]) window.location.hash = HASH[v];
   };
 
-  const active = characters.find((c) => c.id === activeId) ?? characters[0] ?? INITIAL_CHARACTERS[0];
+  const activeOrNone = characters.find((c) => c.id === activeId) ?? characters[0];
+  /** Sem personagens, as janelas de importação ainda precisam de uma ficha-base; ela nunca aparece na lista. */
+  const active = activeOrNone ?? INITIAL_CHARACTERS[0];
   const campaignNames = [...new Set([...campaigns.map((c) => c.name), ...characters.map((c) => c.campaign).filter(Boolean)])];
 
   const update = (s: CharacterSheet) => setCharacters((p) => p.map((c) => (c.id === s.id ? s : c)));
@@ -194,8 +186,8 @@ export default function App() {
   };
   const remove = (id: string) => {
     const rest = characters.filter((c) => c.id !== id);
-    setCharacters(rest.length ? rest : INITIAL_CHARACTERS);
-    if (activeId === id) setActiveId((rest[0] ?? INITIAL_CHARACTERS[0]).id);
+    setCharacters(rest);
+    if (activeId === id) setActiveId(rest[0]?.id ?? "");
   };
   const importJson = (text: string) => {
     try {
@@ -226,11 +218,10 @@ export default function App() {
   };
 
   return (
-    <AuthProvider>
     <div className="min-h-screen bg-[#f5f2eb] text-[#2b261f]">
       <T20Navbar
         characters={characters}
-        activeId={active.id}
+        activeId={activeOrNone?.id ?? ""}
         view={view}
         onNavigate={navigate}
         onSelectCharacter={(id) => { setActiveId(id); navigate("sheet"); }}
@@ -239,11 +230,12 @@ export default function App() {
         onOpenVtt={() => setVttOpen(true)}
       />
 
+      {user && sync.error && <div role="alert" className="no-print bg-[#fff0f0] px-4 py-2 text-center text-xs font-bold text-[#c92a2a]">Não foi possível sincronizar os personagens com a sua conta: {sync.error}</div>}
       <main>
         {view === "home" && <HomeView characters={characters} onNavigate={navigate} />}
         {view === "about" && <AboutView onNavigate={navigate} />}
-        {view === "sheet" && <RequireLogin what="a sua ficha"><T20CharacterSheet sheet={active} onUpdate={update} onRoll={setRoll} onEdit={() => startEdit(active.id)} onQuickEdit={() => setEditOpen(true)} onClone={() => clone(active.id)} onLevelUp={levelUp} /></RequireLogin>}
-        {view === "workshop" && <CharacterBuilderWorkshop key={editingId ?? "novo"} initial={characters.find((c) => c.id === editingId)} campaignNames={campaignNames} onFinish={editingId ? finishEdit : add} onCancel={() => navigate("sheet")} />}
+        {view === "sheet" && <RequireLogin what="a sua ficha">{!activeOrNone ? <NoCharacters loading={!!user && !sync.ready && !sync.error} onCreate={() => navigate("createChar")} /> : <T20CharacterSheet sheet={active} onUpdate={update} onRoll={setRoll} onEdit={() => startEdit(active.id)} onQuickEdit={() => setEditOpen(true)} onClone={() => clone(active.id)} onLevelUp={levelUp} />}</RequireLogin>}
+        {view === "workshop" && <RequireLogin what="a Oficina de Heróis"><CharacterBuilderWorkshop key={editingId ?? "novo"} initial={characters.find((c) => c.id === editingId)} campaignNames={campaignNames} onFinish={editingId ? finishEdit : add} onCancel={() => navigate("sheet")} /></RequireLogin>}
         {view === "characters" && (
           <RequireLogin what="os seus personagens"><CharactersListView characters={characters} activeId={active.id} onSelect={(id) => { setActiveId(id); navigate("sheet"); }} onEdit={startEdit} onPdf={(id) => { setActiveId(id); navigate("sheet"); setTimeout(() => window.print(), 600); }} onOpenWorkshop={() => navigate("createChar")} onOpenJson={() => setJsonOpen(true)} onOpenPdf={() => setPdfOpen(true)} onOpenVtt={() => setVttOpen(true)} onClone={clone} onDelete={remove} onImportJson={importJson} /></RequireLogin>
         )}
@@ -273,6 +265,16 @@ export default function App() {
       {pdfOpen && <PdfImportModal isOpen onClose={() => setPdfOpen(false)} current={active} onCreate={add} onMerge={update} />}
       {vttOpen && <VttImportModal isOpen onClose={() => setVttOpen(false)} onImport={importVtt} />}
     </div>
-    </AuthProvider>
+  );
+}
+
+function NoCharacters({ loading, onCreate }: { loading: boolean; onCreate: () => void }) {
+  return (
+    <div className="mx-auto max-w-xl p-6 sm:p-10">
+      <div className="rounded-lg border border-[#ded7c6] bg-white p-8 text-center shadow-sm">
+        <h1 className="font-serif text-2xl font-black text-[#b92b3a]">{loading ? "Carregando os seus personagens…" : "Você ainda não tem personagens"}</h1>
+        {!loading && <button onClick={onCreate} className="mt-5 rounded bg-[#b92b3a] px-6 py-2.5 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Criar personagem</button>}
+      </div>
+    </div>
   );
 }

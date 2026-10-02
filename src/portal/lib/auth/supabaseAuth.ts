@@ -20,7 +20,8 @@ const toUser = (user: User): AuthUser => {
     id: user.id,
     email: user.email ?? "",
     nickname: text("nickname"),
-    confirmed: Boolean(user.email_confirmed_at),
+    // "Verificado" só quando a pessoa clicou no link do e-mail (o banco libera o login antes disso; ver db/supabase-login-sem-confirmar.sql).
+    confirmed: meta.email_verified === true || (meta.email_verified === undefined && Boolean(user.email_confirmed_at)),
     displayName: text("display_name"),
     handle: text("handle"),
     bio: text("bio"),
@@ -82,8 +83,14 @@ export async function signUp(nickname: string, email: string, password: string):
 
 export async function resendConfirmation(email: string): Promise<void> {
   if (!supabase) throw new Error("Contas indisponíveis.");
-  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: redirectUrl() } });
-  if (error) throw explain(error);
+  // A conta já entra sem confirmar: para o Supabase reenviar, ela volta a "não confirmada" por um instante e é liberada de novo no fim.
+  await supabase.rpc("mrpg_prepare_resend");
+  try {
+    const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: redirectUrl() } });
+    if (error) throw explain(error);
+  } finally {
+    await supabase.rpc("mrpg_finish_resend");
+  }
 }
 
 export async function signOut(): Promise<void> {
@@ -95,6 +102,11 @@ export interface ProfilePatch { displayName?: string; handle?: string; bio?: str
 /** Grava o perfil público nos dados da conta. */
 export async function updateProfile(patch: ProfilePatch): Promise<AuthUser> {
   if (!supabase) throw new Error("Contas indisponíveis.");
+  // O identificador (@) é único no site: o banco recusa se outra conta já usa.
+  if (patch.handle !== undefined) {
+    const { error } = await supabase.rpc("mrpg_set_handle", { p_handle: patch.handle });
+    if (error) throw new Error(error.message);
+  }
   const data: Record<string, unknown> = {};
   if (patch.displayName !== undefined) data.display_name = patch.displayName;
   if (patch.handle !== undefined) data.handle = patch.handle;
