@@ -5,7 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 // Portal, ficha oficial, exploração e Tactics são publicados pela mesma entrada.
 // Isso mantém o storage oficial e o runtime da mesa no mesmo origin.
+// GitHub Pages publica em /mesaonline/: o fluxo de publicação define VITE_BASE; em desenvolvimento a base é "/".
 export default defineConfig({
+  base: process.env.VITE_BASE || "/",
   plugins: [react(), tailwindcss()],
   server: { host: true, allowedHosts: true },
   preview: { host: true, port: 4173, allowedHosts: true },

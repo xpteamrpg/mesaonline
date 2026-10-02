@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { withBase } from "../../../utils/assetUrl";
 
 /**
  * Título "ARMADA NEXUS RPG" em ouro polido em alto-relevo: letras com chanfro iluminado (luz vinda de cima à esquerda), degradê metálico,
@@ -60,5 +61,5 @@ export function ArmadaTitle({ className }: { className?: string }) {
 export function ArmadaTitleArt({ className }: { className?: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <ArmadaTitle className={className} />;
-  return <img src="/ui/expandido/titulo-armada.webp" alt="Armada Nexus RPG" className={className} draggable={false} onError={() => setFailed(true)} />;
+  return <img src={withBase("/ui/expandido/titulo-armada.webp")} alt="Armada Nexus RPG" className={className} draggable={false} onError={() => setFailed(true)} />;
 }

@@ -6,6 +6,7 @@ import { MapArea } from "./components/MapArea";
 import { CharacterSheet, CombatActions, InitiativePanel, RollTable } from "./components/Panels";
 import { CornerMount } from "./components/ui";
 import { SkinRuntimeContext, type SkinRuntime } from "./runtime";
+import { withBase } from "../../utils/assetUrl";
 
 export type MesaSkinTableProps = {
   /**
@@ -47,7 +48,7 @@ export default function MesaSkinTable({ view, onViewChange, links = {}, onAction
   return (
     <SkinRuntimeContext.Provider value={runtime}>
     <div className="appearance-table relative flex min-h-screen w-full flex-col bg-[color:var(--mx-0b0706)] lg:h-screen lg:overflow-hidden" data-mesa-view={view}>
-      <img className="mx-exp mx-dragon" src="/ui/expandido/dragao-canto.webp" alt="" draggable={false} />
+      <img className="mx-exp mx-dragon" src={withBase("/ui/expandido/dragao-canto.webp")} alt="" draggable={false} />
       {/* ormolu corner mounts of the imported console */}
       <div className="pointer-events-none absolute inset-0 z-50 hidden lg:block">
         <CornerMount className="absolute top-0 left-0" />

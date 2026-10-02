@@ -1,3 +1,4 @@
+import { withBase } from "../../../utils/assetUrl";
 /**
  * Arte do modo EXPANDIDO (aparece só quando <html data-table-mode="expanded">): marca da tormenta e o d20 dentro de um orbe de tempestade
  * preso por garras de dragão. O Minimalista continua com a estrela e o d20 simples.
@@ -60,13 +61,13 @@ export function OrbD20({ diceOpen, className }: { diceOpen?: boolean; className?
           </g>
           <path className="tormenta-bolt" d="M60 4 L42 46 L55 46 L38 96" fill="none" stroke="#ffd9d0" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
           <g className="d20-die">
-            <image href="/ui/expandido/d20-cristal.webp" x="9" y="9" width="82" height="82" />
+            <image href={withBase("/ui/expandido/d20-cristal.webp")} x="9" y="9" width="82" height="82" />
           </g>
           <ellipse cx="34" cy="26" rx="15" ry="8" fill="#ffffff" opacity="0.1" transform="rotate(-28 34 26)" />
         </g>
       </svg>
       {/* as garras de dragão seguram o orbe (arte gerada, fundo transparente) */}
-      <img className="mx-orb-claws" src="/ui/expandido/garras-orbe.webp" alt="" draggable={false} />
+      <img className="mx-orb-claws" src={withBase("/ui/expandido/garras-orbe.webp")} alt="" draggable={false} />
     </span>
   );
 }

@@ -30,6 +30,7 @@ import { resolveTacticalAction } from "../../tactics/engine/combat";
 import { executeTacticalAction, executeTacticalEndTurn, executeTacticalMove } from "../../tactics/engine/runtimeCommands";
 import { aiPlan, applyAiMovement } from "../../tactics/engine/ai";
 import { buildCastInfo, computeCastPlan, findSpellEntry } from "../../tactics/interpretation/spellCasting";
+import { withBase } from "../../utils/assetUrl";
 
 interface Props {
   snapshot: RuntimeSnapshot;
@@ -48,7 +49,7 @@ export default function TacticsWorkspace(props: Props) {
   // Exploração e combate têm cenas físicas diferentes na referência. O estado
   // tático mantém as mesmas células, tokens e regras do board corrente, mas a
   // camada visual usa a ponte-fortaleza rubra própria do encontro.
-  const tacticalMap = useMemo(() => ({ ...board.map, image: "/tactics/fortaleza-tempestade-rubra.jpg" }), [board.map]);
+  const tacticalMap = useMemo(() => ({ ...board.map, image: withBase("/tactics/fortaleza-tempestade-rubra.jpg") }), [board.map]);
   const combat = snapshot.combat;
   const selectedUnitId = board.selectedTokenIds[0] || "";
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId);

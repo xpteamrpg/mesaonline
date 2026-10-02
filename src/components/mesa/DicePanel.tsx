@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Tray, cx } from "../mesaSkin/components/ui";
+import { withBase } from "../../utils/assetUrl";
 import { rollFormula } from "../../game/macros";
 import { appendRoll } from "../../game/vttBridge";
 import type { DiceResolution } from "../../game/types";
@@ -16,8 +17,8 @@ const DELTAS = [-5, -2, -1, 1, 2, 5];
 const ROLL_MS = 900;
 /** Imagem do dado no modo Expandido: o d20 é o mesmo cristal do orbe da barra; os outros seguem o mesmo estilo (d3 usa o cubo). Sem imagem no D%. */
 const DIE_IMAGE: Record<number, string> = {
-  20: "/ui/expandido/d20-cristal.webp", 12: "/ui/expandido/dado-d12.webp", 10: "/ui/expandido/dado-d10.webp", 8: "/ui/expandido/dado-d8.webp",
-  6: "/ui/expandido/dado-d6.webp", 4: "/ui/expandido/dado-d4.webp", 3: "/ui/expandido/dado-d3.webp",
+  20: withBase("/ui/expandido/d20-cristal.webp"), 12: withBase("/ui/expandido/dado-d12.webp"), 10: withBase("/ui/expandido/dado-d10.webp"), 8: withBase("/ui/expandido/dado-d8.webp"),
+  6: withBase("/ui/expandido/dado-d6.webp"), 4: withBase("/ui/expandido/dado-d4.webp"), 3: withBase("/ui/expandido/dado-d3.webp"),
 };
 
 /** Contorno e facetas de cada dado (viewBox 64): d4 tetraedro, d6 cubo, d8 octaedro, d10 trapezoedro, d12 dodecaedro, d20 icosaedro. */

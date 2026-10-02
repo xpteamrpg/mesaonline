@@ -1,5 +1,6 @@
 import type { BattleMap, ThreatTemplate } from "./types";
 import { cellKey } from "./rules";
+import { withBase } from "../utils/assetUrl";
 
 function markRect(
   terrain: BattleMap["terrain"],
@@ -50,8 +51,8 @@ export const DEFAULT_MAPS: BattleMap[] = [
     id: "taverna-fenix",
     name: "Ponte da Tormenta Rubra",
     location: "Cenário atual",
-    image: "/tactics/ponte-tempestade-rubra.jpg",
-    isoImage: "/tactics/taverna-isometrica.png",
+    image: withBase("/tactics/ponte-tempestade-rubra.jpg"),
+    isoImage: withBase("/tactics/taverna-isometrica.png"),
     cols: 14,
     rows: 14,
     terrain: tavernTerrain(),
@@ -60,8 +61,8 @@ export const DEFAULT_MAPS: BattleMap[] = [
     id: "ruinas-akhall",
     name: "Fortaleza da Tormenta",
     location: "Ponte da Tormenta Rubra",
-    image: "/tactics/fortaleza-tempestade-rubra.jpg",
-    isoImage: "/tactics/fortaleza-isometrica.png",
+    image: withBase("/tactics/fortaleza-tempestade-rubra.jpg"),
+    isoImage: withBase("/tactics/fortaleza-isometrica.png"),
     cols: 14,
     rows: 14,
     terrain: ruinsTerrain(),
@@ -74,7 +75,7 @@ export const DEFAULT_THREATS: ThreatTemplate[] = [
     name: "Uktril da Tormenta",
     title: "Lefeu de infantaria, ND 5",
     symbol: "UK",
-    sprite: "/tactics/sprite-lefeu.png",
+    sprite: withBase("/tactics/sprite-lefeu.png"),
     pv: 68,
     pm: 15,
     defense: 23,
@@ -99,7 +100,7 @@ export const DEFAULT_THREATS: ThreatTemplate[] = [
     name: "Arauto de Aharadak",
     title: "Sacerdote da Devoradora, ND 6",
     symbol: "AA",
-    sprite: "/tactics/sprite-cultista.png",
+    sprite: withBase("/tactics/sprite-cultista.png"),
     pv: 54,
     pm: 32,
     defense: 21,

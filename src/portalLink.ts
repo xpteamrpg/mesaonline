@@ -12,10 +12,11 @@
  * próprio Portal.
  */
 import { setActiveCharacterId } from "../ficha-modernrpg/characterRoute";
+import { SITE_ROOT } from "./utils/assetUrl";
 
 const RAW_PORTAL_URL = (import.meta.env?.VITE_PORTAL_URL as string | undefined)?.trim();
 
-export const PORTAL_URL = RAW_PORTAL_URL || "/";
+export const PORTAL_URL = RAW_PORTAL_URL || SITE_ROOT;
 
 /** Endereço do Portal, opcionalmente em uma rota interna dele. */
 export function portalHref(hashRoute = ""): string {

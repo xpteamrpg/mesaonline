@@ -12,6 +12,7 @@ import { ImagePicker } from "../common/ImagePicker";
 import { PageBanner } from "../layout/PageBanner";
 import imgCampanhas from "../../assets/menu/campanhas.jpg";
 import imgMonstros from "../../assets/menu/monstros.jpg";
+import { SITE_ROOT } from "../../../utils/assetUrl";
 
 /** "Ferramentas desta mesa" ficam desligadas por enquanto (decisão do usuário); o código é mantido para reativar depois. */
 const SHOW_TABLE_TOOLS = false;
@@ -171,7 +172,7 @@ export const CampaignsView: React.FC<Props> = ({ characters, campaigns, onChange
       <button onClick={() => setDetail(false)} className="mb-3 text-xs font-bold text-[#b92b3a] hover:underline">← Todas as campanhas</button>
       <PageHead icon="🏰" title="Minhas Campanhas" subtitle="Mesas com seus personagens, NPCs e cenas importados do VTT, diário e bestiário de encontros." right={
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => window.open(`/mesa/?campanha=${encodeURIComponent(selected || "Nova mesa")}`, "_blank", "noopener,noreferrer")} className="rounded border border-[#2b8a3e] bg-[#ebfbee] px-3 py-1.5 text-xs font-bold text-[#2b8a3e] hover:bg-[#2b8a3e] hover:text-white">🎲 Abrir mesa online</button>
+          <button onClick={() => window.open(`${SITE_ROOT}mesa/?campanha=${encodeURIComponent(selected || "Nova mesa")}`, "_blank", "noopener,noreferrer")} className="rounded border border-[#2b8a3e] bg-[#ebfbee] px-3 py-1.5 text-xs font-bold text-[#2b8a3e] hover:bg-[#2b8a3e] hover:text-white">🎲 Abrir mesa online</button>
           <button onClick={onOpenVtt} className="rounded border border-[#7a3fe0] bg-[#f3eeff] px-3 py-1.5 text-xs font-bold text-[#7a3fe0] hover:bg-[#7a3fe0] hover:text-white">🎲 Importar campanha do VTT</button>
           {record && <button onClick={() => setShareOpen(true)} className="rounded border border-[#1c7ed6] bg-[#e7f5ff] px-3 py-1.5 text-xs font-bold text-[#1c7ed6] hover:bg-[#1c7ed6] hover:text-white">🔗 Compartilhar</button>}
           {record && <button onClick={renameCampaign} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-xs font-bold text-[#726859]">Renomear</button>}

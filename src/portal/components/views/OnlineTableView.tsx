@@ -6,6 +6,7 @@ import { PageBanner } from "../layout/PageBanner";
 import { OfficialCampaigns } from "../campaigns/OfficialCampaigns";
 import type { CampaignRecord } from "./CampaignsView";
 import { ImagePicker } from "../common/ImagePicker";
+import { SITE_ROOT } from "../../../utils/assetUrl";
 
 /** Arte própria da página (pintura do projeto). */
 const ONESHOTS_ART = "./images/urbana.jpg";
@@ -27,7 +28,7 @@ function openMesa(opts: { name: string; host?: string; sala?: string }) {
   if (opts.host) params.set("host", opts.host);
   else if (opts.sala) params.set("sala", opts.sala);
   params.set("nome", opts.name);
-  window.open(`/mesa/?${params.toString()}`, "_blank", "noopener,noreferrer");
+  window.open(`${SITE_ROOT}mesa/?${params.toString()}`, "_blank", "noopener,noreferrer");
 }
 
 /** Selo grande: CAMPANHA (azul) ou ONE-SHOT (vermelho). */
