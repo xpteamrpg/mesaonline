@@ -18,7 +18,7 @@ const ROLL_MS = 900;
 /** Imagem do dado no modo Expandido: o d20 é o mesmo cristal do orbe da barra; os outros seguem o mesmo estilo (d3 usa o cubo). Sem imagem no D%. */
 const DIE_IMAGE: Record<number, string> = {
   20: withBase("/ui/expandido/d20-cristal.webp"), 12: withBase("/ui/expandido/dado-d12.webp"), 10: withBase("/ui/expandido/dado-d10.webp"), 8: withBase("/ui/expandido/dado-d8.webp"),
-  6: withBase("/ui/expandido/dado-d6.webp"), 4: withBase("/ui/expandido/dado-d4.webp"), 3: withBase("/ui/expandido/dado-d3.webp"),
+  6: withBase("/ui/expandido/dado-d6.webp"),
 };
 
 /** Contorno e facetas de cada dado (viewBox 64): d4 tetraedro, d6 cubo, d8 octaedro, d10 trapezoedro, d12 dodecaedro, d20 icosaedro. */
@@ -63,10 +63,36 @@ export function formatRollTime(timestamp: number): string {
   return `${two(date.getDate())}/${two(date.getMonth() + 1)} ${two(date.getHours())}:${two(date.getMinutes())}`;
 }
 
+/** Miniatura do dado (contorno dourado sobre fundo escuro), usada nos botões e no histórico. */
+function MiniDie({ faces, size = 22 }: { faces: number; size?: number }) {
+  const shape = DIE_SHAPES[faces] ?? DIE_SHAPES[20];
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="shrink-0">
+      {shape.body.map((d) => <path key={d} d={d} fill="#2b1d12" stroke="#f2d68f" strokeWidth="3" strokeLinejoin="round" />)}
+      <path d={shape.lines} stroke="#f2d68f" strokeWidth="2.2" fill="none" opacity="0.7" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Separa a fórmula em grupos de dados e distribui os números rolados na ordem; sem casar, devolve um grupo só, sem forma. */
+export function rollGroups(formula: string, rolls: number[]): { faces: number | null; count: number; values: number[] }[] {
+  const terms = [...formula.matchAll(/(\d+)d(\d+)/gi)].map((m) => ({ count: Number(m[1]), faces: Number(m[2]) }));
+  if (!terms.length || terms.reduce((n, t) => n + t.count, 0) !== rolls.length) return rolls.length ? [{ faces: null, count: rolls.length, values: rolls }] : [];
+  let at = 0;
+  return terms.map((t) => { const values = rolls.slice(at, at + t.count); at += t.count; return { faces: t.faces, count: t.count, values }; });
+}
+
+function Brackets({ values }: { values: number[] }) {
+  return <span className="num font-semibold text-[color:var(--mx-f4e8ce)]">{values.map((v, i) => <span key={i} className="mr-1">[{v}]</span>)}</span>;
+}
+
+type LastRoll = { total: number; groups: { faces: number | null; count: number; values: number[] }[]; mod: number; focus: number };
+
 export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolution[]; actor: string; onClose: () => void }) {
-  const [faces, setFaces] = useState(20);
+  /** Quantos dados de cada tipo entram na rolagem (clique soma, botão direito tira). */
+  const [pool, setPool] = useState<Record<number, number>>({ 20: 1 });
   const [modifier, setModifier] = useState("0");
-  const [last, setLast] = useState<{ total: number; label: string; faces: number } | null>(null);
+  const [last, setLast] = useState<LastRoll | null>(null);
   const [spin, setSpin] = useState(0);
   const [rolling, setRolling] = useState(false);
   /** Inclinação final de cada rolagem: o dado nunca para na mesma posição. */
@@ -74,37 +100,51 @@ export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolu
   const [flicker, setFlicker] = useState(1);
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const picked = DICE.filter((die) => (pool[die.faces] ?? 0) > 0);
+  const focus = last?.focus ?? picked[0]?.faces ?? 20;
   // Durante o giro o número troca depressa, como dado rolando.
   useEffect(() => {
     if (!rolling) return;
-    const id = window.setInterval(() => setFlicker(1 + Math.floor(Math.random() * Math.max(2, faces === 100 ? 100 : faces))), 70);
+    const id = window.setInterval(() => setFlicker(1 + Math.floor(Math.random() * Math.max(2, focus))), 70);
     return () => window.clearInterval(id);
-  }, [rolling, faces]);
+  }, [rolling, focus]);
 
   const mod = parseModifier(modifier);
-  const faceName = faces === 100 ? "D%" : `D${faces}`;
+  const modText = mod ? `${mod > 0 ? "+" : ""}${mod}` : "";
+  const poolText = picked.map((die) => `${pool[die.faces]}d${die.faces}`).join("+");
+
+  function add(faces: number, delta: number) {
+    setPool((current) => ({ ...current, [faces]: Math.max(0, Math.min(20, (current[faces] ?? 0) + delta)) }));
+  }
 
   function roll() {
-    const formula = `1d${faces}${mod ? `${mod > 0 ? "+" : ""}${mod}` : ""}`;
-    const result = rollFormula(formula);
-    if (!result) return;
-    const natural = result.rolls[0];
+    if (!picked.length) return;
+    const groups = picked.map((die) => {
+      const part = rollFormula(`${pool[die.faces]}d${die.faces}`)!;
+      return { faces: die.faces, count: part.count, values: part.rolls };
+    });
+    const all = groups.flatMap((group) => group.values);
+    const total = all.reduce((sum, value) => sum + value, 0) + mod;
+    const formula = `${poolText}${modText}`;
+    const single20 = picked.length === 1 && picked[0].faces === 20 && pool[20] === 1;
+    const natural = single20 ? all[0] : undefined;
     appendRoll({
       id: `mesa-dice-${crypto.randomUUID()}`,
       actor,
       target: "—",
-      action: `Rolagem ${faceName}`,
+      action: "Rolagem",
       kind: "system",
-      natural: faces === 20 ? natural : undefined,
+      natural,
       modifier: mod,
-      total: result.total,
+      total,
       formula,
-      rolls: result.rolls,
-      outcome: faces === 20 && natural === 20 ? "Crítico" : faces === 20 && natural === 1 ? "Falha crítica" : "Rolagem",
-      success: !(faces === 20 && natural === 1),
+      rolls: all,
+      outcome: natural === 20 ? "Crítico" : natural === 1 ? "Falha crítica" : "Rolagem",
+      success: natural !== 1,
       timestamp: Date.now(),
     });
-    setLast({ total: result.total, faces, label: `Rolagem de ${faceName}${mod ? ` ${mod > 0 ? "+" : ""}${mod}` : ""}` });
+    setLast({ total, groups, mod, focus: picked[picked.length - 1].faces });
     setSpin((value) => value + 1);
     setTilt({ x: Math.round(Math.random() * 50 - 25), y: Math.round(Math.random() * 50 - 25), z: Math.round(Math.random() * 90 - 45) });
     // O dado gira e só depois o número aparece.
@@ -114,117 +154,151 @@ export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolu
   }
 
   return (
-    <div className="shrink-0 p-2.5 pr-0 lg:w-[clamp(290px,19vw,370px)]" data-dice-panel>
-      <Tray className="flex h-full min-h-[360px] flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[#7a5227]/50 px-3 py-2.5">
-          <h2 className="dice-title font-display text-[17px] font-bold tracking-[0.08em]">ROLAGEM DE DADOS</h2>
-          <button type="button" onClick={onClose} aria-label="Fechar rolagem de dados" className="grid h-7 w-7 place-items-center rounded-[7px] text-[color:var(--mx-c9b295)] transition-colors hover:bg-[color:var(--mx-2a1a12)] hover:text-[color:var(--mx-f0d9a5)]">
-            <X size={16} />
+    <div className="shrink-0 p-2.5 pr-0 lg:w-[clamp(230px,15vw,290px)]" data-dice-panel>
+      <Tray className="flex h-full min-h-[320px] flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-[#7a5227]/50 px-3 py-1.5">
+          <h2 className="dice-title font-display text-[14px] font-bold tracking-[0.08em]">ROLAGEM DE DADOS</h2>
+          <button type="button" onClick={onClose} aria-label="Fechar rolagem de dados" className="grid h-6 w-6 place-items-center rounded-[7px] text-[color:var(--mx-c9b295)] transition-colors hover:bg-[color:var(--mx-2a1a12)] hover:text-[color:var(--mx-f0d9a5)]">
+            <X size={14} />
           </button>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto scroll-tray p-3">
+        <div className="flex-1 space-y-2 overflow-y-auto scroll-tray p-2">
           {/* dado animado com o último resultado */}
-          <div className="grid place-items-center rounded-[10px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] py-3">
-            {DIE_IMAGE[faces] && (
-              <motion.img
-                key={`img-${spin}-${faces}`}
-                className="mx-exp mx-die"
-                src={DIE_IMAGE[faces]}
-                alt=""
-                draggable={false}
-                style={{ transformPerspective: 520 }}
-                initial={false}
-                animate={spin
-                  ? { rotateX: [0, 540, 1080 + tilt.x], rotateY: [0, 720, 1440 + tilt.y], rotateZ: [0, 200, 360 + tilt.z], scale: [0.85, 1.18, 1] }
-                  : { rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1 }}
-                transition={{ duration: ROLL_MS / 1000, ease: [0.2, 0.7, 0.3, 1] }}
-              />
-            )}
-            <motion.svg
-              key={spin}
-              className={DIE_IMAGE[faces] ? "mx-min" : undefined}
-              viewBox="0 0 64 64"
-              width="92"
-              height="92"
-              initial={spin ? { rotate: -200, scale: 0.7 } : false}
-              animate={{ rotate: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              style={{ filter: "drop-shadow(0 0 12px rgba(232,44,54,0.75))" }}
-              aria-hidden="true"
-            >
-              <DieShape faces={faces} label={last && last.faces === faces ? last.total : faces === 100 ? "%" : faces} />
-            </motion.svg>
-            <div className="dice-result num mt-1 font-display text-[34px] font-bold" data-dice-result>{rolling ? flicker : last ? last.total : "—"}</div>
-            <div className="text-[12px] text-[#a6947c]">{rolling ? "Rolando…" : last ? last.label : "Escolha o dado e role"}</div>
+          <div className="grid place-items-center rounded-[10px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] py-1.5">
+            <div className="relative grid h-[64px] w-[64px] place-items-center">
+              {DIE_IMAGE[focus] && (
+                <motion.img
+                  key={`img-${spin}-${focus}`}
+                  className="mx-exp mx-die"
+                  src={DIE_IMAGE[focus]}
+                  alt=""
+                  draggable={false}
+                  style={{ transformPerspective: 520, width: 64, height: 64 }}
+                  initial={false}
+                  animate={spin
+                    ? { rotateX: [0, 540, 1080 + tilt.x], rotateY: [0, 720, 1440 + tilt.y], rotateZ: [0, 200, 360 + tilt.z], scale: [0.85, 1.18, 1] }
+                    : { rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1 }}
+                  transition={{ duration: ROLL_MS / 1000, ease: [0.2, 0.7, 0.3, 1] }}
+                />
+              )}
+              <motion.svg
+                key={spin}
+                className={DIE_IMAGE[focus] ? "mx-min" : undefined}
+                viewBox="0 0 64 64"
+                width="64"
+                height="64"
+                initial={spin ? { rotate: -200, scale: 0.7 } : false}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                style={{ filter: "drop-shadow(0 0 10px rgba(232,44,54,0.75))" }}
+                aria-hidden="true"
+              >
+                <DieShape faces={focus} label={focus === 100 ? "%" : focus} />
+              </motion.svg>
+            </div>
+            <div className="dice-result num font-display text-[28px] font-bold leading-tight" data-dice-result>{rolling ? flicker : last ? last.total : "—"}</div>
+            <div className="min-h-[16px] px-1 text-center text-[12px] text-[#a6947c]" data-dice-detail>
+              {rolling ? "Rolando…" : last
+                ? <>{last.groups.map((group, i) => <Brackets key={i} values={group.values} />)}{last.mod ? <span className="num">{last.mod > 0 ? "+" : ""}{last.mod}</span> : null}</>
+                : "Escolha os dados e role"}
+            </div>
           </div>
 
-          <div>
-            <div className="micro mb-1.5 text-[#c9a25e]">DADOS DISPONÍVEIS</div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {DICE.map((die) => (
+          <div className="grid grid-cols-4 gap-1.5">
+            {DICE.map((die) => {
+              const n = pool[die.faces] ?? 0;
+              return (
                 <button
                   key={die.label}
                   type="button"
-                  onClick={() => setFaces(die.faces)}
-                  aria-pressed={faces === die.faces}
+                  onClick={() => add(die.faces, 1)}
+                  onContextMenu={(event) => { event.preventDefault(); add(die.faces, -1); }}
+                  aria-label={`${die.label}${n ? ` (${n})` : ""}`}
+                  title="Clique soma um dado; botão direito tira"
+                  data-die-button={die.faces}
                   className={cx(
-                    "dice-pick font-display h-11 rounded-[9px] border text-[14px] font-bold transition-colors",
-                    faces === die.faces
-                      ? "border-[#e0574f]/80 bg-[#5a1418]/70 text-[color:var(--mx-ffe9d6)] shadow-[0_0_12px_rgba(224,87,79,0.3)]"
-                      : "border-[#7a5227]/55 bg-[color:var(--mx-150e0a)] text-[color:var(--mx-e3d3b6)] hover:border-[#d9a94c]/80 hover:bg-[color:var(--mx-221609)]",
+                    "dice-pick relative mx-auto grid h-9 w-9 place-items-center rounded-full border transition-colors",
+                    n ? "border-[#e0574f]/80 bg-[#5a1418]/70 shadow-[0_0_10px_rgba(224,87,79,0.3)]" : "border-[#7a5227]/55 bg-[color:var(--mx-150e0a)] hover:border-[#d9a94c]/80",
                   )}
                 >
-                  {die.label}
+                  <MiniDie faces={die.faces} size={22} />
+                  <span className="num font-display pointer-events-none absolute text-[8px] font-bold text-[#f2d68f]" style={{ top: "56%" }}>{die.faces === 100 ? "%" : die.faces}</span>
+                  {n > 0 && <span className="num absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#c2202b] px-1 text-[10px] font-bold text-white" data-die-count>{n}</span>}
                 </button>
-              ))}
-            </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-1">
+            {DELTAS.map((delta) => (
+              <button
+                key={delta}
+                type="button"
+                onClick={() => setModifier(String(mod + delta))}
+                className="h-7 min-w-0 flex-1 rounded-full border border-[#7a5227]/55 bg-[color:var(--mx-150e0a)] text-[11px] font-semibold text-[color:var(--mx-e3d3b6)] transition-colors hover:border-[#d9a94c]/80"
+              >
+                {delta > 0 ? `+${delta}` : delta}
+              </button>
+            ))}
+            <input
+              value={modifier}
+              onChange={(event) => setModifier(event.target.value)}
+              onFocus={(event) => event.currentTarget.select()}
+              inputMode="numeric"
+              aria-label="Modificador"
+              className="num h-7 w-[44px] shrink-0 rounded-full border border-[#7a5227]/55 bg-[color:var(--mx-100b09)] text-center text-[12px] font-semibold text-[color:var(--mx-f4e8ce)] outline-none focus:border-[#d9a94c]"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => { setPool({}); setModifier("0"); }}
+              aria-label="Limpar dados e modificador"
+              title="Limpar"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#7a5227]/55 bg-[color:var(--mx-150e0a)] text-[color:var(--mx-c9b295)] hover:border-[#d9a94c]/80"
+            >
+              <X size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={roll}
+              disabled={!picked.length}
+              data-dice-roll
+              className="dice-roll font-display flex h-8 min-w-0 flex-1 items-center justify-center rounded-full border border-[#e0574f]/80 px-2 text-[13px] font-bold tracking-[0.08em] text-[color:var(--mx-ffe9d6)] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              style={{ background: "linear-gradient(180deg,rgba(194,32,43,0.9),rgba(120,16,22,0.85))", boxShadow: "0 0 12px rgba(224,87,79,0.28), inset 0 1px 0 rgba(255,180,160,0.22)" }}
+            >
+              <span className="truncate">ROLAR{poolText ? ` ${poolText}${modText}` : ""}</span>
+            </button>
           </div>
 
           <div>
-            <div className="micro mb-1.5 text-[#c9a25e]">MODIFICADOR</div>
-            <div className="flex items-center gap-1.5">
-              {DELTAS.map((delta) => (
-                <button
-                  key={delta}
-                  type="button"
-                  onClick={() => setModifier(String(mod + delta))}
-                  className="h-9 min-w-0 flex-1 rounded-[8px] border border-[#7a5227]/55 bg-[color:var(--mx-150e0a)] text-[12.5px] font-semibold text-[color:var(--mx-e3d3b6)] transition-colors hover:border-[#d9a94c]/80 hover:bg-[color:var(--mx-221609)]"
-                >
-                  {delta > 0 ? `+${delta}` : delta}
-                </button>
-              ))}
-              <input
-                value={modifier}
-                onChange={(event) => setModifier(event.target.value)}
-                onFocus={(event) => event.currentTarget.select()}
-                inputMode="numeric"
-                aria-label="Modificador"
-                className="num h-9 w-[58px] shrink-0 rounded-[8px] border border-[#7a5227]/55 bg-[color:var(--mx-100b09)] text-center text-[14px] font-semibold text-[color:var(--mx-f4e8ce)] outline-none focus:border-[#d9a94c]"
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={roll}
-            className="dice-roll font-display flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[#e0574f]/80 text-[15px] font-bold tracking-[0.1em] text-[color:var(--mx-ffe9d6)] transition-transform hover:-translate-y-0.5"
-            style={{ background: "linear-gradient(180deg,rgba(194,32,43,0.9),rgba(120,16,22,0.85))", boxShadow: "0 0 16px rgba(224,87,79,0.28), inset 0 1px 0 rgba(255,180,160,0.22)" }}
-          >
-            ROLAR {faceName}{mod ? ` ${mod > 0 ? "+" : ""}${mod}` : ""}
-          </button>
-
-          <div>
-            <div className="micro mb-1.5 text-[#c9a25e]">HISTÓRICO RECENTE</div>
-            <div className="rounded-[10px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] px-2 py-1">
+            <div className="micro mb-1 text-[#c9a25e]">HISTÓRICO</div>
+            <div className="rounded-[10px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] px-1.5 py-0.5">
               {rolls.length === 0 && <div className="px-1 py-3 text-center text-[12px] text-[#a6947c]">Nenhuma rolagem ainda.</div>}
-              {rolls.slice(0, 7).map((entry) => (
-                <div key={entry.id} className="flex items-center gap-2 border-b border-[#7a5227]/25 px-1 py-1.5 text-[12.5px] last:border-b-0">
-                  <span className="min-w-0 flex-1 truncate text-[color:var(--mx-ddd0b6)]" title={`${entry.action} · ${entry.formula}`}>{entry.kind === "system" || entry.kind === "save" ? `${entry.action} · ` : ""}{entry.formula}</span>
-                  <span className="dice-total num w-9 shrink-0 text-right text-[15px] font-bold">{entry.total}</span>
-                  <span className="num w-[78px] shrink-0 text-right text-[10.5px] text-[#a6947c]">{formatRollTime(entry.timestamp)}</span>
-                </div>
-              ))}
+              {rolls.slice(0, 7).map((entry) => {
+                const groups = rollGroups(entry.formula, entry.rolls);
+                const extra = /^Rolagem/.test(entry.action) ? "" : entry.action;
+                return (
+                  <div key={entry.id} className="flex items-center gap-2 border-b border-[#7a5227]/25 px-1 py-1.5 text-[12px] last:border-b-0" data-dice-entry>
+                    <div className="min-w-0 flex-1">
+                      {extra && <div className="truncate text-[10.5px] text-[#a6947c]" title={extra}>{extra}</div>}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        {groups.map((group, i) => (
+                          <span key={i} className="inline-flex items-center gap-1">
+                            {group.faces && <MiniDie faces={group.faces} size={16} />}
+                            <Brackets values={group.values} />
+                          </span>
+                        ))}
+                        {entry.modifier ? <span className="num text-[color:var(--mx-ddd0b6)]">{entry.modifier > 0 ? "+" : ""}{entry.modifier}</span> : null}
+                      </div>
+                      <div className="num truncate text-[10px] text-[#a6947c]">{entry.formula} · {formatRollTime(entry.timestamp)}</div>
+                    </div>
+                    <span className="dice-total num shrink-0 text-right text-[20px] font-bold leading-none" data-dice-total>{entry.total}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

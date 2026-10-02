@@ -148,7 +148,7 @@ export function legacyFichaToDraft(o: Any): PdfDraft {
   for (const c of Array.isArray(o.classAbilities) ? (o.classAbilities as Any[]) : []) add("Classe", c);
   if (powers.length) draft.powers = powers;
 
-  draft.notes = [text(o.notes), text(o.notesCampanha), text(o.notesOutros), text(o.extras?.profs) ? `Proficiências: ${String(o.extras.profs).trim()}` : undefined].filter(Boolean).join("\n\n") || undefined;
+  draft.notes = [text(o.playerName) ? `Jogador: ${String(o.playerName).trim()}` : undefined, text(o.notes), text(o.notesCampanha), text(o.notesOutros), text(o.extras?.profs) ? `Proficiências: ${String(o.extras.profs).trim()}` : undefined].filter(Boolean).join("\n\n") || undefined;
   return draft;
 }
 

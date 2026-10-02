@@ -225,8 +225,10 @@ describe("Mesa Online", () => {
     expect(token).toBeTruthy();
     selectToken(token!.id);
     await act(async () => node.querySelector<HTMLElement>('[title="Rolar Acrobacia"]')!.click());
-    expect(node.textContent).toContain("HISTÓRICO RECENTE");
-    expect(node.textContent).toMatch(/Acrobacia · 1d20[+-]\d+/);
+    expect(node.textContent).toContain("HISTÓRICO");
+    expect(node.textContent).toContain("Acrobacia");
+    expect(node.textContent).toMatch(/1d20[+-]\d+/);
+    expect(node.querySelector("[data-dice-entry]")?.textContent).toMatch(/\[\d+\]/);
   });
 });
 

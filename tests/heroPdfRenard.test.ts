@@ -90,3 +90,12 @@ describe("poderes de raça e de origem do campo 'Habilidades de Raça e Origem'"
     expect(powersOf("Lágrima", lagrima)).toContain("Redirecionar Destino");
   });
 });
+
+describe("poderes dos campos Poder1..N valem mesmo com a lista escrita em 'Poderes'", () => {
+  it("Astolfo: ginete, Estilo esotérico e matador de monstros (Poder4, Poder5, Poder6) entram na ficha", () => {
+    const names = (heroJsonToDraft({ personagem: { nome: "Astolfo" }, campos_originais_pdf: astolfo }).powers ?? []).map((p) => p.name.toLowerCase());
+    expect(names.some((n) => /ginete/.test(n))).toBe(true);
+    expect(names.some((n) => /esot[eé]rico/.test(n))).toBe(true);
+    expect(names.some((n) => /matador de monstros/.test(n))).toBe(true);
+  });
+});

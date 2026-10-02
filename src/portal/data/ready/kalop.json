@@ -152,7 +152,7 @@
  },
  "attacks": [
   {
-   "id": "atk-mur6qjs2-epo7o",
+   "id": "atk-mur9p7na-l4k93",
    "name": "Corrente de espinhos",
    "skill": "Luta",
    "damage": "2d4",
@@ -161,7 +161,7 @@
    "damageType": ""
   },
   {
-   "id": "atk-mur6qjs3-qig2p",
+   "id": "atk-mur9p7nb-z8q1s",
    "name": "Cauda",
    "skill": "Luta",
    "damage": "—",
@@ -169,7 +169,7 @@
    "damageType": ""
   },
   {
-   "id": "atk-mur6qjs3-hnvhe",
+   "id": "atk-mur9p7nb-lz5o8",
    "name": "Asas",
    "skill": "Luta",
    "damage": "—",
@@ -224,7 +224,7 @@
  ],
  "powers": [
   {
-   "id": "pw-mur6qjs7-agc8t",
+   "id": "pw-mur9p7nf-rudzy",
    "name": "Origem: Nativo de midgard",
    "type": "Raça",
    "description": ""
@@ -306,7 +306,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur6qjt9-x0dzv",
+   "id": "pw-mur9p7o3-2kaac",
    "name": "Voto da probleza(homebrews)",
    "type": "Classe",
    "description": "Nao posso acumular mais de 1000 tibares em pertences e ganho o dobro de beneficios de alimentos"
@@ -340,7 +340,7 @@
  "money": 644.5,
  "equipment": [
   {
-   "id": "eq-mur6qjrd-tumbt",
+   "id": "eq-mur9p7mv-7j11k",
    "equipped": true,
    "name": "Gibão de peles",
    "quantity": 1,
@@ -352,7 +352,7 @@
    "armorPenalty": -3
   },
   {
-   "id": "eq-mur6qjro-5s7ws",
+   "id": "eq-mur9p7n4-dnsd2",
    "equipped": false,
    "name": "Escudo vime(comprado ambos por (30)",
    "quantity": 2,
@@ -362,7 +362,7 @@
    "category": "Item Geral"
   },
   {
-   "id": "eq-mur6qjs2-02q5l",
+   "id": "eq-mur9p7na-55vyl",
    "equipped": false,
    "name": "Corrente de espinhos comprado por 35 tibares",
    "quantity": 1,
@@ -374,9 +374,9 @@
  ],
  "languages": "Comum",
  "xp": 3000,
- "notes": "Herói do playtest (importado do JSON da ficha de origem).",
- "createdAt": "2026-10-02T16:36:23.384Z",
- "updatedAt": "2026-10-02T16:36:23.389Z",
+ "notes": "Herói do playtest (importado do JSON da ficha de origem).\n\nJogador: Napoleão Bonaparte\n\nKalop sita é um mulher que Cresceu em um plano espiritual chamado midgard criado por um mago louco de vestes brancas e detalhes dourados poderoso e devoto de azgher.\n\nNesse plano, o mago aparecia em tempos e tempos para cuidar como um diretor do campo de concentração que é usado pelos professores que são determinados por ele que são todos nativos do plano. Esses professores lecionavam as crianças daquele plano com o intuito de as treinar em diversos meio para as tornarem devotas das classes que melhor definiam elas. A Kalop foi escolhida como uma paladina, uma das melhores classes segundo eles.\n\nDepois de anos de aprendizado eles entram na chamada \"Grande aprovação\" onde são treinados em caçar criaturas malignas que apareciam em Midgard.\n\nKalop e diversos outros que a acomphava, passaram nesse teste, ao custo da vida de um dos grandes amigos dela. No fim da aprovação todos foram premiados com uma medalha feita de ouro puro, um feito do grande conflito entre azgher e a malvada tenebra o que era um dos itens mais incríveis que eles podiam ganhar ali devido ao seu valor simbólico e então, aqueles que sucederam foram mandados em uma missão, cada um foram peregrinar cada lugar de arton sozinhos e só com alguns itens básicos.\n\nKalop, caiu próximo de Vectoria o que a levou a se inscrever na guilda e a se tornar uma aventureira⅝\n\nDois arcos longos vendidos por 100 tibares\n2 escudos leves vendidos por 5 tibares\n1 besta leve vendida por 17.5 tibares\n\nSe eu tiver apenas menos tibares que o esperado tudo bem.\n\nProficiências: Marciais, escudos e armaduras pesadas, exoticas",
+ "createdAt": "2026-10-02T17:59:19.834Z",
+ "updatedAt": "2026-10-02T17:59:19.837Z",
  "origin": "Nativo de midgard",
  "deity": "Azgher",
  "avatar": "/herois/kalop-token.webp"

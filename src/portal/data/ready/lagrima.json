@@ -210,13 +210,13 @@
    "cost": 3
   },
   {
-   "id": "pw-mur6qjnf-rhjtv",
+   "id": "pw-mur9p7jn-pzbck",
    "name": "Caminho do arcanista: Feiticeiro abençoado",
    "type": "Classe",
    "description": ""
   },
   {
-   "id": "pw-mur6qjo3-2u0uc",
+   "id": "pw-mur9p7k9-ffs4b",
    "name": "Familiar rato",
    "type": "Classe",
    "description": ""
@@ -230,7 +230,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur6qjp1-tvlsn",
+   "id": "pw-mur9p7l4-o5cen",
    "name": "Aumento de atributo+1 sab",
    "type": "Classe",
    "description": ""
@@ -385,7 +385,7 @@
  ],
  "languages": "Comum",
  "xp": 3000,
- "notes": "Herói do playtest (importado de m.pdf).",
+ "notes": "Herói do playtest (importado de m.pdf).\n\nClasse: Arcanista ( Feiticeiro abençoada)\n\n— Habilidades de Raça e Origem —\n==================Racial=================\n\n - Atributos: 2 sab 1 car, -1 for\n\n - Poderes:\nEssência Feérica\nMagia Instintiva.\nCanção da Melancolia\nSentidos Místicos.\n\n\n\n==================Origem================\n\n - Poderes:  +1 int \n\n - Itens: essência de mana, mochila de aventureiros \n\n\n\n===============Desvantagem==============\n\n - Idade: 120  anos. Maduro\n\n - corvade: magia ilimitada \n\n - temioso, sono ruim: magia discreta \n\n========================================\n\n— Anotações —\n=========================Pontos-Entre-Aventuras==========================\n\n - Missões Narradas: 0\n\n - Missões Jogadas: 0\n\n - PeA Gastos: 0\n\n - PeA Totais: 0\n\n\n\n=========================Obrigações-&-Restrições=========================\n\n - \n\n\n\n=====================================================================",
  "createdAt": "2026-10-02T15:17:16.303Z",
  "updatedAt": "2026-10-02T15:17:16.304Z",
  "origin": "Aspirante a herói",

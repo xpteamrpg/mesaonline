@@ -348,9 +348,10 @@ export function parseHeroForm(fields: Record<string, string>, draft: PdfDraft) {
   };
   const listed = powersFromText(f.get("Poderes") ?? "");
   for (const p of listed) addPower(p.tag, p.name);
-  if (!listed.length) {
-    for (const [field, tag] of [["PoderConcedido1", "Concedido"], ["Poder1", "Classe"], ["Poder2", "Classe"], ["Poder3", "Classe"]] as const) {
-      for (const part of (f.get(field) ?? "").split(/[,;]/)) if (part.trim()) addPower(tag, part.replace(/>>.*$/, "").trim());
+  // Os campos de poder do formulário (Poder1..12, PoderConcedido1..12) entram sempre, junto com a lista escrita em "Poderes"; poder repetido não duplica.
+  for (let n = 1; n <= 12; n += 1) {
+    for (const [prefix, tag] of [["PoderConcedido", "Concedido"], ["Poder", "Classe"]] as const) {
+      for (const part of (f.get(`${prefix}${n}`) ?? "").split(/[,;]/)) if (part.trim()) addPower(tag, part.replace(/>>.*$/, "").trim());
     }
   }
   // Poderes de raça e de origem anotados à parte (o que a raça já dá de graça não é repetido).

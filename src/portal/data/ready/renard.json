@@ -210,7 +210,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur6qjbu-jo4rl",
+   "id": "pw-mur9p79p-674xa",
    "name": "Magias 1°",
    "type": "Classe",
    "description": ""
@@ -224,7 +224,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur6qjcm-9alvc",
+   "id": "pw-mur9p7ah-r8l9e",
    "name": "Aumento de atributo - car",
    "type": "Classe",
    "description": ""
@@ -430,7 +430,7 @@
  ],
  "languages": "Comum",
  "xp": 3000,
- "notes": "Herói do playtest (importado de renard.pdf).",
+ "notes": "Herói do playtest (importado de renard.pdf).\n\n— Habilidades de Raça e Origem —\n==================Racial================\r\n• Atributos: +2 des, +1 int\r\n• Visão: escuro\r\n• Poderes: criança das trevas, herança divina, sombras profanas\r\n================Origem=================\r\n• Poderes: usurpar \r\n• Itens: essencia de mana\r\n==========Desvantagem e  Idade============\r\n• Idade: 18\r\n• Desvantagem:  matugo\r\n• Desvantagem de Idade: ----\r\n• Poderes: vitalidade\n\n— Anotações —\nmatugo: minha recuperação de PV e PM são uma categoria menor em cidades\r\n\r\ncapa esvoaçante e mascara completa ambas concedem +1 de enganação\r\n\r\ntomo de guerra: +1PM para gastar em aprimoramentos em magias de evocação\n\n— Missões —\nRegistre aqui as missões que participar\r• Missões Bem-Sucedidas\rExemplo: • Missão: Nome | Recompensa xxxxExp e T$ xxxx | +xx% • Status: Sucesso\r• Missões Falhas",
  "createdAt": "2026-10-02T15:17:00.666Z",
  "updatedAt": "2026-10-02T15:17:00.668Z",
  "origin": "Duplo feerico",

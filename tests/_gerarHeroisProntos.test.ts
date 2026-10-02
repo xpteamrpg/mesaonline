@@ -42,7 +42,7 @@ it.runIf(process.env.GERAR_HEROIS === "1")("gera os heróis prontos", () => {
     else sheet.class = "Arcanista";
     const path = classExtra || (/^arcanista$/i.test(classText) ? "" : classText);
     if (path) sheet.path = cap(path);
-    sheet.notes = [`Herói do playtest (importado de ${h.pdf}.pdf).`, sheet.notes && !/^Importado de/.test(sheet.notes) ? sheet.notes : ""].filter(Boolean).join("\n\n");
+    sheet.notes = [`Herói do playtest (importado de ${h.pdf}.pdf).`, String(sheet.notes ?? "").replace(/^Importado de[^\n]*\n*/, "").trim()].filter(Boolean).join("\n\n");
     if (h.variant) {
       // Raça com herança obrigatória: a opção "base" (Manual básico) dá as habilidades da raça básica (ex.: Sombras Profanas da Sulfure).
       sheet.raceVariantId = h.variant;
@@ -75,7 +75,7 @@ it.runIf(process.env.GERAR_HEROIS === "1")("gera os heróis prontos", () => {
     sheet.campaign = "Campanha livre";
     sheet.avatar = "/herois/kalop-token.webp";
     delete sheet.avatarPos;
-    sheet.notes = ["Herói do playtest (importado do JSON da ficha de origem).", sheet.notes && !/^Importado de/.test(sheet.notes) ? sheet.notes : ""].filter(Boolean).join("\n\n");
+    sheet.notes = ["Herói do playtest (importado do JSON da ficha de origem).", String(sheet.notes ?? "").replace(/^Importado de[^\n]*\n*/, "").trim()].filter(Boolean).join("\n\n");
     fs.writeFileSync("src/portal/data/ready/kalop.json", JSON.stringify(sheet, null, 1));
     report.push(`\n=== ${sheet.name} (JSON da ficha de origem) ===`);
     report.push(`raça/classe/nível: ${sheet.race} (${sheet.raceId}) | ${sheet.class} (${sheet.classId}) | nv ${sheet.level} | origem ${sheet.origin} | divindade ${sheet.deity}`);

@@ -203,7 +203,7 @@
  ],
  "powers": [
   {
-   "id": "pw-mur6qjgo-9h6g9",
+   "id": "pw-mur9p7dw-zrehg",
    "name": "Caminho do arcanista:sentinela",
    "type": "Classe",
    "description": ""
@@ -233,7 +233,7 @@
    "cost": null
   },
   {
-   "id": "pw-mur6qjiz-xp17u",
+   "id": "pw-mur9p7f7-rxtne",
    "name": "Poderes de Arcanista: Estilo de arma longa",
    "type": "Classe",
    "description": ""
@@ -245,6 +245,30 @@
    "description": "Uma vez por rodada, se inimigo entrar voluntariamente no alcance da sua arma alongada: gaste 1 PM para atacá-lo. Se for investida, causa +2 dados de dano.",
    "requirement": "Estilo de Arma Longa",
    "cost": 1
+  },
+  {
+   "id": "combat-geral-ginete",
+   "name": "Ginete",
+   "type": "Combate",
+   "description": "Passa automaticamente em testes de Cavalgar para não cair por dano. Não sofre penalidade para atacar à distância ou lançar magia montado.",
+   "requirement": "Treinado em Cavalgar",
+   "cost": null
+  },
+  {
+   "id": "magic-geral-estilo-esoterico",
+   "name": "Estilo Esotérico",
+   "type": "Magia",
+   "description": "1 vez/rodada, ao agresrir corpo a corpo empunhando esotérico: gaste 2 PM para lançar magia (padrão/mov/completa) como livre.",
+   "requirement": "Treinado em Luta e Misticismo, 5º nível",
+   "cost": 2
+  },
+  {
+   "id": "combat-geral-matador-de-monstros",
+   "name": "Matador de Monstros",
+   "type": "Combate",
+   "description": "Recebe +1d10 dano contra criaturas Grandes ou maiores. Elas não recebem bônus de tamanho em manobras contra você.",
+   "requirement": "5º nível de personagem",
+   "cost": null
   },
   {
    "id": "raca-sereia-tritao-pirata-oceanico",
@@ -537,7 +561,7 @@
  ],
  "languages": "Comum",
  "xp": 15280,
- "notes": "Herói do playtest (importado de astolfo.pdf).",
+ "notes": "Herói do playtest (importado de astolfo.pdf).\n\nClasse: Arcanista(Sentinela)\n\n— Habilidades de Raça e Origem —\n==================Racial=================\r\n - Atributos:+1 em sabedoria, inteligência, constituição \r\n - habilidades: Mestre do tridente, Transformação anfibia, canção dos mares:Despedaçar, amendrontar\r\npoderes:Pirata oceanico\r\n==================Origem================\r\n - Poderes: Engenhosidade\r\n - Itens: Essencia de mana\r\n\r\n===============Desvantagem==============\r\n - Idade: ?? anos.\r\n - Rabugento\r\n - mouco\r\n========================================\n\n— Anotações —\n=========================Pontos-Entre-Aventuras==========================\r\n - Missões Narradas: 0\r\n - Missões Jogadas: 3\r\n - PeA Gastos: 0\r\n - PeA Totais: 5\r\n\r\n=========================Obrigações-&-Restrições=========================\r\n - \r\n\r\n=====================================================================",
  "createdAt": "2026-10-02T15:17:08.304Z",
  "updatedAt": "2026-10-02T15:17:08.305Z",
  "origin": "Duplo feerico",
