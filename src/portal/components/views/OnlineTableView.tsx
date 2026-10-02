@@ -58,7 +58,7 @@ function emptyTable(input: Partial<TableEntry> & { name: string }): TableEntry {
 }
 
 const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) => {
-  const { user } = useAuth();
+  const { user, requireLogin } = useAuth();
   const [form, setForm] = useState(emptyForm);
   const [created, setCreated] = useState<TableEntry | null>(null);
   const [kind, setKind] = useState<"campanha" | "oneshot">("oneshot");
@@ -68,6 +68,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
 
   const submit = () => {
     setError("");
+    if (!requireLogin("Para criar uma mesa você precisa estar logado.")) return;
     if (!form.name.trim()) { setError("Nome da mesa é obrigatório."); return; }
     setBusy(true);
     const payload = { ...form, kind, gmName: form.gmName || user?.email || "", seatsTotal: Number(form.seatsTotal) || 1, priceValue: Number(form.priceValue) || 0 };
@@ -99,7 +100,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
         <p className="mt-2 text-xs leading-5 text-[#726859]">Compartilhe o código ou o link abaixo com quem você quiser convidar.</p>
         <div className="mt-3 rounded border border-[#ded7c6] bg-[#fbf9f4] p-3 text-center"><div className="text-[10px] font-black uppercase text-[#726859]">Código</div><div className="font-mono text-2xl font-black tracking-widest text-[#b92b3a]">{created.code}</div></div>
         <button onClick={() => navigator.clipboard?.writeText(`${window.location.origin}${window.location.pathname}#/mesa-online?codigo=${created.code}`)} className="mt-2 w-full rounded border border-[#ded7c6] bg-white py-2 text-xs font-bold text-[#726859] hover:bg-[#eae4d5]">📋 Copiar link de convite</button>
-        <button onClick={() => openMesa({ name: created.name, host: created.liveRoomCode || created.code })} className="mt-2 w-full rounded bg-[#b92b3a] py-3 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">🎲 Entrar na mesa online agora</button>
+        <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: created.name, host: created.liveRoomCode || created.code }); }} className="mt-2 w-full rounded bg-[#b92b3a] py-3 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">🎲 Entrar na mesa online agora</button>
         {notice && <p className="mt-3 rounded border border-[#e0c98c] bg-[#fff8e6] p-2 text-[11px] leading-4 text-[#7a5a14]">{notice}</p>}
         <button onClick={() => { setCreated(null); setNotice(""); }} className="mt-4 w-full text-center text-[11px] font-bold text-[#726859] hover:text-[#b92b3a]">← Criar outra mesa</button>
       </div>
@@ -137,6 +138,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
 };
 
 const JoinPrivateTable: React.FC = () => {
+  const { requireLogin } = useAuth();
   const [code, setCode] = useState(() => new URLSearchParams(window.location.hash.split("?")[1] || "").get("codigo") ?? "");
   const [found, setFound] = useState<TableEntry | null>(null);
   const [error, setError] = useState("");
@@ -145,6 +147,7 @@ const JoinPrivateTable: React.FC = () => {
   const submit = () => {
     setError(""); setFound(null);
     if (!code.trim()) return;
+    if (!requireLogin("Para entrar numa mesa você precisa estar logado.")) return;
     setBusy(true);
     const typed = extractCode(code);
     getTableByCode(typed)
@@ -166,7 +169,7 @@ const JoinPrivateTable: React.FC = () => {
           <div className="mt-1 text-white/70">{[found.system, found.modality, found.schedule].filter(Boolean).join(" · ")}</div>
           {found.gmName && <div className="text-white/70">Mestre: {found.gmName}</div>}
           <div className="mt-1 text-white/70">Vagas: {found.seatsFilled}/{found.seatsTotal}</div>
-          <button onClick={() => openMesa({ name: found.name, sala: found.liveRoomCode || found.code })} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white">🎲 Entrar na mesa</button>
+          <button onClick={() => { if (requireLogin("Para entrar numa mesa você precisa estar logado.")) openMesa({ name: found.name, sala: found.liveRoomCode || found.code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white">🎲 Entrar na mesa</button>
         </div>
       )}
     </div>
@@ -175,6 +178,7 @@ const JoinPrivateTable: React.FC = () => {
 
 /** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
 const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry }> = ({ link, fresh }) => {
+  const { requireLogin } = useAuth();
   const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
   const code = link.liveRoomCode || fresh?.liveRoomCode || link.code;
   return (
@@ -194,7 +198,7 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry }> = ({ link
           <span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest text-[#2b261f]">{code}</b>
           <button onClick={() => navigator.clipboard?.writeText(code)} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]">Copiar</button>
         </div>
-        <button onClick={() => openMesa({ name: link.name, host: code })} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
+        <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: link.name, host: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
       </div>
     </div>
   );
@@ -202,6 +206,7 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry }> = ({ link
 
 /** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
 const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void }> = ({ kind, title, campaigns = [], onManage }) => {
+  const { requireLogin } = useAuth();
   const [links] = useState<MyTableLink[]>(getMyTables());
   const [fresh, setFresh] = useState<Record<string, TableEntry>>({});
   useEffect(() => {
@@ -233,7 +238,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
                     <span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest text-[#2b261f]">{code}</b>
                     <button onClick={() => navigator.clipboard?.writeText(code)} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]">Copiar</button>
                   </div>
-                  <button onClick={() => openMesa({ name: c.name, host: code })} className="mt-3 w-full rounded bg-[#1c5fb5] py-2 text-xs font-black uppercase text-white">Entrar na mesa online</button>
+                  <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: c.name, host: code }); }} className="mt-3 w-full rounded bg-[#1c5fb5] py-2 text-xs font-black uppercase text-white">Entrar na mesa online</button>
                 </div>
               </div>
             );
@@ -269,6 +274,7 @@ export function campaignRoomCode(id: string): string {
 }
 
 export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; onManageCampaigns?: () => void }> = ({ campaigns = [], onManageCampaigns }) => {
+  const { requireLogin } = useAuth();
   const [tables, setTables] = useState<TableEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -331,7 +337,7 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; onManageC
                   <div className="mt-2 flex items-center justify-between text-[11px]"><span className="font-bold text-[#2b8a3e]">{t.priceType === "paga" ? `R$ ${t.priceValue.toFixed(2)}` : "Gratuita"}</span><span className="text-[#726859]">{t.seatsFilled}/{t.seatsTotal} vagas</span></div>
                   <div className="mt-2"><StarRating table={t} onRated={() => load(page, false)} /></div>
                   {t.contactInfo && <div className="mt-1 text-[10px] text-[#1c7ed6]">Contato: {t.contactInfo}</div>}
-                  <button onClick={() => openMesa({ name: t.name, sala: t.liveRoomCode || t.code })} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa</button>
+                  <button onClick={() => { if (requireLogin("Para entrar numa mesa você precisa estar logado.")) openMesa({ name: t.name, sala: t.liveRoomCode || t.code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa</button>
                 </div>
               </div>
             ))}

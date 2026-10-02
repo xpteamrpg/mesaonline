@@ -29,7 +29,7 @@ export const HomeView: React.FC<{ onNavigate: (view: View) => void; characters: 
               <>
                 <div className="mt-2 font-serif text-xl font-black">Entre para ver o seu espaço</div>
                 <div className="mt-1 text-xs text-white/70">Seus personagens e campanhas ficam guardados na sua conta, visíveis só para você.</div>
-                <button onClick={openAuthModal} className="mt-3 rounded bg-[#b92b3a] px-4 py-2 text-xs font-black uppercase text-white">Entrar ou criar conta</button>
+                <button onClick={() => openAuthModal()} className="mt-3 rounded bg-[#b92b3a] px-4 py-2 text-xs font-black uppercase text-white">Entrar ou criar conta</button>
               </>
             ) : (
               <>

@@ -100,10 +100,10 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
           <div className="relative">
             {user ? (
               <button onClick={() => { setAcctMenu((v) => !v); setCharMenu(false); setMenuOpen(false); }} className="flex items-center gap-1.5 rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-xs font-bold text-[#726859]">
-                <span className="max-w-[110px] truncate">👤 {user.email}</span> <span className="text-[9px]">▼</span>
+                <span className="max-w-[110px] truncate">👤 {user.nickname || user.email}</span> <span className="text-[9px]">▼</span>
               </button>
             ) : (
-              <button onClick={openAuthModal} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-xs font-bold text-[#726859]">Entrar</button>
+              <button onClick={() => openAuthModal()} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-xs font-bold text-[#726859]">Entrar</button>
             )}
             {acctMenu && user && (
               <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded border border-[#ded7c6] bg-white p-2 shadow-2xl">

@@ -6,6 +6,10 @@
 export interface AuthUser {
   id: string;
   email: string;
+  /** apelido escolhido ao criar a conta */
+  nickname?: string;
+  /** e-mail já confirmado */
+  confirmed?: boolean;
 }
 
 export interface SharedCampaign {
