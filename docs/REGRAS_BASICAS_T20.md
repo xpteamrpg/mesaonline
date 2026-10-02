@@ -3,7 +3,7 @@
 Fonte: o PDF `regrasbasicas.pdf` (livro básico, cap. 5 "Jogando", págs. 214–239, passado pelo usuário em 02/10/2026) e o texto do capítulo de Magia (págs. 170–173) colado pelo usuário. O PDF é imagem (sem texto) e pesa 39 MB; ele fica fora do Git. Esta página guarda só o que o código usa. Regra do projeto: regra de T20 só com fonte; o que for convenção nossa fica dito como tal.
 
 ## Habilidades (pág. 224)
-- Custo variável: o máximo de PM gasto por uso é o **nível** na classe que dá a habilidade (para raça, origem e itens, o nível do personagem). O livro não soma o atributo-chave a esse limite (o atributo-chave afeta o total de PM e a CD). *O usuário citou "nível + atributo"; não confere com esta página — pendente de conferência.*
+- Custo variável: o máximo de PM gasto por uso é o **nível** na classe que dá a habilidade (para raça, origem e itens, o nível do personagem). Regra do usuário (02/10): vale o nível da classe que dá o poder de magia; só soma o atributo de conjuração quando o personagem tem um poder/talento que diz isso (ainda não implementado: o código usa só o nível).
 - Alcance: pessoal, toque, curto (9 m = 6 quadrados), médio (30 m = 20), longo (90 m = 60), ilimitado.
 - A habilidade gasta os PM mesmo se falhar.
 
@@ -20,7 +20,7 @@ Fonte: o PDF `regrasbasicas.pdf` (livro básico, cap. 5 "Jogando", págs. 214–
 - Crítico: multiplica os dados de dano; bônus numéricos (e dados extras, como ataque furtivo) não são multiplicados.
 
 ## Duração (pág. 227)
-Instantânea, cena, sustentada (1 PM por turno, ação livre), definida (rodadas, horas, dias), permanente, descarregar. Efeito de duração em rodadas termina imediatamente antes da iniciativa do mesmo resultado, depois do número de rodadas (pág. 233).
+Instantânea, cena, sustentada (1 PM por turno, ação livre), definida (rodadas e dias; horas só em Controlar o Tempo, segundo o usuário), permanente, descarregar. Efeito de duração em rodadas termina imediatamente antes da iniciativa do mesmo resultado, depois do número de rodadas (pág. 233).
 Teste de resistência: CD = 10 + metade do nível + atributo-chave. Anula, parcial (efeito menor em quem passa), reduz à metade.
 
 ## Magia (págs. 170–173)

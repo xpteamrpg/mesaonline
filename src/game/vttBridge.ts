@@ -681,7 +681,7 @@ export function startCombat(): CombatState {
   BOARD = {
     ...BOARD,
     tokens: BOARD.tokens.map((token) => initiativeById.has(token.id)
-      ? { ...token, initiativeRoll: initiativeById.get(token.id)!, effects: token.effects?.filter((effect) => effect.kind === "long") }
+      ? { ...token, initiativeRoll: initiativeById.get(token.id)!, effects: token.effects?.filter((effect) => effect.kind === "long"), tempHp: undefined }
       : token),
     selectedTokenIds: order[0] ? [order[0]] : [],
   };
@@ -783,7 +783,7 @@ export function endCombat(): CombatState {
     pendingReaction: undefined,
     revision: combatState.revision + 1,
   };
-  BOARD = { ...BOARD, tokens: BOARD.tokens.map((token) => ({ ...token, effects: token.effects?.filter((effect) => effect.kind === "long") })) };
+  BOARD = { ...BOARD, tokens: BOARD.tokens.map((token) => ({ ...token, effects: token.effects?.filter((effect) => effect.kind === "long"), tempHp: undefined })) };
   SCENES = SCENES.map((scene) => scene.id === activeSceneId ? { ...scene, board: BOARD } : scene);
   saveAndNotify();
   return combatState;

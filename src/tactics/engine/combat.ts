@@ -96,7 +96,9 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
     } else if (action.condition) {
       target = updateToken(target.id, { conditions: [...new Set([...(target.conditions || []), action.condition])] });
     }
-    damage = mitigateDamage(target, damage, action.damageType, actor).amount;
+    // Dano mágico (magia ou arma com Arma Mágica) ignora RD "/mágico", como a do Instante Estoico.
+    const magical = action.category === "spell" || (actor.effects || []).some((effect) => effect.weaponId === action.id);
+    damage = mitigateDamage(target, damage, action.damageType, actor, magical).amount;
     if (damage > 0) {
       target = updateToken(target.id, { hp: target.hp - damage });
       emitTacticalEvent("onDamageApplied", { source: actor, target, action, amount: damage });

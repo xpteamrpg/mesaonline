@@ -208,6 +208,8 @@ export interface BoardToken {
   sprite?: string;
   accent: string;
   hp: number;
+  /** PV temporários: perdem-se primeiro e acabam com a cena (Campo de Força) */
+  tempHp?: number;
   hpMax: number;
   pm: number;
   pmMax: number;
@@ -372,7 +374,7 @@ export interface TacticalEffect {
   expiresRound?: number;
   /** quem conjurou: por padrão o efeito por rodadas termina no início do turno dele (regra do ModernRPG) */
   casterId?: string;
-  mods?: Partial<Record<"attack" | "damage" | "defense" | "rd", number>>;
+  mods?: Partial<Record<"attack" | "damage" | "defense" | "rd" | "saves" | "tempHp", number>>;
   damageType?: string;
   condition?: string | string[];
   reactiveKey?: string;
@@ -382,6 +384,10 @@ export interface TacticalEffect {
   weaponId?: string;
   /** vale uma vez só: some depois de reduzir um dano (Instante Estoico, RD "contra o próximo dano") */
   once?: boolean;
+  /** RD "/mágico": não reduz dano mágico (de magia ou de arma mágica), como no Instante Estoico */
+  notMagical?: boolean;
+  /** a descrição da magia diz que acumula com outras magias (Armadura Arcana): soma em vez de valer só o maior */
+  stacks?: boolean;
 }
 
 export interface ChatMessage {

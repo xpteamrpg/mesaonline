@@ -27,6 +27,12 @@ interface KnownSpellEffect {
   cancels?: string[];
   /** a RD vale uma vez só (reduz o próximo dano e some) */
   once?: boolean;
+  /** RD "/mágico": não vale contra dano de magia nem de arma mágica */
+  notMagical?: boolean;
+  /** a descrição diz que acumula com outras magias */
+  stacks?: boolean;
+  /** lançada como reação, os PV temporários viram RD contra o próximo dano (Campo de Força) */
+  reactionTempHpAsRd?: boolean;
   /** vale uma vez só apenas quando a magia foi lançada como reação (Campo de Força: "RD 30 contra o próximo dano") */
   onceAsReaction?: boolean;
   /** o bônus fica preso à arma escolhida (Arma Mágica) */
@@ -41,7 +47,8 @@ export const SPELL_EFFECTS: Record<string, KnownSpellEffect> = {
   "arma-espiritual": { cost: 1, reactiveKey: "arma-espiritual", duration: "scene" },
   "arma-de-jade": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene" },
   "arma-magica": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene", weaponBound: true },
-  "armadura-arcana": { cost: 1, effect: { defense: 5 }, duration: "scene" },
+  "armadura-arcana": { cost: 1, effect: { defense: 5 }, duration: "scene", stacks: true },
+  "protecao-divina": { cost: 1, effect: { saves: 2 }, duration: "scene" },
   "arsenal-de-allihanna": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene" },
   "escudo-da-fe": { cost: 1, effect: { defense: 2 }, duration: "rounds", rounds: 1 },
   "percepcao-rubra": { cost: 1, effect: { attack: 1, defense: 1 }, duration: "scene" },
@@ -59,8 +66,8 @@ export const SPELL_EFFECTS: Record<string, KnownSpellEffect> = {
   "sopro-das-uivantes": { cost: 3, damage: "4d6", condition: "Caído", duration: "rounds", rounds: 1, saveResult: "half" },
   "raio-solar": { cost: 3, damage: "4d8", condition: "Ofuscado", duration: "rounds", rounds: 1, saveResult: "half" },
   "miasma-mefitico": { cost: 3, damage: "5d6", condition: "Enjoado", duration: "rounds", rounds: 1, saveResult: "half" },
-  "campo-de-forca": { cost: 4, effect: { rd: 30 }, duration: "rounds", rounds: 1, onceAsReaction: true },
-  "instante-estoico": { cost: 1, effect: { rd: 10 }, duration: "rounds", rounds: 1, once: true },
+  "campo-de-forca": { cost: 3, effect: { tempHp: 30 }, duration: "scene", reactionTempHpAsRd: true },
+  "instante-estoico": { cost: 1, effect: { rd: 10 }, duration: "rounds", rounds: 1, once: true, notMagical: true },
 };
 
 export interface ResolveSpellEffectRequest {
@@ -166,24 +173,43 @@ function resolveKnown(request: ResolveSpellEffectRequest, key: string, known: Kn
     if (save?.passed && known.saveResult === "half") damage = Math.floor(damage / 2);
     if (save?.passed && known.saveResult === "negates") damage = 0;
     if (damage > 0) {
-      const mitigated = mitigateDamage(token, damage, action.damageType, request.caster);
+      const mitigated = mitigateDamage(token, damage, action.damageType, request.caster, true);
       damage = mitigated.amount;
       token = updateToken(token.id, { hp: token.hp - damage });
     }
     const appliesCondition = Boolean(known.condition && !(save?.passed && known.saveResult !== "partial"));
     const conditions = appliesCondition ? (Array.isArray(known.condition) ? known.condition : [known.condition!]) : [];
     if (known.effect || conditions.length || known.reactiveKey) {
+      let mods: TacticalEffect["mods"] | undefined = known.effect ? { ...known.effect, ...(request.augmentMods || {}) } : known.effect;
+      let once = known.once || undefined;
+      let duration = known.duration || "scene";
+      let rounds = known.rounds || 1;
+      // Campo de Força em reação: em vez dos PV temporários, RD contra o próximo dano.
+      if (known.reactionTempHpAsRd && action.kind === "reaction" && mods?.tempHp) {
+        mods = { rd: mods.tempHp };
+        once = true;
+        duration = "rounds";
+        rounds = 1;
+      }
+      // PV temporários: valem o maior (não acumulam), perdem-se primeiro e acabam com a cena.
+      if (mods?.tempHp) {
+        token = updateToken(token.id, { tempHp: Math.max(token.tempHp || 0, mods.tempHp) });
+        const { tempHp: _applied, ...rest } = mods;
+        mods = rest;
+      }
       const effect: TacticalEffect = {
         id: `spell:${key}:${request.caster.id}`,
         name: known.weaponBound && request.weapon ? `${request.spell.name} (${request.weapon.name})` : request.spell.name,
         weaponId: known.weaponBound ? request.weapon?.id : undefined,
-        once: known.once || (known.onceAsReaction && action.kind === "reaction") || undefined,
+        once,
+        notMagical: known.notMagical || undefined,
+        stacks: known.stacks || undefined,
         sourceId: `spell:${key}`,
         sourceName: request.spell.name,
-        kind: known.duration || "scene",
-        expiresRound: known.duration === "rounds" ? getCombatState().round + descriptorRounds(request.spell.name, known.rounds || 1) : undefined,
+        kind: duration,
+        expiresRound: duration === "rounds" ? getCombatState().round + descriptorRounds(request.spell.name, rounds) : undefined,
         casterId: request.caster.id,
-        mods: known.effect ? { ...known.effect, ...(request.augmentMods || {}) } : known.effect,
+        mods,
         condition: conditions,
         reactiveKey: known.reactiveKey,
         saveDC: action.saveDC || request.caster.spellDC,
@@ -223,7 +249,7 @@ function resolveGeneric(request: ResolveSpellEffectRequest): SpellEffectResoluti
       });
     }
     if (damage > 0) {
-      damage = mitigateDamage(target, damage, request.action.damageType, request.caster).amount;
+      damage = mitigateDamage(target, damage, request.action.damageType, request.caster, true).amount;
       target = updateToken(target.id, { hp: target.hp - damage });
       emitTacticalEvent("onDamageApplied", { source: request.caster, target, action: request.action, amount: damage });
     }

@@ -233,3 +233,78 @@ describe("Amedrontar", () => {
     throw new Error("o alvo nunca passou no teste de Vontade");
   });
 });
+
+describe("Campo de Força, Instante Estoico, Armadura Arcana e Proteção Divina", () => {
+  it("Campo de Força dá 30 PV temporários que são gastos antes dos PV e acabam com a cena", async () => {
+    const { bridge, runtime, hero, action } = await setup(ASTOLFO);
+    runtime.executeTacticalAction(hero.id, action("Campo de Força").id, [hero.id], null, null);
+    expect(bridge.getBoard().tokens.find((t) => t.id === hero.id)!.tempHp).toBe(30);
+    const { mitigateDamage } = await import("../src/tactics/engine/reactiveTriggers");
+    const hp = bridge.getBoard().tokens.find((t) => t.id === hero.id)!.hp;
+    expect(mitigateDamage(bridge.getBoard().tokens.find((t) => t.id === hero.id)!, 20).amount).toBe(0);
+    expect(bridge.getBoard().tokens.find((t) => t.id === hero.id)!.tempHp).toBe(10);
+    expect(mitigateDamage(bridge.getBoard().tokens.find((t) => t.id === hero.id)!, 25).amount).toBe(15);
+    expect(bridge.getBoard().tokens.find((t) => t.id === hero.id)!.tempHp).toBeUndefined();
+    expect(bridge.getBoard().tokens.find((t) => t.id === hero.id)!.hp).toBe(hp);
+  });
+
+  it("Campo de Força: +3 PM (3º círculo) muda os PV temporários para 50", async () => {
+    const { bridge, runtime, hero, action, augmentIndex } = await setup(ASTOLFO);
+    const fifty = augmentIndex("Campo de Força", (a) => a.soma?.tempHp === 20);
+    expect(fifty).toBeGreaterThanOrEqual(0);
+    runtime.executeTacticalAction(hero.id, action("Campo de Força").id, [hero.id], null, { counts: { [fifty]: 1 }, racial: false });
+    expect(bridge.getBoard().tokens.find((t) => t.id === hero.id)!.tempHp).toBe(50);
+    expect(bridge.getBoard().tokens.find((t) => t.id === hero.id)!.pm).toBe(99 - 6);
+  });
+
+  it("Instante Estoico: a RD vale contra dano que não é de magia e não vale contra dano mágico", async () => {
+    const { bridge, runtime, hero, action } = await setup(LAGRIMA);
+    runtime.executeTacticalAction(hero.id, action("Instante Estoico").id, [hero.id], null, null);
+    const { mitigateDamage } = await import("../src/tactics/engine/reactiveTriggers");
+    const token = () => bridge.getBoard().tokens.find((t) => t.id === hero.id)!;
+    expect(mitigateDamage(token(), 15, undefined, undefined, true).amount).toBe(15); // dano mágico: RD não vale e o efeito continua
+    expect(token().effects?.some((e) => e.sourceId === "spell:instante-estoico")).toBe(true);
+    expect(mitigateDamage(token(), 15).amount).toBe(5); // dano comum: RD 10
+  });
+
+  it("Armadura Arcana soma +5 na Defesa e acumula com outras magias; Bênção e Arma Mágica não", async () => {
+    const { effectBonus } = await import("../src/tactics/engine/effectBonuses");
+    const armor = { id: "a", name: "Armadura Arcana", sourceId: "spell:armadura-arcana", kind: "scene" as const, stacks: true, mods: { defense: 5 } };
+    const shield = { id: "s", name: "Escudo da Fé", sourceId: "spell:escudo-da-fe", kind: "scene" as const, mods: { defense: 2 } };
+    expect(effectBonus({ effects: [armor] }, "defense")).toBe(5);
+    expect(effectBonus({ effects: [armor, shield] }, "defense")).toBe(7);
+  });
+
+  it("Armadura Arcana lançada eleva a Defesa que o atacante precisa vencer", async () => {
+    const { bridge, runtime, hero, action } = await setup(ASTOLFO, (b) => {
+      b.addToken(makeToken({ id: "alvo", name: "Alvo", side: "threats", gx: 6, gy: 5, hp: 100, hpMax: 100, defense: 10, initiative: -50 }));
+    });
+    const { targetDefense } = await import("../src/tactics/engine/targeting");
+    const self = () => bridge.getBoard().tokens.find((t) => t.id === hero.id)!;
+    const foe = bridge.getBoard().tokens.find((t) => t.id === "alvo")!;
+    const before = targetDefense(bridge.getBoard(), foe, self());
+    runtime.executeTacticalAction(hero.id, action("Armadura Arcana").id, [hero.id], null, null);
+    expect(targetDefense(bridge.getBoard(), foe, self())).toBe(before + 5);
+  });
+
+  it("Proteção Divina soma +2 nos testes de resistência do alvo", async () => {
+    const { bridge, runtime, hero, action } = await setup(LAGRIMA);
+    const { saveModifier } = await import("../src/tactics/engine/saves");
+    const before = saveModifier(bridge.getBoard().tokens.find((t) => t.id === hero.id)!, "will");
+    runtime.executeTacticalAction(hero.id, action("Proteção Divina").id, [hero.id], null, null);
+    const token = bridge.getBoard().tokens.find((t) => t.id === hero.id)!;
+    expect(saveModifier(token, "will")).toBe(before + 2);
+    expect(saveModifier(token, "fortitude")).toBe(token.fortitude + 2);
+    expect(saveModifier(token, "reflexes")).toBeGreaterThanOrEqual(token.reflexes + 2);
+  });
+
+  it("Proteção Divina: o aprimoramento 'aumenta o bônus em +1' soma", async () => {
+    const { bridge, runtime, hero, action, augmentIndex } = await setup(LAGRIMA);
+    const inc = augmentIndex("Proteção Divina", (a) => a.soma?.saves === 1);
+    expect(inc).toBeGreaterThanOrEqual(0);
+    const { saveModifier } = await import("../src/tactics/engine/saves");
+    const before = saveModifier(bridge.getBoard().tokens.find((t) => t.id === hero.id)!, "will");
+    runtime.executeTacticalAction(hero.id, action("Proteção Divina").id, [hero.id], null, { counts: { [inc]: 2 }, racial: false });
+    expect(saveModifier(bridge.getBoard().tokens.find((t) => t.id === hero.id)!, "will")).toBe(before + 4);
+  });
+});

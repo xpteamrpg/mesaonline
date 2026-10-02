@@ -127,11 +127,11 @@ export function resolveIncomingAttackReaction(
   return { key, prevented: !save.passed, save, roll };
 }
 
-export function damageReductionFor(token: BoardToken, damageType?: string, source?: BoardToken): number {
+export function damageReductionFor(token: BoardToken, damageType?: string, source?: BoardToken, magical = false): number {
   const effects = token.effects || [];
   const eligible = effects.filter((effect) => {
     const rd = effect.mods?.rd || 0;
-    return rd > 0 && damageTypesMatch(effect.damageType, damageType);
+    return rd > 0 && damageTypesMatch(effect.damageType, damageType) && !(magical && effect.notMagical);
   });
   // RDs de magia não acumulam entre si; poderes/itens acumulam.
   const spell = Math.max(0, ...eligible.filter((effect) => /^spell:|magia/i.test(effect.sourceId || effect.sourceName || "")).map((effect) => effect.mods?.rd || 0));
@@ -142,14 +142,25 @@ export function damageReductionFor(token: BoardToken, damageType?: string, sourc
   return spell + other + conditionMods(token.conditions).damageReduction + (despisesCowards ? REACTIVE_TRIGGERS["desprezar-os-covardes"].damageReduction : 0);
 }
 
-export function mitigateDamage(token: BoardToken, amount: number, damageType?: string, source?: BoardToken): { amount: number; reduced: number } {
-  const reduced = Math.min(Math.max(0, amount), damageReductionFor(token, damageType, source));
+/**
+ * Dano que chega aos PV: primeiro a RD (que não vale contra dano mágico quando a RD é "/mágico"), depois os PV temporários.
+ * `magical`: o dano vem de magia ou de arma mágica.
+ */
+export function mitigateDamage(token: BoardToken, amount: number, damageType?: string, source?: BoardToken, magical = false): { amount: number; reduced: number } {
+  const reduced = Math.min(Math.max(0, amount), damageReductionFor(token, damageType, source, magical));
   if (reduced > 0) {
     // RD "contra o próximo dano" (Instante Estoico, Campo de Força em reação): some depois de reduzir um dano.
-    const spent = (token.effects || []).filter((effect) => effect.once && (effect.mods?.rd || 0) > 0 && damageTypesMatch(effect.damageType, damageType));
+    const spent = (token.effects || []).filter((effect) => effect.once && (effect.mods?.rd || 0) > 0 && damageTypesMatch(effect.damageType, damageType) && !(magical && effect.notMagical));
     if (spent.length) updateToken(token.id, { effects: (token.effects || []).filter((effect) => !spent.includes(effect)) });
   }
-  return { amount: Math.max(0, amount - reduced), reduced };
+  let remaining = Math.max(0, amount - reduced);
+  const temp = getBoard().tokens.find((entry) => entry.id === token.id)?.tempHp ?? token.tempHp ?? 0;
+  if (remaining > 0 && temp > 0) {
+    const absorbed = Math.min(temp, remaining);
+    remaining -= absorbed;
+    updateToken(token.id, { tempHp: temp - absorbed || undefined });
+  }
+  return { amount: remaining, reduced };
 }
 
 export function addTacticalEffect(tokenId: string, effect: TacticalEffect): BoardToken {
@@ -197,7 +208,7 @@ function runBuiltInTriggers<K extends EventName>(event: K, payload: TacticalEven
     const alreadyUsed = (attack.target.effects || []).some((effect) => effect.id === markerId);
     if (spiritual && !alreadyUsed && cellDistance(attack.attacker, attack.target) <= 1) {
       const rolled = roll("2d6");
-      const damage = mitigateDamage(attack.attacker, rolled, spiritual.damageType, attack.target).amount;
+      const damage = mitigateDamage(attack.attacker, rolled, spiritual.damageType, attack.target, true).amount;
       updateToken(attack.attacker.id, { hp: attack.attacker.hp - damage });
       addTacticalEffect(attack.target.id, {
         id: markerId,

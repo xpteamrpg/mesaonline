@@ -1,4 +1,5 @@
 import { conditionMods } from "../../game/conditionEffects";
+import { effectBonus } from "./effectBonuses";
 import type { BoardToken, SaveOutcome, SaveType } from "../../game/types";
 
 export interface SaveRequest {
@@ -22,9 +23,10 @@ export interface SaveResolution {
 }
 
 export function saveModifier(token: BoardToken, type: SaveType): number {
-  if (type === "fortitude") return token.fortitude;
-  if (type === "reflexes") return token.reflexes + conditionMods(token.conditions).reflexes;
-  return token.will;
+  const bonus = effectBonus(token, "saves"); // Proteção Divina e semelhantes
+  if (type === "fortitude") return token.fortitude + bonus;
+  if (type === "reflexes") return token.reflexes + conditionMods(token.conditions).reflexes + bonus;
+  return token.will + bonus;
 }
 
 export function saveLabel(type: SaveType): SaveResolution["label"] {

@@ -861,31 +861,57 @@
  },
  "campo-de-forca": {
   "baseMods": {
-   "rd": 30
+   "tempHp": 30
   },
   "aprimoramentos": [
    {
     "custo": 1,
     "tipo": "muda",
-    "rotulo": "Muda a execução para reação e a duração para instantânea (RD 30 contra o próximo dano que sofrer)",
+    "rotulo": "Muda a execução para reação e a duração para instantânea (em vez dos PV temporários, RD 30 contra o próximo dano que sofrer)",
     "execucao": "reaction"
    },
    {
     "custo": 3,
     "tipo": "muda",
-    "rotulo": "Muda a RD para 50 (requer 3º círculo)",
+    "rotulo": "Muda os PV temporários ou a RD para 50 (requer 3º círculo)",
     "altera": [
      "efeito"
     ],
-    "requerCirculo": 3,
-    "manual": true
+    "soma": {
+     "tempHp": 20
+    },
+    "requerCirculo": 3
    },
    {
     "custo": 7,
     "tipo": "muda",
-    "rotulo": "Muda a RD para 70 (requer 4º círculo)",
+    "rotulo": "Muda os PV temporários ou a RD para 70 (requer 4º círculo)",
     "altera": [
      "efeito"
+    ],
+    "soma": {
+     "tempHp": 40
+    },
+    "requerCirculo": 4
+   },
+   {
+    "custo": 7,
+    "tipo": "muda",
+    "rotulo": "Esfera imóvel e tremeluzente: alcance curto, outra criatura ou objeto Enorme ou menor, duração sustentada (requer 4º círculo)",
+    "altera": [
+     "alvo",
+     "duracao"
+    ],
+    "requerCirculo": 4,
+    "manual": true
+   },
+   {
+    "custo": 9,
+    "tipo": "muda",
+    "rotulo": "Como a esfera, mas tudo dentro fica sem peso e flutua 9 m por rodada (requer 4º círculo)",
+    "altera": [
+     "alvo",
+     "duracao"
     ],
     "requerCirculo": 4,
     "manual": true
@@ -893,6 +919,52 @@
   ],
   "alvo": {
    "lado": "si"
+  }
+ },
+ "protecao-divina": {
+  "baseMods": {
+   "saves": 2
+  },
+  "aprimoramentos": [
+   {
+    "custo": 2,
+    "tipo": "aumenta",
+    "rotulo": "Aumenta o bônus concedido em +1",
+    "soma": {
+     "saves": 1
+    }
+   },
+   {
+    "custo": 2,
+    "tipo": "muda",
+    "rotulo": "Muda a execução para reação, o alcance para curto e a duração para 1 rodada",
+    "altera": [
+     "duracao"
+    ],
+    "execucao": "reaction",
+    "alcance": "Curto"
+   },
+   {
+    "custo": 2,
+    "tipo": "muda",
+    "rotulo": "Muda o alvo para área de círculo com 3 m de raio: todos os aliados dentro recebem o bônus (requer 2º círculo)",
+    "altera": [
+     "alvo"
+    ],
+    "requerCirculo": 2,
+    "manual": true
+   },
+   {
+    "custo": 5,
+    "tipo": "extra",
+    "rotulo": "Também torna o alvo imune a efeitos de encantamento (requer 3º círculo)",
+    "requerCirculo": 3,
+    "manual": true
+   }
+  ],
+  "alvo": {
+   "lado": "aliados",
+   "incluiSi": true
   }
  }
 }

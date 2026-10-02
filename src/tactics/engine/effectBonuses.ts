@@ -1,8 +1,8 @@
 import type { BoardToken, TacticalEffect } from "../../game/types";
 
-type Stat = "attack" | "damage" | "defense";
+type Stat = "attack" | "damage" | "defense" | "saves";
 
-const fromSpell = (effect: TacticalEffect) => /^spell:/i.test(effect.sourceId || "");
+const fromSpell = (effect: TacticalEffect) => /^spell:/i.test(effect.sourceId || "") && !effect.stacks;
 
 /**
  * Bônus que os efeitos ativos do token dão a ataque, dano ou Defesa.

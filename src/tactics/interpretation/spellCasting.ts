@@ -70,6 +70,8 @@ interface CuratedEnhancement {
   manual?: boolean;
   /** muda a execução da magia (ex.: Campo de Força, +1 PM: reação) */
   execucao?: GameAction["kind"];
+  /** muda o alcance da magia ("curto", "toque"...) */
+  alcance?: string;
 }
 const CURATED = enhancementsJson as unknown as Record<string, { baseMods?: Record<string, number>; aprimoramentos: CuratedEnhancement[] }>;
 
@@ -162,6 +164,7 @@ export function normalizeAugments(entry: CanonicalSpellEntry): NormalizedAugment
         altera: option.altera,
         requerCirculo: option.requerCirculo,
         execucao: option.execucao,
+        alcance: option.alcance,
       };
     });
   }
