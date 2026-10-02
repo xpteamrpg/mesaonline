@@ -1,6 +1,6 @@
 import type { ActionEffect, GameAction } from "../../game/types";
 import { summonDefinitionFor } from "../engine/summonEffects";
-import { actionKindFromExecution, formulasIn, normalizeRuleText, parseRangeM } from "./modernRpgRules";
+import { actionKindFromExecution, baseSpellText, formulasIn, normalizeRuleText, parseRangeM } from "./modernRpgRules";
 import enhancementsJson from "../data/spellEnhancements.json";
 import { spellKeyOf } from "./spellCasting";
 
@@ -102,8 +102,9 @@ const REGISTRY = enhancementsJson as unknown as Record<string, { baseMods?: Reco
  */
 export function classifySpellEffect(spell: { name: string; description?: string; effect?: string }): ActionEffect {
   if (summonDefinitionFor(spell.name)) return "summon";
-  const text = `${spell.name}. ${spell.description || ""}. ${spell.effect || ""}`;
-  const formulas = formulasIn(`${spell.effect || ""} ${spell.description || ""}`);
+  // Só o texto base conta: o bloco "Aprimoramentos:" não define o efeito da magia.
+  const text = `${spell.name}. ${baseSpellText(spell.description)}. ${spell.effect || ""}`;
+  const formulas = formulasIn(`${spell.effect || ""} ${baseSpellText(spell.description)}`);
   const healing = /cura|curar|recupera|restaura|regenera/i.test(text) && !/causa[^.]*dano/i.test(text);
   if (healing) return "heal";
   if (formulas.length || spell.effect) return "damage";

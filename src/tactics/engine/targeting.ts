@@ -2,6 +2,7 @@ import { conditionMods } from "../../game/conditionEffects";
 import type { BoardState, BoardToken, BoardWall } from "../../game/types";
 import { type Cell, activeGrid, distanceBetween } from "../../game/distance";
 import { blockCenter, blockGap, coveredCells } from "../../game/tokenSize";
+import { effectBonus } from "./effectBonuses";
 
 /** Passos de grade (Chebyshev). Usado para adjacencia e interpolacao de raio,
  *  NAO para distancia em metros — para isso use rangeM/distanceBetween. */
@@ -75,5 +76,5 @@ export function targetDefense(board: BoardState, source: BoardToken, target: Boa
   const cover = coverBetween(board, source, target);
   const mods = conditionMods(target.conditions);
   const byCondition = mods.defense + (ranged ? mods.defenseVsRanged : mods.defenseVsMelee);
-  return target.defense + byCondition + (cover === "partial" ? 5 : cover === "total" ? 99 : 0);
+  return target.defense + byCondition + effectBonus(target, "defense") + (cover === "partial" ? 5 : cover === "total" ? 99 : 0);
 }

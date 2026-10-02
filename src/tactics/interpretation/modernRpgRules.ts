@@ -7,9 +7,24 @@ export function normalizeRuleText(value: unknown): string {
     .toLowerCase();
 }
 
+/** Fórmulas de dado do texto, sem as que são duração ou distância ("1d4 rodadas", "1d4 dias", "2d6 metros"): essas não são dano nem cura. */
 export function formulasIn(value: unknown): string[] {
-  return [...String(value ?? "").matchAll(/\d+d\d+(?:\s*[+-]\s*\d+)?/gi)]
-    .map((match) => match[0].replace(/\s/g, ""));
+  return [...String(value ?? "").matchAll(/(\d+d\d+(?:\s*[+-]\s*\d+)?)(\s*(?:de\s+)?(?:rodadas?|horas?|dias?|metros?)\b)?/gi)]
+    .filter((match) => !match[2])
+    .map((match) => match[1].replace(/\s/g, ""));
+}
+
+/** Texto da magia sem o bloco "Aprimoramentos:" que a ficha anexa à descrição (os aprimoramentos não fazem parte do efeito base). */
+export function baseSpellText(value: unknown): string {
+  return String(value ?? "").split(/\n*\s*Aprimoramentos\s*:/i)[0];
+}
+
+/** Dado de dano ou cura da magia: o campo `effect` da ficha só vale se aparecer no texto base (o importador antigo gravava "1d4" de "1d4 rodadas"). */
+export function spellDiceFormula(spell: { effect?: string; description?: string }): string | undefined {
+  const base = formulasIn(baseSpellText(spell.description));
+  const effect = String(spell.effect ?? "").replace(/\s/g, "");
+  if (effect && (!spell.description || base.includes(effect))) return effect;
+  return base[0];
 }
 
 export function numberBonus(value: unknown, fallback = 0): number {

@@ -4,11 +4,13 @@ import type { Ability, CharacterSheet, AttackItem, PowerEntry, SpellItem, Equipm
 import type { BoardToken, GameAction, TacticalUnitView } from "../../game/types";
 import {
   actionKindFromExecution,
+  baseSpellText,
   formulasIn,
   inferActionFields,
   normalizeRuleText,
   parseAreaM,
   parseRangeM,
+  spellDiceFormula,
 } from "./modernRpgRules";
 
 function attackAction(attack: AttackItem): GameAction {
@@ -79,8 +81,9 @@ function powerAction(power: PowerEntry): GameAction {
 }
 
 function spellAction(spell: SpellItem): GameAction {
-  const text = `${spell.name}. ${spell.execution || ""}. ${spell.range || ""}. ${spell.resistance || ""}. ${spell.description || ""}. ${spell.effect || ""}`;
-  const formulas = formulasIn(`${spell.effect || ""} ${spell.description || ""}`);
+  const dice = spellDiceFormula(spell);
+  const text = `${spell.name}. ${spell.execution || ""}. ${spell.range || ""}. ${spell.resistance || ""}. ${baseSpellText(spell.description)}. ${dice || ""}`;
+  const formulas = dice ? [dice] : [];
   const healing = /cura|curar|recupera|restaura|regenera/i.test(text) && !/causa[^.]*dano/i.test(text);
   const fields = inferActionFields(text);
   const personal = /pessoal/i.test(spell.range || "") || /você mesmo|voce mesmo/i.test(text);
@@ -92,15 +95,15 @@ function spellAction(spell: SpellItem): GameAction {
     name: spell.name,
     category: "spell",
     kind: actionKindFromExecution(spell.execution),
-    effect: classifySpellEffect({ name: spell.name, description: spell.description, effect: spell.effect }),
+    effect: classifySpellEffect({ name: spell.name, description: spell.description, effect: dice }),
     target: personal ? "self" : areaM ? "area" : healing ? "ally" : "enemy",
     description: spell.description || `${spell.circle}º círculo · ${spell.school || spell.type || "Magia"}`,
     pmCost: spell.cost || Math.max(1, spell.circle * 2 - 1),
     rangeM: parseRangeM(spell.range, personal ? 0 : 9),
     areaM,
-    damage: healing ? undefined : spell.effect || formulas[0],
+    damage: healing ? undefined : dice,
     damageType: healing ? undefined : spellDamageType(`${spell.effect || ""} ${spell.description || ""}`),
-    healing: healing ? spell.effect || formulas[0] || "1d8" : undefined,
+    healing: healing ? dice || "1d8" : undefined,
     ...fields,
     color: /fogo|chama|lava/i.test(text) ? "fire" : healing ? "gold" : /trevas|morte|necrom|sangue/i.test(text) ? "blood" : "arcane",
   };

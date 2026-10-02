@@ -865,6 +865,12 @@
   },
   "aprimoramentos": [
    {
+    "custo": 1,
+    "tipo": "muda",
+    "rotulo": "Muda a execução para reação e a duração para instantânea (RD 30 contra o próximo dano que sofrer)",
+    "execucao": "reaction"
+   },
+   {
     "custo": 3,
     "tipo": "muda",
     "rotulo": "Muda a RD para 50 (requer 3º círculo)",

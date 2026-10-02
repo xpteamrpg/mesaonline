@@ -26,6 +26,8 @@ import { reachableCells, moverOf, EXPLORATION_BUDGET_M } from "./movement";
 import "./conditionTicks";
 import { spendCombatAction } from "./actionEconomy";
 import { resolveSpellEffect } from "./spellEffects";
+import { parseRangeM } from "../interpretation/modernRpgRules";
+import { actionsForToken } from "../../game/actions";
 import {
   buildCastInfo, computeCastPlan, findSpellEntry, sanitizeAugmentChoice, spellKeyOf, type AugmentChoice,
 } from "../interpretation/spellCasting";
@@ -180,13 +182,27 @@ function augmentedSpellAction(actor: BoardToken, action: GameAction, choice: Aug
   const info = buildCastInfo({ action, entry, level: actor.level || 1, currentPm: actor.pm, candidates: [], ...castCircleContext(actor, entry.circulo), racial: choice.racial });
   const plan = computeCastPlan(info, choice);
   if (plan.error) throw new Error(plan.error);
-  return { action: { ...action, pmCost: plan.cost }, maxTargets: plan.maxTargets, mods: plan.mods };
+  const next: GameAction = { ...action, pmCost: plan.cost };
+  // Aprimoramentos que mudam a execução, o alcance ou somam dados à cura e ao dano.
+  if (plan.kind) next.kind = plan.kind;
+  if (plan.alcance) next.rangeM = parseRangeM(plan.alcance, action.rangeM);
+  if (plan.addHealing.length && action.healing) next.healing = [action.healing, ...plan.addHealing].join("+");
+  if (plan.addDamage.length && action.damage) next.damage = [action.damage, ...plan.addDamage].join("+");
+  return { action: next, maxTargets: plan.maxTargets, mods: plan.mods };
+}
+
+/** Magias cujo alvo é uma arma (Arma Mágica): vale a arma escolhida; sem escolha, a primeira arma do personagem. */
+function weaponForSpell(actor: BoardToken, action: GameAction, choice: AugmentChoice | null): { id: string; name: string } | undefined {
+  if (action.category !== "spell" || !/^\s*1 arma/i.test(findSpellEntry(action)?.alvo || "")) return undefined;
+  const weapons = actionsForToken(actor).filter((entry) => entry.category === "weapon");
+  const weapon = weapons.find((entry) => entry.id === choice?.weaponId) || weapons[0];
+  if (!weapon) throw new Error("Este personagem não tem arma equipada para receber a magia.");
+  return { id: weapon.id, name: weapon.name };
 }
 
 function resolveAction(actorId: string, actionId: string, targetIds: string[], targetCell?: TargetCell | null, augment?: AugmentChoice | null): void {
   const actor = requiredToken(actorId);
   let action = canonicalAction(actor, actionId);
-  assertActorCanAct(actor, action.kind);
   assertNoPendingReaction();
   let maxTargets = Number.POSITIVE_INFINITY;
   let augmentMods: Record<string, number> | undefined;
@@ -204,6 +220,14 @@ function resolveAction(actorId: string, actionId: string, targetIds: string[], t
     maxTargets = augmented.maxTargets;
     augmentMods = augmented.mods;
   }
+  // Magia de alvo contado ("1 criatura", "2 criaturas") não aceita mais alvos do que o catálogo diz.
+  if (action.category === "spell" && maxTargets === Number.POSITIVE_INFINITY) {
+    const counted = Number(findSpellEntry(action)?.alvo?.match(/^\s*(\d+)\s+[a-zà-ú]/i)?.[1]);
+    if (counted > 0) maxTargets = counted;
+  }
+  // A ação que a magia gasta pode ter mudado com o aprimoramento (ex.: livre → padrão).
+  assertActorCanAct(actor, action.kind);
+  const weapon = weaponForSpell(actor, action, augment || null);
   const targets = validatedTargets(actor, action, targetIds, targetCell);
   if (targets.length > maxTargets) throw new Error(`Esta magia afeta no máximo ${maxTargets} alvo(s) com os aprimoramentos escolhidos.`);
   const resolved = action;
@@ -220,6 +244,7 @@ function resolveAction(actorId: string, actionId: string, targetIds: string[], t
         board: getBoard(),
         combatState: getCombatState(),
         augmentMods,
+        weapon,
       });
     } else {
       resolveTacticalAction(caster.id, resolved, fresh.map((token) => token.id));

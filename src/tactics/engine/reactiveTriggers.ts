@@ -144,6 +144,11 @@ export function damageReductionFor(token: BoardToken, damageType?: string, sourc
 
 export function mitigateDamage(token: BoardToken, amount: number, damageType?: string, source?: BoardToken): { amount: number; reduced: number } {
   const reduced = Math.min(Math.max(0, amount), damageReductionFor(token, damageType, source));
+  if (reduced > 0) {
+    // RD "contra o próximo dano" (Instante Estoico, Campo de Força em reação): some depois de reduzir um dano.
+    const spent = (token.effects || []).filter((effect) => effect.once && (effect.mods?.rd || 0) > 0 && damageTypesMatch(effect.damageType, damageType));
+    if (spent.length) updateToken(token.id, { effects: (token.effects || []).filter((effect) => !spent.includes(effect)) });
+  }
   return { amount: Math.max(0, amount - reduced), reduced };
 }
 

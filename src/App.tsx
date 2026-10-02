@@ -36,6 +36,7 @@ import {
   addToken, hostMultiplayer, joinMultiplayer, setObjects, appendChat, appendRoll, clearRollHistory, getRuntimeSnapshot, restoreMultiplayerSession, selectToken, sendSignal, setInitiativeRoll, shareAudioWithRoom, startCombat, endCombat,
   subscribeRuntime, updateToken,
 } from "./game/vttBridge";
+import type { AugmentChoice } from "./tactics/interpretation/spellCasting";
 import { executeTacticalAction, executeTacticalEndTurn, executeTacticalMove } from "./tactics/engine/runtimeCommands";
 import type { BoardToken, GameAction, ThreatTemplate } from "./game/types";
 import { boardTokenFromCharacter, getModernRpgCharacter, sheetSkillTotal, tacticalViewForToken } from "./integration/modernRpgCharacterBridge";
@@ -91,7 +92,7 @@ export default function App() {
   const [mapIntent, setMapIntent] = useState<
     | { kind: "move" }
     | { kind: "place-token"; token: BoardToken }
-    | { kind: "area-action"; action: GameAction }
+    | { kind: "area-action"; action: GameAction; augment?: AugmentChoice }
     | {
       kind: "map-tool";
       tool: Extract<MapToolId, "door" | "shape" | "trigger" | "object">;
@@ -660,7 +661,7 @@ export default function App() {
       else {
         const action = mapIntent.action;
         const targets = action.target === "area" ? actionTargetsForArea(actor, action, cell) : [];
-        executeTacticalAction(actorId, action.id, targets, cell);
+        executeTacticalAction(actorId, action.id, targets, cell, mapIntent.augment || null);
       }
       setMapIntent(null);
     } catch (error) {
@@ -826,10 +827,10 @@ export default function App() {
       preselectActionId={hotkeyAction}
       onClose={() => { setSkinActionMode(null); setHotkeyAction(null); }}
       onArmMove={armMove}
-      onArmAreaAction={(action) => {
+      onArmAreaAction={(action, augment) => {
         setSkinPanel(null);
         setStageTool("select");
-        setMapIntent({ kind: "area-action", action });
+        setMapIntent({ kind: "area-action", action, augment });
         appendChat({ author: "Sistema", text: `Escolha o ponto de ${action.name} no mapa.`, kind: "system" });
       }}
     />}

@@ -8,7 +8,7 @@ import {
   syncCombat,
   updateToken,
 } from "../../game/vttBridge";
-import { inferActionFields, normalizeRuleText } from "../interpretation/modernRpgRules";
+import { baseSpellText, inferActionFields, normalizeRuleText } from "../interpretation/modernRpgRules";
 import { findSpellEntry } from "../interpretation/spellCasting";
 import { spendCombatAction } from "./actionEconomy";
 import { addTacticalEffect, emitTacticalEvent, mitigateDamage } from "./reactiveTriggers";
@@ -25,6 +25,12 @@ interface KnownSpellEffect {
   saveResult?: "negates" | "half" | "partial";
   damage?: string;
   cancels?: string[];
+  /** a RD vale uma vez só (reduz o próximo dano e some) */
+  once?: boolean;
+  /** vale uma vez só apenas quando a magia foi lançada como reação (Campo de Força: "RD 30 contra o próximo dano") */
+  onceAsReaction?: boolean;
+  /** o bônus fica preso à arma escolhida (Arma Mágica) */
+  weaponBound?: boolean;
 }
 
 /** Registro específico portado de spell-effects.js (sem DOM e sem masterFicha). */
@@ -34,7 +40,7 @@ export const SPELL_EFFECTS: Record<string, KnownSpellEffect> = {
   santuario: { cost: 1, reactiveKey: "santuario", duration: "scene" },
   "arma-espiritual": { cost: 1, reactiveKey: "arma-espiritual", duration: "scene" },
   "arma-de-jade": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene" },
-  "arma-magica": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene" },
+  "arma-magica": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene", weaponBound: true },
   "armadura-arcana": { cost: 1, effect: { defense: 5 }, duration: "scene" },
   "arsenal-de-allihanna": { cost: 1, effect: { attack: 1, damage: 1 }, duration: "scene" },
   "escudo-da-fe": { cost: 1, effect: { defense: 2 }, duration: "rounds", rounds: 1 },
@@ -53,7 +59,8 @@ export const SPELL_EFFECTS: Record<string, KnownSpellEffect> = {
   "sopro-das-uivantes": { cost: 3, damage: "4d6", condition: "Caído", duration: "rounds", rounds: 1, saveResult: "half" },
   "raio-solar": { cost: 3, damage: "4d8", condition: "Ofuscado", duration: "rounds", rounds: 1, saveResult: "half" },
   "miasma-mefitico": { cost: 3, damage: "5d6", condition: "Enjoado", duration: "rounds", rounds: 1, saveResult: "half" },
-  "campo-de-forca": { cost: 4, effect: { rd: 30 }, duration: "rounds", rounds: 1 },
+  "campo-de-forca": { cost: 4, effect: { rd: 30 }, duration: "rounds", rounds: 1, onceAsReaction: true },
+  "instante-estoico": { cost: 1, effect: { rd: 10 }, duration: "rounds", rounds: 1, once: true },
 };
 
 export interface ResolveSpellEffectRequest {
@@ -65,6 +72,8 @@ export interface ResolveSpellEffectRequest {
   combatState?: CombatState;
   /** bônus do efeito já com os aprimoramentos (ex.: Bênção +3/+3); sobrepõe o efeito base */
   augmentMods?: Record<string, number>;
+  /** arma escolhida para magias que afetam uma arma (Arma Mágica) */
+  weapon?: { id: string; name: string };
 }
 
 export interface SpellTargetResult {
@@ -113,10 +122,11 @@ export function resolveSpellEffect(request: ResolveSpellEffectRequest): SpellEff
   }
 
   const key = spellKey(request.spell.name);
+  if (key === "amedrontar") return resolveFear(request);
   const known = SPELL_EFFECTS[key];
   if (known) return resolveKnown(request, key, known);
 
-  const text = `${request.spell.description || ""} ${request.spell.effect || ""} ${request.spell.resistance || ""}`;
+  const text = `${baseSpellText(request.spell.description)} ${request.spell.effect || ""} ${request.spell.resistance || ""}`;
   const inferred = inferActionFields(text);
   const action: GameAction = {
     ...request.action,
@@ -165,7 +175,9 @@ function resolveKnown(request: ResolveSpellEffectRequest, key: string, known: Kn
     if (known.effect || conditions.length || known.reactiveKey) {
       const effect: TacticalEffect = {
         id: `spell:${key}:${request.caster.id}`,
-        name: request.spell.name,
+        name: known.weaponBound && request.weapon ? `${request.spell.name} (${request.weapon.name})` : request.spell.name,
+        weaponId: known.weaponBound ? request.weapon?.id : undefined,
+        once: known.once || (known.onceAsReaction && action.kind === "reaction") || undefined,
         sourceId: `spell:${key}`,
         sourceName: request.spell.name,
         kind: known.duration || "scene",
@@ -195,14 +207,21 @@ function resolveKnown(request: ResolveSpellEffectRequest, key: string, known: Kn
 function resolveGeneric(request: ResolveSpellEffectRequest): SpellEffectResolution {
   spendAndPay(request.caster, request.action);
   const sharedDamage = request.action.damage ? rollFormula(request.action.damage) : null;
-  const sharedHealing = request.action.healing ? rollFormula(request.action.healing) : null;
   const results = request.targets.map((original): SpellTargetResult => {
     let target = currentToken(original.id);
     const save = request.action.save ? resolveSave({ target, type: request.action.save, dc: request.action.saveDC || request.caster.spellDC, halfOnSave: request.action.halfOnSave }) : undefined;
     let damage = sharedDamage?.total || 0;
     if (save?.passed) damage = request.action.halfOnSave ? Math.floor(damage / 2) : 0;
     if (request.action.extraDamage && damage > 0) damage += rollFormula(request.action.extraDamage).total;
-    let healing = sharedHealing?.total || 0;
+    // A cura é rolada à parte para cada alvo (cada um recebe o seu resultado).
+    const healRoll = request.action.healing ? rollFormula(request.action.healing) : null;
+    let healing = healRoll?.total || 0;
+    if (healRoll) {
+      appendRoll({
+        id: `heal-${crypto.randomUUID()}`, actor: request.caster.name, target: target.name, action: request.spell.name, kind: "heal",
+        modifier: 0, total: healing, formula: request.action.healing!, rolls: healRoll.rolls, outcome: `+${healing} PV`, success: true, timestamp: Date.now(),
+      });
+    }
     if (damage > 0) {
       damage = mitigateDamage(target, damage, request.action.damageType, request.caster).amount;
       target = updateToken(target.id, { hp: target.hp - damage });
@@ -264,13 +283,68 @@ function pushSaveRoll(request: ResolveSpellEffectRequest, target: BoardToken, sa
   });
 }
 
+/** Rola fórmulas de um ou mais termos ("2d8+2", "2d8+2+1d8+1"); o multiplicador (crítico) vale só para os dados. */
 export function rollFormula(formula: string, multiplier = 1): { total: number; rolls: number[] } {
-  const clean = String(formula || "0").replace(/\s/g, "");
-  const match = clean.match(/^(\d*)d(\d+)([+-]\d+)?$/i);
-  if (!match) return { total: Number(clean) || 0, rolls: [] };
-  const amount = (Number(match[1]) || 1) * multiplier;
-  const sides = Number(match[2]);
-  const modifier = Number(match[3] || 0);
-  const rolls = Array.from({ length: amount }, () => Math.floor(Math.random() * sides) + 1);
-  return { rolls, total: rolls.reduce((sum, value) => sum + value, modifier) };
+  const clean = String(formula || "0").replace(/\s/g, "").replace(/^\+/, "");
+  const terms = clean.match(/[+-]?\d*d\d+|[+-]?\d+/gi);
+  if (!terms || terms.join("") !== clean) return { total: Number(clean) || 0, rolls: [] };
+  const rolls: number[] = [];
+  let total = 0;
+  for (const term of terms) {
+    const dice = term.match(/^([+-]?)(\d*)d(\d+)$/i);
+    if (!dice) { total += Number(term); continue; }
+    const amount = (Number(dice[2]) || 1) * multiplier;
+    const sides = Number(dice[3]);
+    const sign = dice[1] === "-" ? -1 : 1;
+    for (let i = 0; i < amount; i += 1) {
+      const value = Math.floor(Math.random() * sides) + 1;
+      rolls.push(value);
+      total += sign * value;
+    }
+  }
+  return { rolls, total };
+}
+
+/**
+ * Amedrontar (catálogo): Vontade parcial. Falhou: apavorado por 1 rodada (1d4+1 com o aprimoramento) e depois abalado pelo resto da cena.
+ * Passou: abalado por 1d4 rodadas. O alvo rola o teste de verdade (aparece nas rolagens).
+ */
+function resolveFear(request: ResolveSpellEffectRequest): SpellEffectResolution {
+  const action = request.action;
+  spendAndPay(request.caster, action);
+  const round = getCombatState().round;
+  const dc = action.saveDC || request.caster.spellDC;
+  const results: SpellTargetResult[] = [];
+  const effect = (target: BoardToken, part: string, condition: string, kind: TacticalEffect["kind"], rounds?: number): BoardToken => addTacticalEffect(target.id, {
+    id: `spell:amedrontar:${request.caster.id}:${part}`,
+    name: `Amedrontar (${condition})`,
+    sourceId: "spell:amedrontar",
+    sourceName: "Amedrontar",
+    kind,
+    expiresRound: rounds ? round + rounds : undefined,
+    casterId: request.caster.id,
+    condition,
+    saveDC: dc,
+  });
+  for (const original of request.targets) {
+    let token = currentToken(original.id);
+    const save = resolveSave({ target: token, type: "will", dc, partialOnSave: true });
+    const conditions: string[] = [];
+    if (!save.passed) {
+      const frightRounds = request.augmentMods?.apavorado ? rollFormula("1d4+1").total : 1;
+      token = effect(token, "apavorado", "Apavorado", "rounds", frightRounds);
+      token = effect(token, "abalado", "Abalado", "scene");
+      conditions.push("Apavorado", "Abalado");
+    } else {
+      token = effect(token, "abalado", "Abalado", "rounds", rollFormula("1d4").total);
+      conditions.push("Abalado");
+    }
+    syncCombatConditions(token.id, token.conditions || []);
+    pushSaveRoll(request, token, save);
+    conditions.forEach((condition) => emitTacticalEvent("onConditionApplied", { source: request.caster, target: token, condition }));
+    results.push({ tokenId: token.id, save, conditions });
+  }
+  appendCombatLog({ type: "spell", title: `${request.caster.name}: Amedrontar`, detail: `${results.length} alvo(s) fizeram Vontade (CD ${dc}).`, tone: "success" });
+  emitTacticalEvent("onSpellResolved", { caster: request.caster, targets: request.targets, action });
+  return { route: "specific", action, results };
 }

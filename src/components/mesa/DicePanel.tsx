@@ -86,7 +86,50 @@ function Brackets({ values }: { values: number[] }) {
   return <span className="num font-semibold text-[color:var(--mx-f4e8ce)]">{values.map((v, i) => <span key={i} className="mr-1">[{v}]</span>)}</span>;
 }
 
-type LastRoll = { total: number; groups: { faces: number | null; count: number; values: number[] }[]; mod: number; focus: number };
+/** Um dado grande: a imagem de cristal (Expandido) ou o desenho em SVG, com o número em cima quando já rolou. */
+function DieFace({ faces, size, value, spinning, tilt, dim }: { faces: number; size: number; value?: number; spinning?: boolean; tilt?: { x: number; y: number; z: number }; dim?: boolean }) {
+  const image = DIE_IMAGE[faces];
+  const t = tilt ?? { x: 0, y: 0, z: 0 };
+  return (
+    <motion.div
+      className="relative grid shrink-0 place-items-center"
+      style={{ width: size, height: size, transformPerspective: 520, opacity: dim ? 0.45 : 1 }}
+      initial={false}
+      animate={spinning
+        ? { rotateX: [0, 540, 1080 + t.x], rotateY: [0, 720, 1440 + t.y], rotateZ: [0, 200, 360 + t.z], scale: [0.85, 1.18, 1] }
+        : { rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1 }}
+      transition={{ duration: ROLL_MS / 1000, ease: [0.2, 0.7, 0.3, 1] }}
+      data-die-face={faces}
+    >
+      {image && <img className="mx-exp" src={image} alt="" draggable={false} style={{ width: size, height: size, objectFit: "contain", filter: "drop-shadow(0 0 8px rgba(255,60,40,.6))" }} />}
+      <svg className={image ? "mx-min" : undefined} viewBox="0 0 64 64" width={size} height={size} style={{ filter: "drop-shadow(0 0 8px rgba(232,44,54,0.7))" }} aria-hidden="true">
+        <DieShape faces={faces} label={value ?? (faces === 100 ? "%" : faces)} />
+      </svg>
+      {image && value !== undefined && (
+        <span className="mx-exp num font-display pointer-events-none absolute inset-0 place-items-center text-center font-bold text-[#fff0c4]" style={{ fontSize: Math.round(size * 0.36), textShadow: "0 1px 3px #000, 0 0 8px #000, 0 0 12px rgba(255,170,60,.8)", gridTemplateColumns: "1fr" }}>
+          <span className="grid h-full w-full place-items-center">{value}</span>
+        </span>
+      )}
+    </motion.div>
+  );
+}
+
+/** Miniatura do botão de dado: o cristal no Expandido (d20 a d6); d4, d3 e D% levam só o número. */
+function DieThumb({ faces }: { faces: number }) {
+  const image = DIE_IMAGE[faces];
+  return (
+    <>
+      <span className={image ? "mx-min grid place-items-center" : "hidden"}><MiniDie faces={faces} size={22} /></span>
+      {image
+        ? <img className="mx-exp" src={image} alt="" draggable={false} style={{ width: 28, height: 28, objectFit: "contain" }} />
+        : null}
+      {!image && <span className="num font-display text-[13px] font-bold text-[#f2d68f]">{faces === 100 ? "%" : faces}</span>}
+    </>
+  );
+}
+
+type LastRoll = { total: number; groups: { faces: number | null; count: number; values: number[] }[]; mod: number };
+type ShownDie = { faces: number; value?: number };
 
 export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolution[]; actor: string; onClose: () => void }) {
   /** Quantos dados de cada tipo entram na rolagem (clique soma, botão direito tira). */
@@ -97,24 +140,30 @@ export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolu
   const [rolling, setRolling] = useState(false);
   /** Inclinação final de cada rolagem: o dado nunca para na mesma posição. */
   const [tilt, setTilt] = useState({ x: 0, y: 0, z: 0 });
-  const [flicker, setFlicker] = useState(1);
+  const [flickers, setFlickers] = useState<number[]>([]);
+  /** true logo depois de rolar (mostra os dados rolados); mexer nos dados volta a mostrar os escolhidos. */
+  const [showLast, setShowLast] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const picked = DICE.filter((die) => (pool[die.faces] ?? 0) > 0);
-  const focus = last?.focus ?? picked[0]?.faces ?? 20;
-  // Durante o giro o número troca depressa, como dado rolando.
+  const poolDice: ShownDie[] = picked.flatMap((die) => Array.from({ length: pool[die.faces] ?? 0 }, () => ({ faces: die.faces })));
+  const lastDice: ShownDie[] = last ? last.groups.flatMap((group) => group.values.map((value) => ({ faces: group.faces ?? 20, value }))) : [];
+  const shownDice = showLast && last ? lastDice : poolDice;
+  // Durante o giro cada número troca depressa, como dado rolando.
   useEffect(() => {
     if (!rolling) return;
-    const id = window.setInterval(() => setFlicker(1 + Math.floor(Math.random() * Math.max(2, focus))), 70);
+    const id = window.setInterval(() => setFlickers(lastDice.map((die) => 1 + Math.floor(Math.random() * Math.max(2, die.faces)))), 70);
     return () => window.clearInterval(id);
-  }, [rolling, focus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rolling, spin]);
 
   const mod = parseModifier(modifier);
   const modText = mod ? `${mod > 0 ? "+" : ""}${mod}` : "";
   const poolText = picked.map((die) => `${pool[die.faces]}d${die.faces}`).join("+");
 
   function add(faces: number, delta: number) {
+    setShowLast(false);
     setPool((current) => ({ ...current, [faces]: Math.max(0, Math.min(20, (current[faces] ?? 0) + delta)) }));
   }
 
@@ -144,7 +193,9 @@ export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolu
       success: natural !== 1,
       timestamp: Date.now(),
     });
-    setLast({ total, groups, mod, focus: picked[picked.length - 1].faces });
+    setLast({ total, groups, mod });
+    setShowLast(true);
+    setFlickers(all.map(() => 1));
     setSpin((value) => value + 1);
     setTilt({ x: Math.round(Math.random() * 50 - 25), y: Math.round(Math.random() * 50 - 25), z: Math.round(Math.random() * 90 - 45) });
     // O dado gira e só depois o número aparece.
@@ -166,38 +217,21 @@ export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolu
         <div className="flex-1 space-y-2 overflow-y-auto scroll-tray p-2">
           {/* dado animado com o último resultado */}
           <div className="grid place-items-center rounded-[10px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] py-1.5">
-            <div className="relative grid h-[64px] w-[64px] place-items-center">
-              {DIE_IMAGE[focus] && (
-                <motion.img
-                  key={`img-${spin}-${focus}`}
-                  className="mx-exp mx-die"
-                  src={DIE_IMAGE[focus]}
-                  alt=""
-                  draggable={false}
-                  style={{ transformPerspective: 520, width: 64, height: 64 }}
-                  initial={false}
-                  animate={spin
-                    ? { rotateX: [0, 540, 1080 + tilt.x], rotateY: [0, 720, 1440 + tilt.y], rotateZ: [0, 200, 360 + tilt.z], scale: [0.85, 1.18, 1] }
-                    : { rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1 }}
-                  transition={{ duration: ROLL_MS / 1000, ease: [0.2, 0.7, 0.3, 1] }}
+            <div className="flex min-h-[76px] flex-wrap items-center justify-center gap-1.5 px-1" data-dice-stage>
+              {!shownDice.length && <DieFace faces={20} size={72} dim />}
+              {shownDice.slice(0, 8).map((die, index) => (
+                <DieFace
+                  key={`${spin}-${index}-${die.faces}`}
+                  faces={die.faces}
+                  size={shownDice.length <= 1 ? 72 : shownDice.length <= 3 ? 56 : shownDice.length <= 6 ? 44 : 36}
+                  value={showLast ? (rolling ? flickers[index] ?? 1 : die.value) : undefined}
+                  spinning={showLast && spin > 0}
+                  tilt={tilt}
                 />
-              )}
-              <motion.svg
-                key={spin}
-                className={DIE_IMAGE[focus] ? "mx-min" : undefined}
-                viewBox="0 0 64 64"
-                width="64"
-                height="64"
-                initial={spin ? { rotate: -200, scale: 0.7 } : false}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                style={{ filter: "drop-shadow(0 0 10px rgba(232,44,54,0.75))" }}
-                aria-hidden="true"
-              >
-                <DieShape faces={focus} label={focus === 100 ? "%" : focus} />
-              </motion.svg>
+              ))}
+              {shownDice.length > 8 && <span className="num text-[12px] text-[#a6947c]">+{shownDice.length - 8}</span>}
             </div>
-            <div className="dice-result num font-display text-[28px] font-bold leading-tight" data-dice-result>{rolling ? flicker : last ? last.total : "—"}</div>
+            <div className="dice-result num font-display text-[28px] font-bold leading-tight" data-dice-result>{rolling ? "…" : last ? last.total : "—"}</div>
             <div className="min-h-[16px] px-1 text-center text-[12px] text-[#a6947c]" data-dice-detail>
               {rolling ? "Rolando…" : last
                 ? <>{last.groups.map((group, i) => <Brackets key={i} values={group.values} />)}{last.mod ? <span className="num">{last.mod > 0 ? "+" : ""}{last.mod}</span> : null}</>
@@ -222,8 +256,7 @@ export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolu
                     n ? "border-[#e0574f]/80 bg-[#5a1418]/70 shadow-[0_0_10px_rgba(224,87,79,0.3)]" : "border-[#7a5227]/55 bg-[color:var(--mx-150e0a)] hover:border-[#d9a94c]/80",
                   )}
                 >
-                  <MiniDie faces={die.faces} size={22} />
-                  <span className="num font-display pointer-events-none absolute text-[8px] font-bold text-[#f2d68f]" style={{ top: "56%" }}>{die.faces === 100 ? "%" : die.faces}</span>
+                  <DieThumb faces={die.faces} />
                   {n > 0 && <span className="num absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#c2202b] px-1 text-[10px] font-bold text-white" data-die-count>{n}</span>}
                 </button>
               );
@@ -254,7 +287,7 @@ export default function DicePanel({ rolls, actor, onClose }: { rolls: DiceResolu
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => { setPool({}); setModifier("0"); }}
+              onClick={() => { setPool({}); setModifier("0"); setShowLast(false); }}
               aria-label="Limpar dados e modificador"
               title="Limpar"
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[#7a5227]/55 bg-[color:var(--mx-150e0a)] text-[color:var(--mx-c9b295)] hover:border-[#d9a94c]/80"

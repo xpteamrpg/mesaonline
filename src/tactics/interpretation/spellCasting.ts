@@ -68,6 +68,8 @@ interface CuratedEnhancement {
   altera?: string[];
   requerCirculo?: number;
   manual?: boolean;
+  /** muda a execução da magia (ex.: Campo de Força, +1 PM: reação) */
+  execucao?: GameAction["kind"];
 }
 const CURATED = enhancementsJson as unknown as Record<string, { baseMods?: Record<string, number>; aprimoramentos: CuratedEnhancement[] }>;
 
@@ -92,6 +94,42 @@ export interface NormalizedAugment {
   altera?: string[];
   /** círculo mínimo que o conjurador precisa lançar (magia racial nunca cumpre) */
   requerCirculo?: number;
+  /** muda a execução da magia ("muda a execução para padrão/reação...") */
+  execucao?: GameAction["kind"];
+  /** dados somados à cura ou ao dano por uso ("aumenta a cura em +1d8+1") */
+  addHealing?: string;
+  addDamage?: string;
+  /** novo alcance ("muda o alcance para curto") */
+  alcance?: string;
+  /** afeta todos os alvos válidos ("alvo para criaturas escolhidas", "todos os alvos válidos") */
+  todosOsAlvos?: boolean;
+  /** valores que o aprimoramento troca no efeito ("muda a RD para 20") */
+  define?: Record<string, number>;
+}
+
+const EXECUTION_WORDS: Record<string, GameAction["kind"]> = { padrao: "standard", reacao: "reaction", livre: "free", movimento: "movement", completa: "full" };
+
+type ParsedAugment = Pick<NormalizedAugment, "execucao" | "addHealing" | "addDamage" | "alcance" | "todosOsAlvos" | "define">;
+
+/** O que um aprimoramento de texto livre sabe fazer sozinho (o resto é cobrado em PM e aplicado à mão). */
+function parseAugmentEffects(desc: string): ParsedAugment {
+  const out: ParsedAugment = {};
+  // minúsculas sem acento, mantendo "+" e dígitos (os dados "+1d8+1" precisam do "+")
+  const text = desc.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const exec = text.match(/muda a execucao para (padrao|reacao|livre|movimento|completa)/);
+  if (exec) out.execucao = EXECUTION_WORDS[exec[1]];
+  const dice = (word: string) => text.match(new RegExp(`aumenta ${word} em \\+?(\\d+d\\d+(?: ?\\+ ?\\d+)?)`))?.[1]?.replace(/ /g, "");
+  const heal = dice("a cura");
+  if (heal) out.addHealing = heal;
+  const dmg = dice("o dano");
+  if (dmg) out.addDamage = dmg;
+  const range = text.match(/muda o alcance para (pessoal|toque|curto|medio|longo)/);
+  if (range) out.alcance = range[1] === "medio" ? "Médio" : range[1][0].toUpperCase() + range[1].slice(1);
+  if (/alvo para criaturas escolhidas|afeta todos os alvos validos|todos os alvos validos/.test(text)) out.todosOsAlvos = true;
+  const rd = text.match(/muda (?:os pv temporarios ou )?a rd para (\d+)/);
+  if (rd) out.define = { rd: Number(rd[1]) };
+  if (/apavorados? por \d+d\d+ ?\+ ?\d+ rodadas/.test(text)) out.define = { ...(out.define || {}), apavorado: 1 };
+  return out;
 }
 
 function augmentKind(desc: string): AugmentKind {
@@ -123,19 +161,23 @@ export function normalizeAugments(entry: CanonicalSpellEntry): NormalizedAugment
         limiteBonus: option.limiteBonus,
         altera: option.altera,
         requerCirculo: option.requerCirculo,
+        execucao: option.execucao,
       };
     });
   }
   return (entry.aprimoramentos || []).map((option) => {
     const desc = String(option.desc || "").trim();
     const targets = Number(desc.match(/n[úu]mero de alvos em \+(\d+)/i)?.[1]);
-    const automatable = Number.isFinite(targets) && targets > 0;
+    const extraTargets = Number.isFinite(targets) && targets > 0 ? targets : undefined;
+    const parsed = parseAugmentEffects(desc);
+    const automatable = Boolean(extraTargets) || Object.keys(parsed).length > 0;
     return {
       custo: Number(option.custo) || 0,
       tipo: augmentKind(desc),
       rotulo: desc || "Aprimoramento",
       manual: !automatable,
-      extraTargets: automatable ? targets : undefined,
+      extraTargets,
+      ...parsed,
     };
   });
 }
@@ -210,11 +252,20 @@ export interface CastPlan {
   error: string;
   maxTargets: number;
   manualNotes: string[];
+  /** ação que a magia gasta com os aprimoramentos escolhidos (só quando algum a muda) */
+  kind?: GameAction["kind"];
+  /** alcance novo, quando um aprimoramento o muda */
+  alcance?: string;
+  /** dados somados à cura e ao dano pelos aprimoramentos */
+  addHealing: string[];
+  addDamage: string[];
 }
 
 export interface AugmentChoice {
   counts: Record<number, number>;
   racial: boolean;
+  /** arma escolhida, para magias cujo alvo é uma arma (Arma Mágica) */
+  weaponId?: string;
 }
 
 /** Sanitiza uma escolha vinda da rede antes de qualquer cálculo. */
@@ -229,7 +280,9 @@ export function sanitizeAugmentChoice(value: unknown): AugmentChoice {
       if (Number.isInteger(index) && index >= 0 && index < 64 && Number.isFinite(times) && times > 0) counts[index] = Math.min(times, 99);
     }
   }
-  return { counts, racial: raw.racial === true };
+  const rawWeapon = (raw as { weaponId?: unknown }).weaponId;
+  const weaponId = typeof rawWeapon === "string" && rawWeapon ? rawWeapon.slice(0, 160) : undefined;
+  return { counts, racial: raw.racial === true, ...(weaponId ? { weaponId } : {}) };
 }
 
 /**
@@ -245,6 +298,11 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
   const changed = new Set<string>();
   let cost = info.baseCost;
   let extraTargets = 0;
+  let allTargets = false;
+  let kind: GameAction["kind"] | undefined;
+  let alcance: string | undefined;
+  const addHealing: string[] = [];
+  const addDamage: string[] = [];
   let used = 0;
   let trick = false;
   let error = "";
@@ -267,6 +325,22 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
     }
     if (option.tipo === "truque") trick = true;
     cost += option.custo * uses;
+    // "Muda" nunca acumula na mesma característica (execução, alcance, alvo, efeito).
+    const touched = [option.execucao && "execução", option.alcance && "alcance", option.todosOsAlvos && "alvo", option.define && "efeito"].filter(Boolean) as string[];
+    if (option.tipo === "muda") {
+      for (const feature of touched) {
+        if (changed.has(feature)) fail(`Mudanças na mesma característica (${feature}) não se acumulam.`);
+        changed.add(feature);
+      }
+    }
+    if (option.execucao) kind = option.execucao;
+    if (option.alcance) alcance = option.alcance;
+    if (option.todosOsAlvos) allTargets = true;
+    for (const [mod, value] of Object.entries(option.define || {})) mods[mod] = value;
+    for (let n = 0; n < uses; n += 1) {
+      if (option.addHealing) addHealing.push(option.addHealing);
+      if (option.addDamage) addDamage.push(option.addDamage);
+    }
     for (const [mod, value] of Object.entries(option.soma || {})) mods[mod] = (mods[mod] || 0) + value * uses;
     if (option.limiteBonus === "circulo") {
       const first = Object.keys(option.soma || {})[0];
@@ -288,7 +362,11 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
     cost,
     mods,
     error,
-    maxTargets: Math.max(1, (info.entry.alvo?.max || 1) + extraTargets),
+    maxTargets: allTargets ? 99 : Math.max(1, (info.entry.alvo?.max || 1) + extraTargets),
     manualNotes,
+    kind,
+    alcance,
+    addHealing,
+    addDamage,
   };
 }

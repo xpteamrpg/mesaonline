@@ -1,3 +1,4 @@
+import { effectBonus } from "./effectBonuses";
 import type { BoardToken, DiceResolution, GameAction } from "../../game/types";
 import { appendCombatLog, appendRoll, getBoard, updateToken } from "../../game/vttBridge";
 import { rollFormula } from "./spellEffects";
@@ -51,7 +52,7 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
       const natural = die(20);
       const ranged = action.attackSkill === "pontaria";
       const attackMods = conditionMods(actor.conditions);
-      const modifier = actor[action.attackSkill] + (action.attackBonus || 0) + (isFlanking(board, actor, target) ? 2 : 0)
+      const modifier = actor[action.attackSkill] + (action.attackBonus || 0) + effectBonus(actor, "attack", action.id) + (isFlanking(board, actor, target) ? 2 : 0)
         + attackMods.attack + (ranged ? 0 : attackMods.meleeAttack);
       const total = natural + modifier;
       const defense = targetDefense(board, actor, target, ranged);
@@ -68,11 +69,13 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
     if (!hit) { results.push({ tokenId: target.id, hit: false }); continue; }
 
     const repeats = Math.max(1, action.repeats || 1);
+    // Bônus de dano de efeitos (Bênção, Arma Mágica...): vale em ataques e não é multiplicado no crítico.
+    const effectDamage = action.attackSkill ? effectBonus(actor, "damage", action.id) : 0;
     let damage = 0;
     const damageRolls: number[] = [];
     for (let index = 0; index < repeats; index += 1) {
       const rolled = sharedDamage || rollFormula(action.damage || "0", critical ? action.critMultiplier || 2 : 1);
-      damage += rolled.total;
+      damage += rolled.total + effectDamage;
       damageRolls.push(...rolled.rolls);
       if (action.extraDamage) {
         const extra = rollFormula(action.extraDamage);

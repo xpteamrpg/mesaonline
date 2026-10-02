@@ -378,6 +378,10 @@ export interface TacticalEffect {
   reactiveKey?: string;
   /** CD capturada no momento em que o efeito reativo foi aplicado. */
   saveDC?: number;
+  /** o bônus vale só para esta arma (id da ação de ataque), como Arma Mágica */
+  weaponId?: string;
+  /** vale uma vez só: some depois de reduzir um dano (Instante Estoico, RD "contra o próximo dano") */
+  once?: boolean;
 }
 
 export interface ChatMessage {
