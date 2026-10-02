@@ -3,6 +3,9 @@ import type { View } from "../../types/view";
 import type { CharacterSheet } from "../../types/sheet";
 import { PageBanner } from "../layout/PageBanner";
 import imgLivros from "../../assets/menu/livros.jpg";
+import imgOficina from "../../assets/menu/oficina.jpg";
+import imgCompendio from "../../assets/menu/compendio.jpg";
+import imgHomebrew from "../../assets/menu/homebrew.jpg";
 import { HomeBanner } from "./HomeBanner";
 import { HOME_CARDS } from "../layout/menuCards";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -69,54 +72,58 @@ export const HomeView: React.FC<{ onNavigate: (view: View) => void; characters: 
   );
 };
 
-const Topic: React.FC<{ icon: string; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-  <article className="rounded-lg border border-[#ded7c6] bg-white p-5 shadow-sm">
-    <h2 className="flex items-center gap-2 font-serif text-xl font-black text-[#b92b3a]"><span aria-hidden>{icon}</span>{title}</h2>
-    <div className="mt-2 space-y-2 text-sm leading-7 text-[#5c5446]">{children}</div>
-  </article>
+/** Bloco da página "O que é": imagem de um lado, texto do outro, alternando esquerda e direita. */
+const Row: React.FC<{ icon: string; title: string; img: string; pos?: string; flip?: boolean; children: React.ReactNode }> = ({ icon, title, img, pos = "50% 40%", flip, children }) => (
+  <section className="grid overflow-hidden rounded-lg border border-[#ded7c6] bg-white shadow-sm md:grid-cols-2">
+    <div className={`relative min-h-[240px] border-b-4 border-[#b92b3a] md:min-h-[300px] md:border-b-0 ${flip ? "md:order-2 md:border-l-4" : "md:border-r-4"} md:border-[#b92b3a]`}>
+      <img src={img} alt="" style={{ objectPosition: pos }} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+    </div>
+    <div className="p-6 sm:p-8">
+      <h2 className="flex items-center gap-2 font-serif text-2xl font-black text-[#b92b3a]"><span aria-hidden>{icon}</span>{title}</h2>
+      <div className="mt-3 space-y-3 text-[15px] leading-7 text-[#5c5446]">{children}</div>
+    </div>
+  </section>
 );
 
 export const AboutView: React.FC<{ onNavigate: (view: View) => void }> = ({ onNavigate }) => (
   <div className="mx-auto max-w-[1400px] p-3 sm:p-5">
     <PageBanner image={imgLivros} position="50% 40%" title="O que é o ModernRPG?" crumb="O que é o ModernRPG?" />
     <div className="space-y-4">
-      <article className="rounded-lg border border-[#b92b3a]/30 bg-[#2b261f] p-6 text-white shadow-md">
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f2c572]">Feito por fãs, para fãs</p>
-        <h2 className="mt-2 font-serif text-3xl font-black leading-tight">Do herói à mesa: tudo para jogar Tormenta20, feito por fãs.</h2>
-        <p className="mt-3 text-sm leading-7 text-white/80">O ModernRPG nasceu da vontade de reunir num lugar só aquilo que jogadores e mestres de Tormenta20 costumam procurar espalhado pela internet: criar o personagem, consultar as regras, organizar a campanha e, no fim, sentar à mesa e jogar. É um projeto de fãs, sem fins comerciais, feito com carinho por quem joga.</p>
+      <article className="rounded-lg border border-[#b92b3a]/30 bg-[#2b261f] p-6 text-white shadow-md sm:p-8">
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f2c572]">Por que o ModernRPG existe</p>
+        <h2 className="mt-2 font-serif text-3xl font-black leading-tight sm:text-4xl">Um lugar para a comunidade de Tormenta20 criar, jogar e se encontrar.</h2>
+        <p className="mt-4 max-w-4xl text-[15px] leading-7 text-white/85">Jogo RPG há 30 anos e crio conteúdo para Tormenta20. Em algum ponto da estrada senti que faltava um espaço onde a comunidade pudesse criar mais, compartilhar o que faz e interagir de verdade. O ModernRPG nasceu para ser esse espaço: do herói à mesa de jogo, tudo reunido num só site.</p>
+        <p className="mt-3 text-sm font-bold text-[#f2c572]">— Samararash</p>
       </article>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-      <Topic icon="⚒️" title="Oficina de Heróis e Meus Personagens">
+      <Row icon="⚒️" title="Oficina de Heróis e Meus Personagens" img={imgOficina} pos="50% 60%">
         <ul className="list-disc space-y-1 pl-5">
           <li>Criação de personagem guiada, passo a passo, do zero ou a partir de um personagem pronto.</li>
           <li>Ficha completa que se recalcula sozinha, com rolagens de dados.</li>
           <li>Importação e exportação de fichas em PDF e JSON, e importação de VTT.</li>
           <li>Cada personagem mostra as campanhas e one-shots em que está.</li>
         </ul>
-      </Topic>
+      </Row>
 
-      <Topic icon="📚" title="Compêndio e Livros">
+      <Row icon="📚" title="Compêndio e Livros" img={imgCompendio} flip>
         <ul className="list-disc space-y-1 pl-5">
           <li>Raças, classes e distinções, equipamentos, magias (grimório) e monstros, todos consultáveis num só lugar.</li>
           <li>Parceiros e ajudantes ligados à ficha.</li>
           <li>Uma biblioteca para guardar os seus próprios livros e PDFs.</li>
         </ul>
-      </Topic>
+      </Row>
 
-      <Topic icon="🧪" title="Homebrew">
+      <Row icon="🧪" title="Homebrew" img={imgHomebrew} pos="50% 35%">
         <p>Tormenta20 tem muito mais para jogar do que o material oficial. A área de Homebrew foi pensada para ter <b>mais de uma opção além do oficial</b>: raças, classes, poderes, magias, itens, monstros e parceiros criados por jogadores e mestres, organizados e fáceis de achar.</p>
         <p>A ideia é ser um espaço para as pessoas <b>compartilharem</b> e, se quiserem, <b>venderem</b> os seus materiais. Esse lugar eu não encontrei na internet, e por isso achei que valia a pena criar.</p>
-      </Topic>
+      </Row>
 
-      <Topic icon="🗺️" title="Campanhas e Mesa online">
+      <Row icon="🗺️" title="Campanhas e Mesa online" img={imgCampanhas} pos="50% 40%" flip>
         <p>Crie campanhas e one-shots, convide os jogadores pelo código da mesa e ligue os personagens de cada um à campanha. A Mesa online reúne mapa, fichas, combate tático com as regras de Tormenta20 e jogo em grupo, tudo no navegador.</p>
         <p>A Mesa online foi construída <b>do zero</b>, com base em material do GitLab, em autorizações de amigos e em material encontrado em comunidades como o Discord e o GitHub. Também é de fãs, para fãs.</p>
-      </Topic>
+      </Row>
 
-      </div>
-
-      <article className="rounded-lg border border-[#ded7c6] bg-[#efe9d6] p-5 text-sm leading-7 text-[#5c5446] shadow-sm">
+      <article className="rounded-lg border border-[#ded7c6] bg-[#efe9d6] p-6 text-sm leading-7 text-[#5c5446] shadow-sm sm:p-8">
         <h2 className="font-serif text-xl font-black text-[#2b261f]">Créditos e avisos</h2>
         <p className="mt-1">Idealizado e criado por <b className="text-[#b92b3a]">Samararash</b>, com a ajuda de amigos e da comunidade de RPG.</p>
         <p className="mt-1 text-xs">Tormenta20 e o seu conteúdo oficial pertencem aos seus respectivos autores. Este é um projeto de fãs, sem fins comerciais, ainda em fase piloto (protótipo).</p>
