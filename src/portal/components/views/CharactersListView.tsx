@@ -50,7 +50,7 @@ export const CharactersListView: React.FC<Props> = ({ characters, activeId, onSe
   }, [characters, q, camp]);
 
   return (
-    <div className="mx-auto max-w-[1340px] p-3 text-[#2b261f] sm:p-5">
+    <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
       <PageBanner image={imgPersonagens} position="50% 32%" title="Meus Personagens" crumb="Meus Personagens" count={characters.length} action={{ label: "Criar Personagem", icon: "👤", onClick: onOpenWorkshop }} />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">

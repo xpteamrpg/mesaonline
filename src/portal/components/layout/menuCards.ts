@@ -12,6 +12,7 @@ import imgParceiros from "../../assets/menu/parceiros.jpg";
 import imgLivrosNovo from "../../assets/menu/livros-novo.jpg";
 import imgRacasNovo from "../../assets/menu/racas-novo.jpg";
 import imgHomebrew from "../../assets/menu/homebrew.jpg";
+import imgCompendio from "../../assets/menu/compendio.jpg";
 
 export interface MenuCard {
   view: View;
@@ -40,7 +41,7 @@ export const HOME_CARDS: MenuCard[] = [
   { view: "online", label: "Mesa online", img: imgCampanhas },
   { view: "companions", label: "Parceiros", img: imgParceiros },
   { view: "books", label: "Livros", img: imgLivrosNovo },
-  { view: "compendium", label: "Compêndio", img: imgLivros },
+  { view: "compendium", label: "Compêndio", img: imgCompendio },
   { view: "races", label: "Raças", img: imgRacasNovo },
   { view: "classes", label: "Classes & Distinções", img: imgClasses },
   { view: "equipment", label: "Equipamentos", img: imgEquip },

@@ -112,7 +112,7 @@ export const CampaignsView: React.FC<Props> = ({ characters, campaigns, onChange
 
   if (!detail) {
     return (
-      <div className="mx-auto max-w-[1340px] p-3 text-[#2b261f] sm:p-5">
+      <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
         <PageBanner image={imgCampanhas} position="50% 45%" title="Minhas Campanhas" crumb="Minhas Campanhas" count={names.length} action={{ label: "Criar Campanha", icon: "🏰", onClick: createCampaign }} />
         <div className="mb-4 flex flex-wrap justify-end gap-2">
           <button onClick={onOpenVtt} className="rounded border border-[#ded7c6] bg-white px-2.5 py-1 text-xs font-bold text-[#726859] hover:text-[#2b261f]">🎲 Importar campanha do VTT</button>
@@ -170,7 +170,7 @@ export const CampaignsView: React.FC<Props> = ({ characters, campaigns, onChange
   return (
     <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
       <button onClick={() => setDetail(false)} className="mb-3 text-xs font-bold text-[#b92b3a] hover:underline">← Todas as campanhas</button>
-      <PageHead icon="🏰" title="Minhas Campanhas" subtitle="Mesas com seus personagens, NPCs e cenas importados do VTT, diário e bestiário de encontros." right={
+      <PageHead image={imgCampanhas} position="50% 45%" icon="🏰" title="Minhas Campanhas" subtitle="Mesas com seus personagens, NPCs e cenas importados do VTT, diário e bestiário de encontros." right={
         <div className="flex flex-wrap gap-2">
           <button onClick={() => window.open(`${SITE_ROOT}mesa/?campanha=${encodeURIComponent(selected || "Nova mesa")}`, "_blank", "noopener,noreferrer")} className="rounded border border-[#2b8a3e] bg-[#ebfbee] px-3 py-1.5 text-xs font-bold text-[#2b8a3e] hover:bg-[#2b8a3e] hover:text-white">🎲 Abrir mesa online</button>
           <button onClick={onOpenVtt} className="rounded border border-[#7a3fe0] bg-[#f3eeff] px-3 py-1.5 text-xs font-bold text-[#7a3fe0] hover:bg-[#7a3fe0] hover:text-white">🎲 Importar campanha do VTT</button>
@@ -409,7 +409,7 @@ export const CompanionsView: React.FC<{ companions: Companion[]; characters: Cha
   };
 
   return (
-    <div className="mx-auto max-w-[1340px] p-3 text-[#2b261f] sm:p-5">
+    <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
       <PageBanner image={imgMonstros} position="50% 22%" title="Parceiros" crumb="Parceiros" count={companions.length} action={{ label: showForm ? "Fechar" : "Adicionar Parceiro", icon: showForm ? "✕" : "🐺", onClick: () => setShowForm((v) => !v) }} />
 
       {showForm && (

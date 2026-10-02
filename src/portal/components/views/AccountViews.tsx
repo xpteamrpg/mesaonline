@@ -30,7 +30,7 @@ const Side: React.FC<{ view: View; onNavigate: (v: View) => void }> = ({ view, o
 };
 
 const Shell: React.FC<{ title: string; view: View; onNavigate: (v: View) => void; children: React.ReactNode }> = ({ title, view, onNavigate, children }) => (
-  <div className="mx-auto max-w-[1100px] p-3 text-[#2b261f] sm:p-5">
+  <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
     <h1 className="font-serif text-3xl font-black sm:text-4xl">{title}</h1>
     <div className="mt-2 border-b-2 border-[#b92b3a]" />
     <div className="mt-5 grid gap-5 md:grid-cols-[200px_1fr]">

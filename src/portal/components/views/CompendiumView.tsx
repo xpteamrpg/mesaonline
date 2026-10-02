@@ -2,6 +2,14 @@ import React, { useMemo, useRef, useState } from "react";
 import type { View } from "../../types/view";
 import { renderPdfCoverToDataUrl } from "../../lib/pdf/renderPdfCover";
 import { PublicBooksView } from "./PublicBooksView";
+import { PageBanner } from "../layout/PageBanner";
+import imgRacasNovo from "../../assets/menu/racas-novo.jpg";
+import imgClasses from "../../assets/menu/classes.jpg";
+import imgEquip from "../../assets/menu/equipamentos.jpg";
+import imgMagias from "../../assets/menu/magias.jpg";
+import imgMonstros from "../../assets/menu/monstros.jpg";
+import imgLivrosNovo from "../../assets/menu/livros-novo.jpg";
+import imgCompendio from "../../assets/menu/compendio.jpg";
 import {
   ATTR_KEYS,
   COMPENDIUM_COUNTS,
@@ -34,17 +42,21 @@ import { XP_TABLE, formatXp } from "../../lib/t20/xp";
 
 /* ------------------------------- primitivas ---------------------------------- */
 
-export const PageHead: React.FC<{ icon: string; title: string; subtitle: string; right?: React.ReactNode; children?: React.ReactNode }> = ({ icon, title, subtitle, right, children }) => (
-  <div className="mb-4 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 className="flex items-center gap-2 font-serif text-2xl font-black"><span className="flex h-7 w-7 items-center justify-center rounded bg-[#b92b3a] text-xs text-white">{icon}</span> {title}</h1>
-        <p className="mt-1 text-xs text-[#726859]">{subtitle}</p>
+export const PageHead: React.FC<{ icon: string; title: string; subtitle: string; right?: React.ReactNode; children?: React.ReactNode; image?: string; position?: string }> = ({ icon, title, subtitle, right, children, image, position }) => (
+  <>
+    {image && <PageBanner image={image} position={position} title={title} crumb={title} />}
+    <div className="mb-4 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          {image
+            ? <p className="text-sm text-[#5c5446]">{subtitle}</p>
+            : <><h1 className="flex items-center gap-2 font-serif text-2xl font-black"><span className="flex h-7 w-7 items-center justify-center rounded bg-[#b92b3a] text-xs text-white">{icon}</span> {title}</h1><p className="mt-1 text-xs text-[#726859]">{subtitle}</p></>}
+        </div>
+        {right}
       </div>
-      {right}
+      {children && <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-[#ded7c6] pt-3">{children}</div>}
     </div>
-    {children && <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-[#ded7c6] pt-3">{children}</div>}
-  </div>
+  </>
 );
 
 export const Pill: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
@@ -96,7 +108,7 @@ export const RacesView: React.FC = () => {
   const list = T20_RACES.filter((r) => (!src || r.fonte === src) && hitIn(s, r.nome, r.fonte, ...r.habilidades.map((h) => h.nome), ...(r.variantes ?? []).map((v) => v.nome)));
   return (
     <Wrap>
-      <PageHead icon="🧬" title="Raças de Arton" subtitle={`${T20_RACES.length} raças do Jogo Básico, Heróis de Arton, Ameaças de Arton, Ruff Ghanor e Duelo de Dragões.`} right={<Search value={q} onChange={setQ} />}>
+      <PageHead image={imgRacasNovo} position="50% 30%" icon="🧬" title="Raças de Arton" subtitle={`${T20_RACES.length} raças do Jogo Básico, Heróis de Arton, Ameaças de Arton, Ruff Ghanor e Duelo de Dragões.`} right={<Search value={q} onChange={setQ} />}>
         <Pill active={!src} onClick={() => setSrc("")}>Todas as fontes</Pill>
         {sources.map((f) => <Pill key={f} active={src === f} onClick={() => setSrc(f)}>{f}</Pill>)}
       </PageHead>
@@ -153,7 +165,7 @@ export const ClassesView: React.FC = () => {
   const dist = T20_DISTINCTIONS.filter((d) => hitIn(s, d.nome, d.admissao, d.fonte));
   return (
     <Wrap>
-      <PageHead icon="⚔️" title="Classes & Distinções" subtitle={`${T20_CLASSES.length} classes (Jogo Básico, Dragão Brasil, Ruff Ghanor) com caminhos/variantes e ${T20_DISTINCTIONS.length} distinções de Heróis de Arton e suplementos.`} right={<Search value={q} onChange={setQ} />}>
+      <PageHead image={imgClasses} position="50% 35%" icon="⚔️" title="Classes & Distinções" subtitle={`${T20_CLASSES.length} classes (Jogo Básico, Dragão Brasil, Ruff Ghanor) com caminhos/variantes e ${T20_DISTINCTIONS.length} distinções de Heróis de Arton e suplementos.`} right={<Search value={q} onChange={setQ} />}>
         <Pill active={tab === "classes"} onClick={() => setTab("classes")}>⚔️ Classes ({T20_CLASSES.length})</Pill>
         <Pill active={tab === "distincoes"} onClick={() => setTab("distincoes")}>🏅 Distinções ({T20_DISTINCTIONS.length})</Pill>
       </PageHead>
@@ -186,7 +198,7 @@ export const EquipmentView: React.FC = () => {
   const list = useMemo(() => T20_EQUIPMENT.filter((e) => (!cat || e.categoria === cat) && hitIn(s, e.nome, e.descricao, e.subtipo)).slice(0, 400), [s, cat]);
   return (
     <Wrap>
-      <PageHead icon="🎒" title="Equipamentos" subtitle={`${T20_EQUIPMENT.length} armas, armaduras, escudos, itens gerais, ferramentas, vestuário, consumíveis, montarias, serviços, itens mágicos, encantos, maldições e modificações.`} right={<Search value={q} onChange={setQ} />}>
+      <PageHead image={imgEquip} position="50% 40%" icon="🎒" title="Equipamentos" subtitle={`${T20_EQUIPMENT.length} armas, armaduras, escudos, itens gerais, ferramentas, vestuário, consumíveis, montarias, serviços, itens mágicos, encantos, maldições e modificações.`} right={<Search value={q} onChange={setQ} />}>
         <Pill active={!cat} onClick={() => setCat("")}>Todos</Pill>
         {ITEM_CATEGORIES.map((c) => <Pill key={c} active={cat === c} onClick={() => setCat(c)}>{c} ({T20_EQUIPMENT.filter((e) => e.categoria === c).length})</Pill>)}
       </PageHead>
@@ -207,7 +219,7 @@ export const SpellsView: React.FC = () => {
   const list = useMemo(() => T20_SPELLS.filter((m) => (circle === null || m.circulo === circle) && (!type || m.tipo === type || m.tipo === "Universal") && (!school || m.escola === school) && hitIn(s, m.nome, m.descricao)), [s, circle, type, school]);
   return (
     <Wrap>
-      <PageHead icon="✨" title="Grimório — Magias" subtitle={`${T20_SPELLS.length} magias arcanas, divinas e universais do 1º ao 5º círculo, com aprimoramentos.`} right={<Search value={q} onChange={setQ} placeholder="Buscar magia…" />}>
+      <PageHead image={imgMagias} position="50% 35%" icon="✨" title="Grimório — Magias" subtitle={`${T20_SPELLS.length} magias arcanas, divinas e universais do 1º ao 5º círculo, com aprimoramentos.`} right={<Search value={q} onChange={setQ} placeholder="Buscar magia…" />}>
         <span className="mr-1 text-[10px] font-bold uppercase text-[#726859]">Círculo</span>
         <Pill active={circle === null} onClick={() => setCircle(null)}>Todos</Pill>
         {[1, 2, 3, 4, 5].map((c) => <Pill key={c} active={circle === c} onClick={() => setCircle(c)}>{c}º ({T20_SPELLS.filter((m) => m.circulo === c).length})</Pill>)}
@@ -282,7 +294,7 @@ export const BestiaryView: React.FC<{ onRoll?: (label: string, formula: string) 
   const list = useMemo(() => T20_THREATS.filter((t) => (!type || t.tipo.startsWith(type)) && (!nd || t.nd === nd) && (!src || t.fonte === src) && hitIn(s, t.nome, t.tipo)).slice(0, 200), [s, type, nd, src]);
   return (
     <Wrap>
-      <PageHead icon="🐉" title="Monstros & Inimigos — Bestiário" subtitle={`${T20_THREATS.length} ameaças do Livro Básico, Ameaças de Arton, Deuses de Arton, Guia de NPCs e Dragão Brasil. Clique numa criatura para ver o bloco completo e rolar ataques.`} right={<Search value={q} onChange={setQ} placeholder="Buscar criatura…" />}>
+      <PageHead image={imgMonstros} position="50% 25%" icon="🐉" title="Monstros & Inimigos — Bestiário" subtitle={`${T20_THREATS.length} ameaças do Livro Básico, Ameaças de Arton, Deuses de Arton, Guia de NPCs e Dragão Brasil. Clique numa criatura para ver o bloco completo e rolar ataques.`} right={<Search value={q} onChange={setQ} placeholder="Buscar criatura…" />}>
         <span className="mr-1 text-[10px] font-bold uppercase text-[#726859]">Tipo</span>
         <Pill active={!type} onClick={() => setType("")}>Todos</Pill>
         {THREAT_TYPES.map((t) => <Pill key={t} active={type === t} onClick={() => setType(t)}>{t}</Pill>)}
@@ -324,7 +336,7 @@ export const BooksView: React.FC<{ books: BookEntry[]; onChange: (b: BookEntry[]
   const inp = "w-full rounded border border-[#ded7c6] bg-[#fbf9f4] p-2 text-xs";
   return (
     <Wrap>
-      <PageHead icon="📚" title="Livros" subtitle="Sua biblioteca pessoal e o catálogo público de materiais homebrew da comunidade." />
+      <PageHead image={imgLivrosNovo} position="50% 40%" icon="📚" title="Livros" subtitle="Sua biblioteca pessoal e o catálogo público de materiais homebrew da comunidade." />
       <div className="mb-4 flex gap-1.5">
         <Pill active={tab === "meus"} onClick={() => setTab("meus")}>📚 Meus Livros ({books.length})</Pill>
         <Pill active={tab === "publicos"} onClick={() => setTab("publicos")}>🌐 Livros disponíveis</Pill>
@@ -384,7 +396,7 @@ export const CompendiumView: React.FC<{ onNavigate: (v: View) => void }> = ({ on
   ];
   return (
     <Wrap>
-      <PageHead icon="📖" title="Compêndio de Arton — Tormenta 20" subtitle={`${Object.values(COMPENDIUM_COUNTS).reduce((a, b) => a + b, 0).toLocaleString("pt-BR")} registros do Jogo Básico e suplementos (Heróis, Ameaças, Deuses, Atlas, Jornadas, Dragão Brasil, Ruff Ghanor).`} right={<Search value={q} onChange={setQ} />}>
+      <PageHead image={imgCompendio} position="50% 40%" icon="📖" title="Compêndio de Arton — Tormenta 20" subtitle={`${Object.values(COMPENDIUM_COUNTS).reduce((a, b) => a + b, 0).toLocaleString("pt-BR")} registros do Jogo Básico e suplementos (Heróis, Ameaças, Deuses, Atlas, Jornadas, Dragão Brasil, Ruff Ghanor).`} right={<Search value={q} onChange={setQ} />}>
         {cards.map((c) => <button key={c.view} onClick={() => onNavigate(c.view)} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-xs font-bold text-[#2b261f] hover:border-[#b92b3a] hover:text-[#b92b3a]">{c.icon} {c.label} <span className="opacity-60">({c.count})</span></button>)}
         <span className="mx-2 h-5 w-px bg-[#ded7c6]" />
         <Pill active={tab === "poderes"} onClick={() => { setTab("poderes"); setSub(""); }}>💪 Poderes ({COMPENDIUM_COUNTS.poderes})</Pill>

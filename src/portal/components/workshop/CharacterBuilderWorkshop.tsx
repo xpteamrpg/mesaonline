@@ -1,3 +1,5 @@
+import { PageBanner } from "../layout/PageBanner";
+import imgOficina from "../../assets/menu/oficina.jpg";
 import { CampaignInvitesBox } from "../campaigns/CampaignInvitesBox";
 import React, { useMemo, useState } from "react";
 import type { BuilderMeta, CharacterSheet, EquipmentItem } from "../../types/sheet";
@@ -311,7 +313,8 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
   };
 
   return (
-    <div className="mx-auto max-w-[1340px] p-3 text-[#2b261f] sm:p-5">
+    <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
+      <PageBanner image={imgOficina} position="50% 60%" title="Oficina de Heróis" crumb="Oficina de Heróis" />
       <div className="mb-4 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -8,7 +8,7 @@ import imgParceiros from "../../assets/menu/parceiros.jpg";
 
 /** "Criar personagem": escolher entre a ficha em branco (vai à Oficina) e os personagens prontos. */
 export const CreateCharacterView: React.FC<{ onBlank: () => void; onReady: () => void }> = ({ onBlank, onReady }) => (
-  <div className="mx-auto max-w-[1100px] p-3 text-[#2b261f] sm:p-5">
+  <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
     <PageBanner image={imgPersonagens} position="50% 25%" title="Criar Personagem" crumb="Meus Personagens › Criar Personagem" />
     <p className="mb-3 text-sm text-[#5c5446]">Escolha como você gostaria de criar seu novo personagem:</p>
     <div className="grid gap-4 md:grid-cols-2">
@@ -46,7 +46,7 @@ export const ReadyCharactersView: React.FC = () => {
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   return (
-    <div className="mx-auto max-w-[1100px] p-3 text-[#2b261f] sm:p-5">
+    <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
       <PageBanner image={imgClasses} position="50% 35%" title="Personagens Prontos" crumb="Personagens Prontos" />
       {notice && <div role="status" className="mb-3 rounded border border-[#c2892c]/60 bg-[#fff6dc] px-3 py-2 text-xs font-semibold text-[#6b4a12]">{notice}</div>}
       <h2 className="font-serif text-2xl font-black text-[#b92b3a] underline">Bando de Exemplo</h2>

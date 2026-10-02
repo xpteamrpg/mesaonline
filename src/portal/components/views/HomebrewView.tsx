@@ -6,7 +6,8 @@ import { HOMEBREW_KINDS, type HomebrewKind } from "./homebrewKinds";
 import { deleteLocalFile, getLocalFile, putLocalFile } from "../../lib/localFiles";
 
 /** Arte própria da página (pintura do projeto, diferente da usada no card da Home). */
-const HOMEBREW_ART = "./images/ja2.jpg";
+import imgHomebrew from "../../assets/menu/homebrew.jpg";
+const HOMEBREW_ART = imgHomebrew;
 const STORAGE_KEY = "tormenta20_online_homebrew_v1";
 const MAX_FILE_MB = 30;
 const FILE_ACCEPT = ".pdf,.doc,.docx,.odt,.rtf,.txt,.md,.json,.zip,image/*,application/pdf";
@@ -129,7 +130,7 @@ export const HomebrewView: React.FC<{ onNavigate: (v: View) => void }> = ({ onNa
   };
 
   return (
-    <div className="mx-auto max-w-[1340px] p-3 text-[#2b261f] sm:p-5">
+    <div className="mx-auto max-w-[1400px] p-3 text-[#2b261f] sm:p-5">
       <PageBanner image={HOMEBREW_ART} position="50% 20%" title="Homebrew" crumb="Homebrew" />
 
       <section className="mb-4 rounded-lg border border-[#ded7c6] bg-white p-5 shadow-sm">

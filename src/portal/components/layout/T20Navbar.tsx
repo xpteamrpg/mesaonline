@@ -79,7 +79,7 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
         <div className="flex items-center gap-2">
           <div className="relative">
             <button onClick={() => { setCharMenu((v) => !v); setMenuOpen(false); }} className="flex items-center gap-2 rounded border border-[#b92b3a] bg-white px-3 py-1.5 text-xs font-bold text-[#b92b3a]">
-              <D20Logo className="h-4 w-4" /> <span className="max-w-[120px] truncate">{active?.name ?? "Minha conta"}</span> <span className="text-[9px]">▼</span>
+              <D20Logo className="h-4 w-4" /> <span className="max-w-[120px] truncate">{active?.name ?? "Meus personagens"}</span> <span className="text-[9px]">▼</span>
             </button>
             {charMenu && (
               <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded border border-[#ded7c6] bg-white p-2 shadow-2xl">

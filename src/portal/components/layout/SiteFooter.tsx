@@ -3,7 +3,7 @@ import { withBase } from "../../../utils/assetUrl";
 
 /** Orbe do d20 com as garras de dragão (mesma arte da Mesa e da janela de login). */
 const FooterOrb: React.FC = () => (
-  <div className="relative h-[64px] w-[82px] shrink-0 select-none" aria-hidden="true">
+  <div className="relative h-[34px] w-[44px] shrink-0 select-none" aria-hidden="true">
     <style>{`@keyframes footOrbSpin { to { transform: rotate(360deg); } }`}</style>
     <img src={withBase("/ui/expandido/d20-cristal.webp")} alt="" draggable={false} className="absolute left-[25.5%] top-[17.9%] w-[49%]" style={{ animation: "footOrbSpin 14s linear infinite", filter: "drop-shadow(0 0 6px rgba(255,60,40,.7))" }} />
     <img src={withBase("/ui/expandido/garras-orbe.webp")} alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full object-contain" />
@@ -30,7 +30,7 @@ const FakeQr: React.FC = () => {
     </g>
   );
   return (
-    <svg viewBox="-1 -1 27 27" className="h-[72px] w-[72px] rounded bg-white p-0.5" role="img" aria-label="QR Code de exemplo">
+    <svg viewBox="-1 -1 27 27" className="h-[38px] w-[38px] rounded bg-white p-px" role="img" aria-label="QR Code de exemplo">
       {cells.map(([x, y]) => <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="#000" />)}
       {finderAt(0, 0)}{finderAt(18, 0)}{finderAt(0, 18)}
     </svg>
@@ -50,29 +50,28 @@ const ICONS: Record<string, React.ReactNode> = {
 };
 const SOCIALS = Object.keys(ICONS);
 
-/** Faixa preta no fim de todas as páginas do Portal. */
+/** Faixa preta, fina, no fim de todas as páginas do Portal (cola no pé da tela mesmo em páginas curtas). */
 export const SiteFooter: React.FC = () => (
-  <footer className="no-print mt-8 bg-black text-[#c9c2b0]">
-    <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-x-8 gap-y-4 px-4 py-5">
-      <div className="flex min-w-[260px] flex-1 items-center gap-4">
+  <footer className="no-print mt-auto bg-black text-[#c9c2b0]">
+    <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-1.5">
+      <div className="flex min-w-[240px] flex-1 items-center gap-2.5">
         <FooterOrb />
-        <div className="text-[12px] leading-5">
-          <div className="font-bold text-white">ModernRPG · projeto piloto (protótipo)</div>
-          <div>Conteúdo oficial pertence aos seus respectivos autores. Este é um projeto de fãs, sem fins comerciais.</div>
-          <div>Criado por <b className="text-[#f2c572]">Samararash</b> · © 2026 ModernRPG. Todos os direitos reservados.</div>
+        <div className="text-[10.5px] leading-[14px]">
+          <div><b className="text-white">ModernRPG</b> · projeto piloto (protótipo) · Criado por <b className="text-[#f2c572]">Samararash</b> · © 2026 ModernRPG. Todos os direitos reservados.</div>
+          <div className="text-[#9c9180]">Conteúdo oficial pertence aos seus respectivos autores. Projeto de fãs, sem fins comerciais.</div>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="text-right text-[11px] leading-4">
+      <div className="flex items-center gap-2">
+        <div className="text-right text-[10px] leading-[13px]">
           <div className="font-bold text-white">Gostou do projeto? Apoie!</div>
-          <div className="text-[#9c9180]">QR Code de exemplo (Pix em breve)</div>
+          <div className="text-[#9c9180]">QR Code de exemplo</div>
         </div>
         <FakeQr />
       </div>
-      <div className="flex flex-wrap justify-end gap-1.5" aria-label="Redes (em breve)">
+      <div className="flex flex-wrap justify-end gap-1" aria-label="Redes (em breve)">
         {SOCIALS.map((name) => (
-          <button key={name} type="button" disabled title={`${name} (em breve)`} aria-label={`${name} (em breve)`} className="grid h-9 w-9 cursor-not-allowed place-items-center rounded-full border border-[#5b5546] text-[#e8e0cc] opacity-80">
-            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">{ICONS[name]}</svg>
+          <button key={name} type="button" disabled title={`${name} (em breve)`} aria-label={`${name} (em breve)`} className="grid h-6 w-6 cursor-not-allowed place-items-center rounded-full border border-[#5b5546] text-[#e8e0cc] opacity-80">
+            <svg viewBox="0 0 24 24" className="h-3 w-3" aria-hidden="true">{ICONS[name]}</svg>
           </button>
         ))}
       </div>

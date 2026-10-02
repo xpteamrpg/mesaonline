@@ -1,7 +1,8 @@
 import React from "react";
 import type { View } from "../../types/view";
 import type { CharacterSheet } from "../../types/sheet";
-import { PageHead } from "./CompendiumView";
+import { PageBanner } from "../layout/PageBanner";
+import imgLivros from "../../assets/menu/livros.jpg";
 import { HomeBanner } from "./HomeBanner";
 import { HOME_CARDS } from "../layout/menuCards";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -76,15 +77,16 @@ const Topic: React.FC<{ icon: string; title: string; children: React.ReactNode }
 );
 
 export const AboutView: React.FC<{ onNavigate: (view: View) => void }> = ({ onNavigate }) => (
-  <div className="mx-auto max-w-[900px] p-3 sm:p-5">
-    <PageHead icon="🎲" title="O que é o ModernRPG?" subtitle="Um espaço de fãs, para fãs de Tormenta20." />
+  <div className="mx-auto max-w-[1400px] p-3 sm:p-5">
+    <PageBanner image={imgLivros} position="50% 40%" title="O que é o ModernRPG?" crumb="O que é o ModernRPG?" />
     <div className="space-y-4">
       <article className="rounded-lg border border-[#b92b3a]/30 bg-[#2b261f] p-6 text-white shadow-md">
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f2c572]">Feito por fãs, para fãs</p>
-        <h2 className="mt-2 font-serif text-3xl font-black leading-tight">Tudo o que a sua mesa de Tormenta20 precisa, em um só lugar.</h2>
+        <h2 className="mt-2 font-serif text-3xl font-black leading-tight">Do herói à mesa: tudo para jogar Tormenta20, feito por fãs.</h2>
         <p className="mt-3 text-sm leading-7 text-white/80">O ModernRPG nasceu da vontade de reunir num lugar só aquilo que jogadores e mestres de Tormenta20 costumam procurar espalhado pela internet: criar o personagem, consultar as regras, organizar a campanha e, no fim, sentar à mesa e jogar. É um projeto de fãs, sem fins comerciais, feito com carinho por quem joga.</p>
       </article>
 
+      <div className="grid gap-4 lg:grid-cols-2">
       <Topic icon="⚒️" title="Oficina de Heróis e Meus Personagens">
         <ul className="list-disc space-y-1 pl-5">
           <li>Criação de personagem guiada, passo a passo, do zero ou a partir de um personagem pronto.</li>
@@ -111,6 +113,8 @@ export const AboutView: React.FC<{ onNavigate: (view: View) => void }> = ({ onNa
         <p>Crie campanhas e one-shots, convide os jogadores pelo código da mesa e ligue os personagens de cada um à campanha. A Mesa online reúne mapa, fichas, combate tático com as regras de Tormenta20 e jogo em grupo, tudo no navegador.</p>
         <p>A Mesa online foi construída <b>do zero</b>, com base em material do GitLab, em autorizações de amigos e em material encontrado em comunidades como o Discord e o GitHub. Também é de fãs, para fãs.</p>
       </Topic>
+
+      </div>
 
       <article className="rounded-lg border border-[#ded7c6] bg-[#efe9d6] p-5 text-sm leading-7 text-[#5c5446] shadow-sm">
         <h2 className="font-serif text-xl font-black text-[#2b261f]">Créditos e avisos</h2>
