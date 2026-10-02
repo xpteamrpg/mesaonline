@@ -269,7 +269,10 @@ function applyObjectAction(actorId: string | null, objectId: string, action: Obj
     if (!wanted.size) throw new Error("Não há nada para pegar.");
     const taken = object.contents.filter((_, index) => wanted.has(index));
     if (getCombatState().active) spendCombatAction(actor.id, "movement"); // pegar item em combate gasta a ação de movimento
-    updateBoardObject(object.id, { contents: object.contents.filter((_, index) => !wanted.has(index)) });
+    const rest = object.contents.filter((_, index) => !wanted.has(index));
+    // Item solto no chão: pegou tudo, o item some do mapa (baú e tesouro continuam, vazios).
+    if (object.kind === "item" && !rest.length) setObjects(getBoard().objects.filter((entry) => entry.id !== object.id));
+    else updateBoardObject(object.id, { contents: rest });
     updateToken(actor.id, { pendingLoot: [...(actor.pendingLoot || []), ...taken] });
     appendChat({ author: object.name, text: `${actor.name} pegou: ${taken.join("; ")}.`, kind: "system" });
     return;

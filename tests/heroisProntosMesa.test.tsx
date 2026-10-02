@@ -3,7 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import App from "../src/App";
 import { getBoard, removeToken, selectToken } from "../src/game/vttBridge";
-import { getCharacterSheetById, loadCharacterSheets, loadReadyHeroSheets, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
+import { getCharacterSheetById, loadCharacterSheets, loadReadyHeroSheets, resetReadyHeroSheet, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 let root: Root | null = null;
@@ -34,6 +34,17 @@ describe("heróis prontos do playtest à disposição do Mestre", () => {
       upsertCharacterSheet(sheet); // sincronizar PV do token não copia o herói pronto para a lista da conta
       expect(loadCharacterSheets().some((c) => c.id === sheet.id)).toBe(false);
     }
+  });
+
+  it("mudanças feitas na Mesa numa ficha pronta (largar item, pegar do chão) ficam salvas só neste navegador", () => {
+    const renard = loadReadyHeroSheets().find((s) => s.id === "pronto-renard")!;
+    const withoutFirst = { ...renard, equipment: renard.equipment.slice(1) };
+    upsertCharacterSheet(withoutFirst);
+    expect(loadReadyHeroSheets().find((s) => s.id === "pronto-renard")!.equipment).toHaveLength(renard.equipment.length - 1);
+    expect(getCharacterSheetById("pronto-renard")!.equipment).toHaveLength(renard.equipment.length - 1);
+    expect(loadCharacterSheets().some((c) => c.id === "pronto-renard")).toBe(false); // continua fora da lista da conta
+    resetReadyHeroSheet("pronto-renard");
+    expect(loadReadyHeroSheets().find((s) => s.id === "pronto-renard")!.equipment).toHaveLength(renard.equipment.length);
   });
 
   it("em Meus personagens o Mestre vê os 3 e adiciona o token ao mapa", async () => {

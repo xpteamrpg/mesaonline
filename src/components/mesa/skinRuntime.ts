@@ -106,12 +106,14 @@ function attributesOf(sheet: CharacterSheet | null, token?: BoardToken): SkinFoc
 
 function focusOf(token: BoardToken | undefined, sheet: CharacterSheet | null): SkinFocus | null {
   if (!token) return null;
+  // O título do token já termina com "· Nv N" (token de ficha sem a ficha à mão): não repetir o nível.
+  const titleText = (token.title || "Ameaça").replace(/\s*·\s*Nv\s*\d+\s*$/i, "");
   const subtitle = sheet
     ? `${sheet.race} • ${sheet.class} • Nível ${sheet.level}`
-    : `${token.title || "Ameaça"} • Nível ${token.level}`;
+    : `${titleText} • Nível ${token.level}`;
   const combatSubtitle = sheet
     ? `Nível ${sheet.level} • ${sheet.class} ${sheet.race}`
-    : `Nível ${token.level} • ${token.title || "Ameaça"}`;
+    : `Nível ${token.level} • ${titleText}`;
   return {
     name: token.name,
     subtitle,

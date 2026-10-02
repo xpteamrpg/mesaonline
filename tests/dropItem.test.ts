@@ -27,3 +27,17 @@ describe("largar item no chão", () => {
     expect(() => executeDropItem("h1", { name: "Adaga" })).toThrow(/não pode agir/);
   });
 });
+
+describe("pegar item do chão", () => {
+  it("pegou tudo: o item some do mapa e vai para o que o personagem pegou", async () => {
+    const bridge = await import("../src/game/vttBridge");
+    const { executeDropItem, executeObjectAction } = await import("../src/tactics/engine/objectCommands");
+    bridge.addToken(makeToken({ id: "h1", name: "Aro", side: "heroes", gx: 4, gy: 4 }));
+    executeDropItem("h1", { name: "Tomo da Harmonia", quantity: 1 });
+    const object = bridge.getRuntimeSnapshot().board.objects[0];
+    executeObjectAction("h1", object.id, "open");
+    executeObjectAction("h1", object.id, "take");
+    expect(bridge.getRuntimeSnapshot().board.objects).toHaveLength(0);
+    expect(bridge.getRuntimeSnapshot().board.tokens.find((t) => t.id === "h1")!.pendingLoot).toEqual(["Tomo da Harmonia"]);
+  });
+});

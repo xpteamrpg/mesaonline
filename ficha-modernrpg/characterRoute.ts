@@ -50,9 +50,38 @@ export function saveCharacterSheets(list: CharacterSheet[]): void {
   }
 }
 
+/**
+ * Mudanças que o Mestre faz nas fichas dos heróis prontos durante o jogo (largar item, pegar do chão, ajustes): ficam só neste navegador,
+ * em chave própria; o modelo original (`READY_HEROES`) nunca é alterado e nada disso vai para a conta.
+ */
+export const READY_EDITS_STORAGE_KEY = "tormenta20_online_ready_edits_v1";
+
+function readReadyEdits(): Record<string, CharacterSheet> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(READY_EDITS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 /** Heróis prontos do playtest: à disposição do Mestre na Mesa, mesmo fora de qualquer campanha. Nunca entram na lista da conta. */
 export function loadReadyHeroSheets(): CharacterSheet[] {
-  return READY_HEROES.map((hero) => hero.sheet as unknown as CharacterSheet);
+  const edits = readReadyEdits();
+  return READY_HEROES.map((hero) => edits[hero.sheet.id as string] ?? (hero.sheet as unknown as CharacterSheet));
+}
+
+/** Volta um herói pronto ao modelo original (descarta as mudanças feitas na Mesa). */
+export function resetReadyHeroSheet(id: string): void {
+  if (typeof window === "undefined") return;
+  const edits = readReadyEdits();
+  delete edits[id];
+  try {
+    window.localStorage.setItem(READY_EDITS_STORAGE_KEY, JSON.stringify(edits));
+    window.dispatchEvent(new CustomEvent("modernrpg-characters-changed"));
+  } catch { /* armazenamento indisponível */ }
 }
 
 export function getCharacterSheetById(id: string): CharacterSheet | null {
@@ -62,7 +91,14 @@ export function getCharacterSheetById(id: string): CharacterSheet | null {
 
 /** Insere ou substitui (por id) um personagem na lista oficial. */
 export function upsertCharacterSheet(sheet: CharacterSheet): void {
-  if (isReadyHeroId(sheet.id)) return; // herói pronto: o token guarda PV/PM; a ficha-modelo não vai para a conta
+  if (isReadyHeroId(sheet.id)) {
+    // herói pronto: a mudança fica só neste navegador (nunca vai para a conta nem para a lista de personagens)
+    try {
+      window.localStorage.setItem(READY_EDITS_STORAGE_KEY, JSON.stringify({ ...readReadyEdits(), [sheet.id]: { ...sheet, updatedAt: new Date().toISOString() } }));
+      window.dispatchEvent(new CustomEvent("modernrpg-characters-changed"));
+    } catch { /* armazenamento indisponível */ }
+    return;
+  }
   const list = loadCharacterSheets();
   const idx = list.findIndex((c) => c.id === sheet.id);
   const next = { ...sheet, updatedAt: new Date().toISOString() };
