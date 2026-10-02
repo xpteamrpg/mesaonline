@@ -4,6 +4,7 @@ import { DISTANCE_MODE_LABEL, type GridSettings, gridSettings } from "../../game
 import { type TravelState, encounterChance, travelState } from "../../game/travel";
 import { activeFloor, floorsOf } from "../../game/floors";
 import { LIGHT_PRESETS as MAP_LIGHT_PRESETS, defaultLight, type LightPreset, type MapToolId, TERRAIN_LABEL } from "../../game/mapTools";
+import { SITE_ROOT } from "../../utils/assetUrl";
 import { SIZE_LABEL, sizeOf } from "../../game/tokenSize";
 import { isMountToken, ownedMountTokens } from "../../game/companions";
 import { getModernRpgCharacter } from "../../integration/modernRpgCharacterBridge";
@@ -32,7 +33,7 @@ import type { BattleMap, BoardObject, RuntimeSnapshot, SceneState, TacticalUnitV
 import { canControlToken, shortPeerId } from "../../game/permissions";
 import {
   appendChat, appendRoll, createScene, getRuntimeSnapshot, renameSceneGroup, sendSignal, hostMultiplayer, interactBoardObject, joinMultiplayer, redoBoard, removeScene, removeToken, renameScene,
-  selectToken, setFog, setWeather, switchScene, undoBoard, updateBoardObject, updateMap, updateToken, setFogSettings, setLighting, upsertWall, upsertLight, setGridSettings, advanceTravelDay, resetTravelEncounter, setActiveFloor, moveTokenToFloor, setObjects, setShapes, removeLight, removeWall, setAutoWalls, setExplored, showStageMedia, closeStageMedia, shareAudioWithRoom, startTravel, setTravelScene, showTravelEvent,
+  selectToken, setFog, setWeather, switchScene, undoBoard, updateBoardObject, updateMap, updateToken, setFogSettings, setLighting, upsertWall, upsertLight, setGridSettings, advanceTravelDay, resetTravelEncounter, setActiveFloor, moveTokenToFloor, setObjects, setShapes, clearTable, removeLight, removeWall, setAutoWalls, setExplored, showStageMedia, closeStageMedia, shareAudioWithRoom, startTravel, setTravelScene, showTravelEvent,
 } from "../../game/vttBridge";
 import { DEFAULT_MAPS } from "../../game/data";
 import { downloadGamePackage, downloadJson } from "../../game/download";
@@ -974,10 +975,12 @@ function UndoRedoPanel({ snapshot }: { snapshot: RuntimeSnapshot }) {
 }
 
 function OnlinePanel({ snapshot }: { snapshot: RuntimeSnapshot }) {
-  const [code, setCode] = useState(""); const [status, setStatus] = useState("");
+  const [code, setCode] = useState(""); const [status, setStatus] = useState(""); const [copied, setCopied] = useState("");
+  const room = snapshot.multiplayer.roomCode;
+  const copy = (what: "código" | "link", text: string) => { void navigator.clipboard?.writeText(text); setCopied(what); window.setTimeout(() => setCopied(""), 1800); };
   async function host() { try { setStatus("Abrindo sala…"); await hostMultiplayer(); setStatus("Sala aberta"); } catch (error) { setStatus((error as Error).message); } }
   async function join() { try { setStatus("Conectando…"); await joinMultiplayer(code); setStatus("Conectado"); } catch (error) { setStatus((error as Error).message); } }
-  return <div className="mesa-panel-stack"><div className={`mesa-online-card ${snapshot.multiplayer.status === "connected" ? "connected" : ""}`}><Radio/><span><small>{snapshot.multiplayer.role.toUpperCase()}</small><strong>{status || snapshot.multiplayer.status}</strong><em>{snapshot.multiplayer.roomCode ? `Sala ${snapshot.multiplayer.roomCode}` : "Sem sala ativa"}{snapshot.multiplayer.peerId ? ` · Peer ${shortPeerId(snapshot.multiplayer.peerId)}` : ""}</em></span></div><button className="mesa-primary-button" onClick={host}><Shield/>Criar sala como Mestre</button><div className="mesa-join-room"><input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="CÓDIGO"/><button onClick={join}>Entrar</button></div><div className="mesa-peer-list"><small>CONEXÕES · {snapshot.multiplayer.peers.length}</small>{snapshot.multiplayer.peers.map((peer) => <span key={peer}><i/>{peer}</span>)}</div></div>;
+  return <div className="mesa-panel-stack"><div className={`mesa-online-card ${snapshot.multiplayer.status === "connected" ? "connected" : ""}`}><Radio/><span><small>{snapshot.multiplayer.role.toUpperCase()}</small><strong>{status || snapshot.multiplayer.status}</strong><em>{snapshot.multiplayer.roomCode ? `Sala ${snapshot.multiplayer.roomCode}` : "Sem sala ativa"}{snapshot.multiplayer.peerId ? ` · Peer ${shortPeerId(snapshot.multiplayer.peerId)}` : ""}</em></span></div>{room && <div className="mesa-room-code"><small>CÓDIGO DA MESA</small><strong>{room}</strong><p>Quem tiver o código (ou o link) entra direto na sua mesa.</p><div className="mesa-panel-actions"><button onClick={() => copy("código", room)}>{copied === "código" ? "Copiado!" : "Copiar código"}</button><button onClick={() => copy("link", `${window.location.origin}${SITE_ROOT}mesa/?sala=${room}`)}>{copied === "link" ? "Copiado!" : "Copiar link"}</button></div></div>}<button className="mesa-primary-button" onClick={host}><Shield/>Criar sala como Mestre</button><div className="mesa-join-room"><input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="CÓDIGO"/><button onClick={join}>Entrar</button></div><div className="mesa-peer-list"><small>CONEXÕES · {snapshot.multiplayer.peers.length}</small>{snapshot.multiplayer.peers.map((peer) => <span key={peer}><i/>{peer}</span>)}</div></div>;
 }
 
 function SettingsPanel({ snapshot }: Props) {
@@ -1233,6 +1236,25 @@ function FloorSection({ board, isPlayer }: { board: RuntimeSnapshot["board"]; is
 
 /** Viagem e passagem de dia (Vtt: avancarDia). Contador de cena, nao campanha. */
 /** Ferramenta de mestre: contador de viagem e Encontro aleatório (ambiente + patamar do grupo → descrição e tokens das ameaças). */
+/** Limpar a mesa: dois passos (botão e confirmação) para não apagar sem querer; "Desfazer" traz de volta. */
+function ClearTableSection({ snapshot }: { snapshot: RuntimeSnapshot }) {
+  const [asking, setAsking] = useState<"tokens" | "tudo" | null>(null);
+  const isPlayer = snapshot.multiplayer.role === "player";
+  const run = (what: "tokens" | "tudo") => { try { clearTable(what); } catch (error) { appendChat({ author: "Sistema", text: (error as Error).message, kind: "system" }); } setAsking(null); };
+  return <div className="mesa-panel-section"><h4>LIMPAR A MESA</h4>
+    <p className="mesa-module-note">{snapshot.board.tokens.length} token(s), {snapshot.board.objects.length} objeto(s), {snapshot.board.lights.length} luz(es) na cena. O mapa e as paredes não mudam.</p>
+    {asking === null
+      ? <div className="mesa-panel-actions">
+        <button disabled={isPlayer} onClick={() => setAsking("tokens")}><Trash2/>Limpar tokens</button>
+        <button disabled={isPlayer} onClick={() => setAsking("tudo")}><Trash2/>Limpar tudo</button>
+      </div>
+      : <div className="mesa-panel-actions">
+        <button className="active" onClick={() => run(asking)}><Trash2/>Confirmar: {asking === "tokens" ? "apagar os tokens" : "apagar tokens, objetos, áreas e luzes"}</button>
+        <button onClick={() => setAsking(null)}>Cancelar</button>
+      </div>}
+  </div>;
+}
+
 function MasterPanel({ snapshot, onSpawnThreats, onSpawnNpc }: { snapshot: RuntimeSnapshot; onSpawnThreats?: (template: ThreatTemplate, count: number) => void; onSpawnNpc?: (name: string) => void }) {
   const [online, setOnline] = useState(false);
   const [ambiente, setAmbiente] = useState("Floresta");
@@ -1274,6 +1296,7 @@ function MasterPanel({ snapshot, onSpawnThreats, onSpawnNpc }: { snapshot: Runti
       <button onClick={() => setOnline(true)}><Radio/><span><strong>Sala online</strong><small>{snapshot.multiplayer.status === "connected" ? "Conectada" : "Criar ou entrar numa sala por código"}</small></span><ChevronRight/></button>
     </div>
     <TravelSection travel={snapshot.board.travel} scenes={snapshot.scenes} onPassDay={testarSorte}/>
+    <ClearTableSection snapshot={snapshot}/>
     <div className="mesa-panel-section"><h4>ENCONTRO ALEATÓRIO</h4>
       <label className="mesa-grid-select">Ambiente ou região
         <select value={ambiente} onChange={(event) => setAmbiente(event.target.value)}>

@@ -65,20 +65,6 @@
   "fase1Exploracao": {
     "data": "2026-09-30",
     "autorizacao": "O usuário liberou mudar layout e botões da exploração, só nos itens da lista acordada (cabeçalho com botão Combate, barra esquerda, painel do personagem, d20 e mesinha de rolagem). Cores, fundos e imagens não mudaram.",
-    "arquivosAlterados": [
-      "src/components/mesaSkin/MesaSkinTable.tsx",
-      "src/components/mesaSkin/actionDialog.css",
-      "src/components/mesaSkin/appearance.css",
-      "src/components/mesaSkin/components/ArmadaTitle.tsx",
-      "src/components/mesaSkin/components/Chrome.tsx",
-      "src/components/mesaSkin/components/ExpandedArt.tsx",
-      "src/components/mesaSkin/components/MapArea.tsx",
-      "src/components/mesaSkin/components/Panels.tsx",
-      "src/components/mesaSkin/components/ui.tsx",
-      "src/components/mesaSkin/config.ts",
-      "src/components/mesaSkin/data.ts",
-      "src/components/mesaSkin/runtime.ts",
-      "src/mesa-theme.css"
-    ]
+    "arquivosAlterados": []
   }
 }

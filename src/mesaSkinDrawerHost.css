@@ -103,3 +103,10 @@
 
 /* Bloco que o token vai ocupar no destino (criatura Grande, Enorme, Colossal): contorno suave. */
 .mesa-move-ghost { position: absolute; z-index: 12; pointer-events: none; border: 2px dashed rgba(255, 224, 140, .8); background: rgba(255, 214, 110, .1); box-shadow: 0 0 12px rgba(255, 200, 80, .35); border-radius: 6px; }
+
+/* Tela de espera enquanto a Mesa abre a sala (no lugar do lobby antigo). */
+.mesa-entrando { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; padding: 24px; background: #0b0706; color: #f2d68f; font-family: "Cinzel", serif; }
+.mesa-entrando strong { font-size: 22px; letter-spacing: .06em; }
+.mesa-entrando p { max-width: 460px; color: #e8dcc2; font-family: "Barlow", sans-serif; font-size: 15px; line-height: 1.4; }
+.mesa-entrando div { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.mesa-entrando button { background: #7b1220; color: #fff0c4; border: 1px solid #d9a94c; border-radius: 8px; padding: 9px 16px; font-weight: 700; cursor: pointer; }

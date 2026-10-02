@@ -3,13 +3,14 @@ import { useAuth } from "../../lib/auth/AuthContext";
 import { createTable, getTableByCode, listPublicTables, rateTable, updateTable, type TableEntry } from "../../lib/tables/client";
 import { addMyTable, alreadyRated, getMyTables, markRated, type MyTableLink } from "../../lib/tables/myTables";
 import { PageBanner } from "../layout/PageBanner";
+import imgCampanhas from "../../assets/menu/campanhas.jpg";
 import { OfficialCampaigns } from "../campaigns/OfficialCampaigns";
 import type { CampaignRecord } from "./CampaignsView";
 import { ImagePicker } from "../common/ImagePicker";
 import { SITE_ROOT } from "../../../utils/assetUrl";
 
 /** Arte própria da página (pintura do projeto). */
-const ONESHOTS_ART = "./images/urbana.jpg";
+const MESA_ONLINE_ART = imgCampanhas;
 
 const inp = "w-full rounded border border-[#ded7c6] bg-[#fbf9f4] p-2 text-xs";
 const AGE_RATINGS = ["livre", "10", "12", "14", "16", "18"];
@@ -76,7 +77,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
         let table = t;
         try { table = { ...(await updateTable(t.id, t.managementToken!, { liveRoomCode: t.code })), managementToken: t.managementToken }; } catch { table = { ...t, liveRoomCode: t.code }; }
         setCreated(table);
-        addMyTable({ id: table.id, code: table.code, managementToken: table.managementToken!, name: table.name, kind, liveRoomCode: table.code });
+        addMyTable({ id: table.id, code: table.code, managementToken: table.managementToken!, name: table.name, kind, liveRoomCode: table.code, data: { ...table, managementToken: undefined } });
         onCreated();
       })
       .catch(() => {
@@ -84,7 +85,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
         const code = randomCode();
         const local = { ...emptyTable(payload), id: `local-${code}`, code, liveRoomCode: code, managementToken: "local" } as TableEntry;
         setCreated(local);
-        addMyTable({ id: local.id, code, managementToken: "local", name: local.name, kind, liveRoomCode: code, local: true });
+        addMyTable({ id: local.id, code, managementToken: "local", name: local.name, kind, liveRoomCode: code, local: true, data: { ...local, managementToken: undefined } });
         setNotice("O servidor de mesas está desligado: a mesa foi criada só neste navegador. O código e o link funcionam na sala ao vivo; a lista pública e as avaliações voltam quando o servidor ligar.");
         onCreated();
       })
@@ -172,31 +173,73 @@ const JoinPrivateTable: React.FC = () => {
   );
 };
 
-const MyTables: React.FC = () => {
-  const [links] = useState<MyTableLink[]>(getMyTables());
-  const [tables, setTables] = useState<Record<string, TableEntry>>({});
+/** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
+const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry }> = ({ link, fresh }) => {
+  const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
+  const code = link.liveRoomCode || fresh?.liveRoomCode || link.code;
+  return (
+    <div className="flex flex-col overflow-hidden rounded-lg border border-[#ded7c6] bg-white shadow-sm">
+      {t.imageUrl ? <img src={t.imageUrl} alt="" className="h-32 w-full object-cover" /> : <div className="h-32 w-full bg-gradient-to-br from-[#2b261f] to-[#4a3f2c]" aria-hidden="true" />}
+      <div className="flex flex-1 flex-col p-3">
+        <div className="flex items-center gap-2"><MesaSeal kind={link.kind ?? t.kind} />{link.local && <span className="text-[9px] font-bold uppercase text-[#9c9180]">só neste navegador</span>}</div>
+        <div className="mt-1 font-serif text-lg font-black leading-tight text-[#b92b3a]">{link.name}</div>
+        <div className="text-[11px] text-[#726859]">{[t.system, t.modality, t.schedule].filter(Boolean).join(" · ")}</div>
+        {t.gmName && <div className="text-[11px] text-[#9c9180]">Mestre: {t.gmName}</div>}
+        {t.description && <p className="mt-1 line-clamp-3 text-[11px] leading-4 text-[#726859]">{t.description}</p>}
+        <div className="mt-2 flex items-center justify-between text-[11px]">
+          <span className="font-bold text-[#2b8a3e]">{t.priceType === "paga" ? `R$ ${Number(t.priceValue || 0).toFixed(2)}` : "Gratuita"}</span>
+          <span className="text-[#726859]">Vagas {t.seatsFilled ?? 0}/{t.seatsTotal ?? "—"}{t.isPublic ? " · pública" : " · privada"}</span>
+        </div>
+        <div className="mt-2 flex items-center gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-2 py-1 text-[11px]">
+          <span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest text-[#2b261f]">{code}</b>
+          <button onClick={() => navigator.clipboard?.writeText(code)} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]">Copiar</button>
+        </div>
+        <button onClick={() => openMesa({ name: link.name, host: code })} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
+      </div>
+    </div>
+  );
+};
 
+/** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
+const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void }> = ({ kind, title, campaigns = [], onManage }) => {
+  const [links] = useState<MyTableLink[]>(getMyTables());
+  const [fresh, setFresh] = useState<Record<string, TableEntry>>({});
   useEffect(() => {
-    links.forEach((l) => { getTableByCode(l.code).then((t) => setTables((prev) => ({ ...prev, [l.id]: t }))).catch(() => {}); });
+    links.filter((l) => !l.local).forEach((l) => { getTableByCode(l.code).then((t) => setFresh((prev) => ({ ...prev, [l.id]: t }))).catch(() => {}); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  if (links.length === 0) return null;
-
+  const mine = links.filter((l) => (l.kind ?? l.data?.kind ?? "oneshot") === kind);
+  const color = kind === "campanha" ? "text-[#1c5fb5]" : "text-[#b92b3a]";
   return (
     <div className="mb-6 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
-      <h2 className="mb-2 font-serif text-sm font-black text-[#b92b3a]">Minhas mesas criadas neste navegador</h2>
-      <div className="space-y-2">
-        {links.map((l) => {
-          const t = tables[l.id];
-          return (
-            <div key={l.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-3 py-2 text-xs">
-              <div className="flex flex-wrap items-center gap-2"><MesaSeal kind={l.kind ?? t?.kind} /><b>{l.name}</b> <span className="text-[#9c9180]">· código {l.code}{t ? ` · ${t.isPublic ? "pública" : "privada"} · ${t.seatsFilled}/${t.seatsTotal} vagas` : ""}</span></div>
-              <button onClick={() => openMesa({ name: l.name, host: l.liveRoomCode || t?.liveRoomCode || l.code })} className="rounded bg-[#b92b3a] px-3 py-1 text-[10px] font-bold uppercase text-white">Entrar na mesa online</button>
-            </div>
-          );
-        })}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className={`font-serif text-base font-black ${color}`}>{title}</h2>
+        {kind === "campanha" && onManage && <button onClick={onManage} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#726859] hover:bg-[#eae4d5]">Gerenciar campanhas</button>}
       </div>
+      {mine.length === 0 && campaigns.length === 0 ? (
+        <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">{kind === "campanha" ? "Nenhuma campanha ainda. Crie uma acima escolhendo “Campanha”." : "Nenhum one-shot ainda. Crie uma acima escolhendo “One-shot”."}</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} />)}
+          {campaigns.map((c) => {
+            const code = campaignRoomCode(c.id);
+            return (
+              <div key={c.id} className="flex flex-col overflow-hidden rounded-lg border border-[#ded7c6] bg-white shadow-sm">
+                <div className="h-32 w-full bg-gradient-to-br from-[#12315f] to-[#1c5fb5]" aria-hidden="true" />
+                <div className="flex flex-1 flex-col p-3">
+                  <MesaSeal kind="campanha" />
+                  <div className="mt-1 font-serif text-lg font-black leading-tight text-[#b92b3a]">{c.name}</div>
+                  <div className="mt-2 flex items-center gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-2 py-1 text-[11px]">
+                    <span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest text-[#2b261f]">{code}</b>
+                    <button onClick={() => navigator.clipboard?.writeText(code)} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]">Copiar</button>
+                  </div>
+                  <button onClick={() => openMesa({ name: c.name, host: code })} className="mt-3 w-full rounded bg-[#1c5fb5] py-2 text-xs font-black uppercase text-white">Entrar na mesa online</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -225,34 +268,6 @@ export function campaignRoomCode(id: string): string {
   return out.join("");
 }
 
-/** As campanhas da pessoa (as que ela criou ou importou no Portal), com o selo azul e o botão da mesa online. */
-const MyCampaigns: React.FC<{ campaigns: CampaignRecord[]; onManage: () => void }> = ({ campaigns, onManage }) => (
-  <div className="mb-6 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
-    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-      <h2 className="font-serif text-sm font-black text-[#1c5fb5]">Minhas campanhas</h2>
-      <button onClick={onManage} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#726859] hover:bg-[#eae4d5]">Gerenciar campanhas</button>
-    </div>
-    {campaigns.length === 0 ? (
-      <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">Nenhuma campanha ainda. Crie uma acima, escolhendo “Campanha”, ou importe uma em Gerenciar campanhas.</p>
-    ) : (
-      <div className="space-y-2">
-        {campaigns.map((c) => {
-          const code = campaignRoomCode(c.id);
-          return (
-            <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-3 py-2 text-xs">
-              <div className="flex flex-wrap items-center gap-2"><MesaSeal kind="campanha" /><b>{c.name}</b><span className="text-[#9c9180]">· código {code}</span></div>
-              <div className="flex gap-2">
-                <button onClick={() => navigator.clipboard?.writeText(code)} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#726859]">Copiar código</button>
-                <button onClick={() => openMesa({ name: c.name, host: code })} className="rounded bg-[#1c5fb5] px-3 py-1 text-[10px] font-bold uppercase text-white">Entrar na mesa online</button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    )}
-  </div>
-);
-
 export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; onManageCampaigns?: () => void }> = ({ campaigns = [], onManageCampaigns }) => {
   const [tables, setTables] = useState<TableEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -275,15 +290,15 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; onManageC
 
   return (
     <div className="mx-auto max-w-[1400px] p-3 sm:p-5">
-      <PageBanner image={ONESHOTS_ART} position="50% 60%" title="Mesa online" crumb="Mesa online" />
+      <PageBanner image={MESA_ONLINE_ART} position="50% 40%" title="Mesa online" crumb="Mesa online" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <CreatePrivateTable onCreated={() => load(1, false)} />
         <JoinPrivateTable />
       </div>
 
-      <div className="mt-6"><MyTables /></div>
-      <MyCampaigns campaigns={campaigns} onManage={() => onManageCampaigns?.()} />
+      <div className="mt-6"><MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} onManage={() => onManageCampaigns?.()} /></div>
+      <MyTablesSection kind="oneshot" title="Meus one-shots" />
       <div className="mb-6 [&_h2]:!text-[#f2c572]"><OfficialCampaigns /></div>
 
       <div className="mt-8 border-t-4 border-[#b92b3a] pt-6">

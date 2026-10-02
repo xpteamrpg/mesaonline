@@ -304,3 +304,9 @@
 
 /* Montaria cujo tamanho não serve: continua na lista (o motivo aparece ao passar o mouse e ao clicar), só mais apagada. */
 .mesa-panel-actions button.mesa-mount-blocked { opacity: .55; }
+
+/* Código da mesa em destaque (Ferramenta de mestre → Sala online) */
+.mesa-room-code { display: grid; gap: 6px; padding: 12px; border: 1px solid #d9a94c; border-radius: 10px; background: rgba(217, 169, 76, .08); text-align: center; }
+.mesa-room-code small { color: #d9a94c; letter-spacing: .14em; font-weight: 700; }
+.mesa-room-code strong { font-family: "Cinzel", serif; font-size: 30px; letter-spacing: .22em; color: #f6dc9a; text-shadow: 0 0 10px rgba(240, 160, 50, .45); user-select: all; }
+.mesa-room-code p { margin: 0; color: #cdbd9f; font-size: 12px; }

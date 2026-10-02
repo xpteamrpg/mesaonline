@@ -12,6 +12,8 @@ export interface MyTableLink {
   liveRoomCode?: string;
   /** criada sem o servidor de mesas (só neste navegador) */
   local?: boolean;
+  /** cópia dos dados da mesa (capa, vagas, horário...) para mostrar o cartão completo mesmo sem rede */
+  data?: Partial<import("./client").TableEntry>;
 }
 
 const KEY = "tormenta20_online_my_tables_v1";

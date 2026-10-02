@@ -389,6 +389,23 @@ export function addToken(token: BoardToken): BoardToken {
   return token;
 }
 
+/**
+ * Mestre: esvazia a mesa. "tokens" tira só os personagens e criaturas; "tudo" também tira objetos (itens, baús, armadilhas),
+ * áreas, gatilhos e luzes e encerra o combate. O mapa, as paredes e o terreno ficam. Pode ser desfeito em Desfazer.
+ */
+export function clearTable(what: "tokens" | "tudo" = "tudo"): void {
+  if (multiplayerState.role === "player") throw new Error("Somente o Mestre limpa a mesa.");
+  if (combatState.active) endCombat();
+  mutateBoard((board) => ({
+    ...board,
+    tokens: [],
+    selectedTokenIds: [],
+    targetedTokenIds: [],
+    ...(what === "tudo" ? { objects: [], shapes: [], lights: [] } : {}),
+  }));
+  logToJournal(what === "tudo" ? "O Mestre limpou a mesa (tokens, objetos, áreas e luzes)." : "O Mestre removeu todos os tokens da mesa.");
+}
+
 export function removeToken(tokenId: string): void {
   if (forward("removeToken", [tokenId])) return;
   const leaving = BOARD.tokens.find((token) => token.id === tokenId);

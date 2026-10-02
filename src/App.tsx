@@ -19,7 +19,7 @@ import MapStage from "./components/mesa/MapStage";
 import { getStageControl, setStageTool, useStageControl } from "./components/mesa/mapStageControl";
 import { effectiveMoveMode } from "./game/movementMode";
 import type { MapToolId as StageToolId } from "./game/mapTools";
-import { goToPortal, openPortalRoute, openPortalSheet } from "./portalLink";
+import { goToPortal, openPortalRoute, openPortalSheet, portalHref } from "./portalLink";
 import { conditionSkillPenalty } from "./game/conditionEffects";
 import { assignHotkey, clearHotkey, readHotkeys } from "./game/hotkeys";
 import { installJukeboxSync } from "./game/jukeboxSync";
@@ -56,6 +56,17 @@ const PANEL_NAV: Partial<Record<MesaPanelId, string>> = {
   "map-context": "objects", history: "journal", automation: "macros", master: "master", settings: "config",
 };
 type MesaStage = "lobby" | "exploration" | "combat";
+
+/** O lobby antigo da Mesa só abre com ?local=1 (ou ?campanha=, e nos testes): a entrada normal é a página "Mesa online" do Portal. */
+const LOBBY_ANTIGO = typeof window !== "undefined" && (() => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("local") === "1" || params.has("campanha") || import.meta.env?.MODE === "test";
+})();
+
+/** Volta para a página "Mesa online" do Portal. */
+function goToMesaOnline(): void {
+  window.location.href = portalHref("mesa-online");
+}
 
 /**
  * Este projeto é APENAS a Mesa Online. O Portal ModernRPG (Home, Ficha,
@@ -113,11 +124,13 @@ export default function App() {
 
   // Depois de um F5 a mesa volta sozinha para a sala anterior, com a mesma
   // identidade PeerJS — é isso que preserva o controlledBy dos tokens.
+  const [entry, setEntry] = useState<"loading" | "error" | "done">(LOBBY_ANTIGO ? "done" : "loading");
+  const [entryError, setEntryError] = useState("");
   useEffect(() => {
     let active = true;
     void restoreMultiplayerSession().then(async (restored) => {
       if (!active) return;
-      if (restored) { setMesaStage("exploration"); return; }
+      if (restored) { setMesaStage("exploration"); setEntry("done"); return; }
       // A entrada é a página "Mesa online" do Portal: ela abre a Mesa já na sala (?host= para o Mestre, ?sala= para o jogador).
       // O lobby antigo (MesaLobby) fica guardado, sem uso; ?local=1 o abre só para testes.
       const params = new URLSearchParams(window.location.search);
@@ -126,13 +139,15 @@ export default function App() {
       try {
         if (host) { await hostMultiplayer(host); }
         else if (sala) { await joinMultiplayer(sala); }
-        else if (params.get("local") === "1" || params.has("campanha") || import.meta.env?.MODE === "test") return;
-        else { goToPortal(); return; }
+        else if (LOBBY_ANTIGO) return;
+        else { goToMesaOnline(); return; }
         if (!active) return;
         window.history.replaceState(null, "", window.location.pathname); // F5 reentra pela sessão guardada, sem reabrir a sala
         setMesaStage("exploration");
-      } catch {
-        // Sala ocupada ou mestre ausente: o lobby antigo mostra o motivo (snapshot.multiplayer.error) e deixa tentar de novo.
+        setEntry("done");
+      } catch (error) {
+        // Sala ocupada ou mestre ausente: mostra o motivo e leva de volta à Mesa online (o lobby antigo não aparece mais).
+        if (active) { setEntryError((error as Error).message || "Não consegui abrir a sala."); setEntry("error"); }
       }
     });
     return () => { active = false; };
@@ -745,7 +760,14 @@ export default function App() {
   }
 
   return <>
-    {mesaStage === "lobby" && <MesaLobby snapshot={snapshot} campaigns={campaigns} onEnter={() => setMesaStage("exploration")}/>}
+    {mesaStage === "lobby" && entry === "done" && <MesaLobby snapshot={snapshot} campaigns={campaigns} onEnter={() => setMesaStage("exploration")}/>}
+    {mesaStage === "lobby" && entry !== "done" && (
+      <main className="mesa-entrando" role="status">
+        <strong>{entry === "error" ? "Não foi possível abrir a mesa" : "Abrindo a mesa…"}</strong>
+        {entry === "error" && <p>{entryError}</p>}
+        {entry === "error" && <div><button onClick={() => window.location.reload()}>Tentar de novo</button><button onClick={goToMesaOnline}>Voltar à Mesa online</button></div>}
+      </main>
+    )}
     {(mesaStage === "exploration" || mesaStage === "combat") && (
       <MesaSkinTable
         view={mesaStage === "combat" ? "combat" : "explore"}
