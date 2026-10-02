@@ -22,7 +22,7 @@ import {
 } from "../../game/vttBridge";
 import { tacticalViewForToken } from "../../integration/modernRpgCharacterBridge";
 import { resolveTacticalAction } from "./combat";
-import { reachableCells, moverOf } from "./movement";
+import { reachableCells, moverOf, EXPLORATION_BUDGET_M } from "./movement";
 import "./conditionTicks";
 import { spendCombatAction } from "./actionEconomy";
 import { resolveSpellEffect } from "./spellEffects";
@@ -104,7 +104,7 @@ function resolveExplorationMove(actorId: string, x: number, y: number, requested
   if (!Number.isInteger(x) || !Number.isInteger(y)) throw new Error("Destino inválido.");
   const board = getBoard();
   const key = `${x},${y}`;
-  if (!reachableCells(board, moverOf(board, actor), { mode }).has(key)) throw new Error("Destino fora do deslocamento ou bloqueado.");
+  if (!reachableCells(board, moverOf(board, actor), { mode, budgetM: EXPLORATION_BUDGET_M }).has(key)) throw new Error("Destino bloqueado ou fora do mapa.");
   const from = { x: actor.gx, y: actor.gy };
   const moved = moveToken(actor.id, x, y);
   const settings = fogSettings(getBoard().fogSettings);

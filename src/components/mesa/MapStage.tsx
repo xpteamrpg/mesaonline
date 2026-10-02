@@ -22,11 +22,14 @@ import IsoStage from "./IsoStage";
 import { pathDistance } from "../../game/ruler";
 import { CELL_PX, boardPixelSize, clampZoom, fitScale, focusCamera, imagePlacement, imageStyle, snapOffset } from "../../game/mapView";
 import { toggleBarrier } from "../../tactics/engine/boardTools";
-import { reachableWithPaths, moverOf } from "../../tactics/engine/movement";
+import { reachableWithPaths, moverOf, EXPLORATION_BUDGET_M } from "../../tactics/engine/movement";
 import { executeExplorationMove, executeTacticalMove } from "../../tactics/engine/runtimeCommands";
 import { onCameraCommand, openDoorDialog, openObjectDialog, setStageTool, useStageControl } from "./mapStageControl";
 import { isShaking } from "../../game/chest";
 import { effectiveMoveMode } from "../../game/movementMode";
+
+/** Valor seguro dentro de um seletor [data-token-id="..."] (CSS.escape não existe em todo ambiente). */
+const attrValue = (value: string) => value.split("\\").join("\\\\").split('"').join('\\"');
 
 interface Props {
   snapshot: RuntimeSnapshot;
@@ -120,22 +123,23 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
       if (before) farthest = Math.max(farthest, Math.hypot(token.gx - before[0], token.gy - before[1]));
       lastPositions.current.set(token.id, [token.gx, token.gy]);
     }
-    if (farthest > 0) zoneRef.current?.style.setProperty("--walk-ms", `${Math.min(2400, Math.max(1000, Math.round(farthest * 280)))}ms`);
+    // Combate: deslize devagar (1 a 2,4 s). Exploração: rápido, para grandes deslocamentos (até 0,5 s).
+    if (farthest > 0) zoneRef.current?.style.setProperty("--walk-ms", snapshot.combat.active ? `${Math.min(2400, Math.max(1000, Math.round(farthest * 280)))}ms` : `${Math.min(500, Math.round(180 + farthest * 30))}ms`);
     // Deslize (mapa 2D): o token já foi para a casa nova; aqui ele "volta" visualmente para a casa antiga e desliza até a nova só com translate.
     if (!iso && farthest > 0) {
       for (const token of board.tokens) {
         const before = slideFrom.current.get(token.id);
         if (!before || (before[0] === token.gx && before[1] === token.gy)) continue;
-        const el = zoneRef.current?.querySelector<HTMLElement>(`[data-token-id="${CSS.escape(token.id)}"]`);
+        const el = zoneRef.current?.querySelector<HTMLElement>(`[data-token-id="${attrValue(token.id)}"]`);
         const parent = el?.offsetParent as HTMLElement | null;
         if (!el || !parent) continue;
         const dx = (before[0] - token.gx) * (parent.clientWidth / map.cols);
         const dy = (before[1] - token.gy) * (parent.clientHeight / map.rows);
         el.style.transition = "none";
-        el.style.translate = `${dx}px ${dy}px`;
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
         void el.offsetWidth; // fixa o ponto de partida antes de animar
         el.style.transition = "";
-        el.style.translate = "0px 0px";
+        el.style.transform = "translate(0px, 0px)";
       }
     }
     slideFrom.current = new Map(board.tokens.map((token) => [token.id, [token.gx, token.gy] as [number, number]]));
@@ -143,8 +147,15 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
   // Na exploração não há alcance desenhado: o destino é conferido só na hora de clicar ou soltar o token.
   const landableFor = (token: BoardToken, x: number, y: number) => {
     const mover = moverOf(board, token);
-    return Boolean(reachableWithPaths(board, mover, { mode: effectiveMoveMode(token, stageControl.moveMode) }).has(`${x},${y}`)) && !footprintOccupied(board, mover, { x, y });
+    return Boolean(reachableWithPaths(board, mover, { mode: effectiveMoveMode(token, stageControl.moveMode), budgetM: EXPLORATION_BUDGET_M }).has(`${x},${y}`)) && !footprintOccupied(board, mover, { x, y });
   };
+  // Marca de seleção: a máscara não desenha nada no token selecionado, então o mapa marca o elemento (o desenho está em mesaSkinDrawerHost.css).
+  useLayoutEffect(() => {
+    const zone = zoneRef.current;
+    if (!zone) return;
+    zone.querySelectorAll("[data-token-id][data-selected]").forEach((el) => el.removeAttribute("data-selected"));
+    if (selectedId) zone.querySelector(`[data-token-id="${attrValue(selectedId)}"]`)?.setAttribute("data-selected", "true");
+  }, [selectedId, board.tokens]);
   // Casa de destino válida: alcançável e com o bloco inteiro livre (Grande 2x2, Enorme 3x3, Colossal 6x6).
   const landable = (x: number, y: number) => Boolean(reach?.has(`${x},${y}`)) && !(moverToken && footprintOccupied(board, moverToken, { x, y }));
   useEffect(() => { setPendingMove(null); }, [moveFor, stageControl.tool, previewToken?.id, previewToken?.gx, previewToken?.gy]);

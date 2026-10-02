@@ -81,7 +81,9 @@
 .mesa-move-path path { stroke: rgba(255, 150, 120, .8); stroke-width: 2.5; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(255, 130, 90, .5)); }
 [data-map-stage] [data-token-id] { transition: left var(--walk-ms, 1000ms) cubic-bezier(.45, .05, .35, 1), top var(--walk-ms, 1000ms) cubic-bezier(.45, .05, .35, 1); }
 /* Mapa 2D: o token já está na casa nova e o deslize é só um deslocamento (translate), feito pela placa de vídeo: animar left/top refazia o layout a cada quadro e travava. */
-.mesa-exploration-board [data-token-id] { transition: translate var(--walk-ms, 1000ms) cubic-bezier(.45, .05, .35, 1); }
+.mesa-exploration-board [data-token-id] { transition: transform var(--walk-ms, 1000ms) cubic-bezier(.45, .05, .35, 1); }
+/* Token selecionado: aro dourado (a máscara não desenha nada na seleção). */
+[data-map-stage] [data-token-id][data-selected]::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid #ffd978; box-shadow: 0 0 10px 2px rgba(255, 217, 120, .6), inset 0 0 8px rgba(255, 217, 120, .3); pointer-events: none; }
 
 /* Cursor: seta comum no mapa; a mira só aparece quando uma ferramenta de clique no mapa está ativa. */
 [data-map-stage] .next-grid > button { cursor: default; }

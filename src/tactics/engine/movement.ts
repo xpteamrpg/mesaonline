@@ -106,6 +106,9 @@ export function moverOf(board: Pick<BoardState, "tokens">, token: BoardToken): B
   return (token.mountId && board.tokens.find((entry) => entry.id === token.mountId)) || token;
 }
 
+/** Exploração não tem limite de distância: o orçamento é grande o bastante para cobrir o mapa (paredes, ocupação e condições como Imóvel continuam valendo). */
+export const EXPLORATION_BUDGET_M = 100000;
+
 export interface ReachableOptions {
   mode?: "walk" | "fly" | "burrow";
   budgetM?: number;

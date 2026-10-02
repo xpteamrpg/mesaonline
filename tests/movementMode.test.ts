@@ -35,11 +35,14 @@ describe("voo e escavação nos comandos", () => {
     return { bridge, commands };
   }
 
-  it("andando, o deslocamento curto não chega; voando, chega", async () => {
+  it("na exploração o movimento é livre (andando ou voando); no combate o deslocamento limita", async () => {
     const { bridge, commands } = await setup();
-    expect(() => commands.executeExplorationMove("grifo", 10, 2, "walk")).toThrow(/deslocamento/);
-    commands.executeExplorationMove("grifo", 10, 2, "fly");
+    commands.executeExplorationMove("grifo", 10, 2, "walk"); // exploração: sem limite de distância
     expect(bridge.getBoard().tokens.find((token) => token.id === "grifo")?.gx).toBe(10);
+    commands.executeExplorationMove("grifo", 2, 2, "fly");
+    expect(bridge.getBoard().tokens.find((token) => token.id === "grifo")?.gx).toBe(2);
+    bridge.startCombat();
+    expect(() => commands.executeTacticalMove("grifo", 10, 2, "walk")).toThrow(/deslocamento/);
   });
 
   it("voar ignora terreno bloqueado e baú fechado; andar não", async () => {
