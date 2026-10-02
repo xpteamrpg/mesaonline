@@ -32,7 +32,7 @@ const label = "mb-1 block text-[11px] font-black uppercase tracking-[0.16em] tex
  * Quando alguém tenta criar ou entrar numa mesa sem estar logado, ela aparece com o motivo.
  */
 export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { login, register, resendConfirmation, authReason } = useAuth();
+  const { login, register, resendConfirmation, signInWithGoogle, authReason } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
@@ -66,8 +66,8 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
         onClose();
       } else {
         const result = await register(email.trim(), password, nickname.trim());
-        if (result.needsConfirmation) setSent(true);
-        else onClose();
+        if (result.loggedIn) onClose();
+        else setSent(true);
       }
     } catch (e) {
       if (e instanceof EmailNotConfirmedError) setNeedsConfirm(true);
@@ -92,7 +92,7 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <h2 className="text-center font-serif text-2xl font-black text-[#f2c572]">{mode === "login" ? "Entre na sua conta" : "Crie sua conta"}</h2>
         {authReason && <p className="mt-2 rounded-lg border border-[#b92b3a]/60 bg-[#b92b3a]/15 px-3 py-2 text-center text-[13px] font-bold text-[#ffd9d4]">{authReason}</p>}
         <p className="mt-2 text-center text-[12.5px] leading-5 text-[#aeb8d0]">
-          A conta guarda os seus <b className="text-[#f0e6cf]">personagens</b> e as suas <b className="text-[#f0e6cf]">campanhas</b>, e permite <b className="text-[#f0e6cf]">compartilhar campanhas</b> com outros jogadores. Seu e-mail precisa ser confirmado.
+          A conta guarda os seus <b className="text-[#f0e6cf]">personagens</b> e as suas <b className="text-[#f0e6cf]">campanhas</b>, e permite <b className="text-[#f0e6cf]">compartilhar campanhas</b> com outros jogadores. Você já entra ao criar a conta; confirme o e-mail depois para ficar como “Verificado”.
         </p>
 
         {sent ? (
@@ -133,6 +133,11 @@ export const AuthModal: React.FC<Props> = ({ isOpen, onClose }) => {
             )}
             <button type="submit" disabled={busy || !email.trim() || !password || (mode === "register" && !canRegister)} className="w-full rounded-lg bg-gradient-to-b from-[#d4293f] to-[#8a0f25] py-3 text-sm font-black uppercase tracking-widest text-[#fff0c4] shadow-[0_0_14px_rgba(230,40,60,.45)] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45">
               {busy ? "Aguarde…" : mode === "login" ? "Entrar" : "Criar conta"}
+            </button>
+            <div className="flex items-center gap-3 text-[11px] text-[#6f7c99]"><span className="h-px flex-1 bg-[#2a3a5c]" />ou<span className="h-px flex-1 bg-[#2a3a5c]" /></div>
+            <button type="button" onClick={() => { setError(""); signInWithGoogle().catch((e) => setError(e instanceof Error ? e.message : "Não foi possível entrar com o Google.")); }} className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#2a3a5c] bg-white py-2.5 text-sm font-bold text-[#1f1f1f] hover:brightness-95">
+              <svg viewBox="0 0 48 48" className="h-5 w-5" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+              Entrar com o Google
             </button>
             <div className="flex items-center gap-3 text-[11px] text-[#6f7c99]"><span className="h-px flex-1 bg-[#2a3a5c]" />ou<span className="h-px flex-1 bg-[#2a3a5c]" /></div>
             <button type="button" onClick={() => { setMode(mode === "login" ? "register" : "login"); setConfirm(""); }} className="w-full rounded-lg border border-[#2a3a5c] bg-[#08142a] py-2.5 text-sm font-bold text-[#f0e6cf] hover:border-[#d9a94c]">

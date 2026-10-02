@@ -14,7 +14,12 @@ export type View =
   | "equipment"
   | "spells"
   | "bestiary"
-  | "homebrew";
+  | "homebrew"
+  | "createChar"
+  | "readyChars"
+  | "account"
+  | "accountProfile"
+  | "accountOrders";
 
 export const VIEW_HASH: Record<View, string> = {
   home: "#/",
@@ -33,12 +38,17 @@ export const VIEW_HASH: Record<View, string> = {
   spells: "#/magias",
   bestiary: "#/monstros",
   homebrew: "#/homebrew",
+  createChar: "#/personagens/novo",
+  readyChars: "#/personagens/prontos",
+  account: "#/conta",
+  accountProfile: "#/conta/perfil",
+  accountOrders: "#/conta/pedidos",
 };
 
 export function viewFromHash(): View {
   const h = window.location.hash.toLowerCase();
   if (h.startsWith("#/oneshots")) return "online";
-  const hit = (Object.entries(VIEW_HASH) as [View, string][]).find(([, hash]) => hash !== "#/" && h.startsWith(hash));
+  const hit = (Object.entries(VIEW_HASH) as [View, string][]).sort((a, b) => b[1].length - a[1].length).find(([, hash]) => hash !== "#/" && h.startsWith(hash));
   if (hit) return hit[0];
   if (h.includes("workshop")) return "workshop";
   if (h.includes("mesa-online")) return "online";

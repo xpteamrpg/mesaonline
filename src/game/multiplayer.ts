@@ -20,7 +20,8 @@ type WireMessage =
   | { type: "armada-runtime-command"; payload: RuntimeCommand }
   | { type: "armada-runtime-command-result"; payload: RuntimeCommandResult }
   | { type: "armada-signal"; payload: unknown }
-  | { type: "armada-audio"; payload: unknown };
+  | { type: "armada-audio"; payload: unknown }
+  | { type: "armada-kicked" };
 
 type Handlers = {
   /** O Mestre pode redigir o snapshot de acordo com o peer destinatário. */
@@ -82,6 +83,8 @@ function createPeer(id: string): Peer {
 export class ArmadaMultiplayer {
   private peer: Peer | null = null;
   private connections = new Map<string, DataConnection>();
+  /** Peers expulsos pelo Mestre nesta sessão: se tentarem voltar, a conexão é fechada na hora. */
+  private banned = new Set<string>();
   /** requestId → nome do comando, para rotular o resultado que voltar. */
   private pending = new Map<string, string>();
   private handlers: Handlers;
@@ -119,6 +122,7 @@ export class ArmadaMultiplayer {
 
   async host(preferredCode?: string): Promise<string> {
     this.teardown();
+    this.banned.clear();
     const roomCode = normalizeRoomCode(preferredCode || randomCode());
     this.manualDisconnect = false;
     this.setState({ role: "master", status: "connecting", roomCode, peerId: "", peers: [], error: undefined, commandLog: [] });
@@ -220,6 +224,13 @@ export class ArmadaMultiplayer {
   }
 
   private acceptConnection(connection: DataConnection, master: boolean, onOpen?: () => void) {
+    if (master && this.banned.has(connection.peer)) {
+      connection.on("open", () => {
+        try { connection.send({ type: "armada-kicked" } satisfies WireMessage); } catch { /* já fechada */ }
+        setTimeout(() => { try { connection.close(); } catch { /* já fechada */ } }, 200);
+      });
+      return;
+    }
     // Reconexão com a mesma identidade: a conexão nova substitui a antiga.
     const previous = this.connections.get(connection.peer);
     if (previous && previous !== connection) {
@@ -257,6 +268,27 @@ export class ArmadaMultiplayer {
     this.schedulePlayerReconnect();
   }
 
+  /** Jogador removido pelo Mestre: sai da sala, esquece a sessão e não tenta reconectar. */
+  private handleKicked() {
+    this.teardown();
+    forgetSession();
+    this.setState({ status: "error", error: "Você foi removido da mesa pelo Mestre." });
+  }
+
+  /** Mestre: expulsa um jogador conectado. Ele é avisado, desconectado e não volta nesta sala enquanto o Mestre não a reabrir. */
+  kick(peerId: string): boolean {
+    if (this.state.role !== "master") return false;
+    this.banned.add(peerId);
+    const connection = this.connections.get(peerId);
+    if (connection) {
+      try { if (connection.open) connection.send({ type: "armada-kicked" } satisfies WireMessage); } catch { /* já fechada */ }
+      setTimeout(() => { try { connection.close(); } catch { /* já fechada */ } }, 200);
+      this.connections.delete(peerId);
+      this.setState({ peers: [...this.connections.keys()] });
+    }
+    return true;
+  }
+
   private schedulePlayerReconnect() {
     const peer = this.peer;
     if (!peer || peer.destroyed || this.manualDisconnect) return;
@@ -287,6 +319,10 @@ export class ArmadaMultiplayer {
         result = { requestId: message.payload.requestId, ok: false, error: (error as Error).message || "Comando recusado pelo Mestre." };
       }
       if (connection.open) connection.send({ type: "armada-runtime-command-result", payload: result } satisfies WireMessage);
+      return;
+    }
+    if (message.type === "armada-kicked") {
+      if (!master) this.handleKicked();
       return;
     }
     if (message.type === "armada-audio") {

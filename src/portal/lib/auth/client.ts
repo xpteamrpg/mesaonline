@@ -10,6 +10,14 @@ export interface AuthUser {
   nickname?: string;
   /** e-mail já confirmado */
   confirmed?: boolean;
+  /** perfil público (guardado nos dados da conta) */
+  displayName?: string;
+  handle?: string;
+  bio?: string;
+  newsletter?: boolean;
+  createdAt?: string;
+  /** formas de entrada ligadas à conta: "email", "google"... */
+  providers?: Array<{ provider: string; email?: string }>;
 }
 
 export interface SharedCampaign {

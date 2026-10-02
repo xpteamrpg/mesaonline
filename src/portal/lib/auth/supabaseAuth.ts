@@ -13,12 +13,22 @@ export class EmailNotConfirmedError extends Error {
   constructor() { super("Confirme o seu e-mail para entrar: abra a mensagem que enviamos e clique no link."); this.name = "EmailNotConfirmedError"; }
 }
 
-const toUser = (user: User): AuthUser => ({
-  id: user.id,
-  email: user.email ?? "",
-  nickname: typeof user.user_metadata?.nickname === "string" ? user.user_metadata.nickname : undefined,
-  confirmed: Boolean(user.email_confirmed_at),
-});
+const toUser = (user: User): AuthUser => {
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const text = (key: string) => (typeof meta[key] === "string" ? (meta[key] as string) : undefined);
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    nickname: text("nickname"),
+    confirmed: Boolean(user.email_confirmed_at),
+    displayName: text("display_name"),
+    handle: text("handle"),
+    bio: text("bio"),
+    newsletter: meta.newsletter !== false,
+    createdAt: user.created_at,
+    providers: (user.identities ?? []).map((i) => ({ provider: i.provider, email: typeof i.identity_data?.email === "string" ? i.identity_data.email : undefined })),
+  };
+};
 
 /** Para onde o link do e-mail leva depois de confirmar: a página Mesa online do próprio site. */
 function redirectUrl(): string {
@@ -56,14 +66,18 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
   return toUser(data.user);
 }
 
-/** Cria a conta. Com confirmação de e-mail ligada no Supabase, `needsConfirmation` vem verdadeiro e ninguém entra antes de clicar no link. */
+/** Cria a conta e já entra; `needsConfirmation` indica que o e-mail ainda não foi confirmado (mostrado como "Não verificado"). */
 export async function signUp(nickname: string, email: string, password: string): Promise<{ needsConfirmation: boolean; user?: AuthUser }> {
   if (!supabase) throw new Error("Contas indisponíveis.");
   const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { nickname }, emailRedirectTo: redirectUrl() } });
   if (error) throw explain(error);
   // E-mail que já existe: o Supabase não acusa erro (para não revelar quem tem conta), mas devolve a lista de identidades vazia.
   if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error("Este e-mail já tem conta. Use “Entrar”.");
-  return { needsConfirmation: !data.session, user: data.session && data.user ? toUser(data.user) : undefined };
+  if (data.session && data.user) return { needsConfirmation: !data.user.email_confirmed_at, user: toUser(data.user) };
+  // O site deixa entrar sem confirmar o e-mail (a conta fica "Não verificada" até a pessoa clicar no link).
+  const login = await supabase.auth.signInWithPassword({ email, password });
+  if (!login.error && login.data.user) return { needsConfirmation: !login.data.user.email_confirmed_at, user: toUser(login.data.user) };
+  return { needsConfirmation: true };
 }
 
 export async function resendConfirmation(email: string): Promise<void> {
@@ -74,4 +88,33 @@ export async function resendConfirmation(email: string): Promise<void> {
 
 export async function signOut(): Promise<void> {
   await supabase?.auth.signOut();
+}
+
+export interface ProfilePatch { displayName?: string; handle?: string; bio?: string; newsletter?: boolean }
+
+/** Grava o perfil público nos dados da conta. */
+export async function updateProfile(patch: ProfilePatch): Promise<AuthUser> {
+  if (!supabase) throw new Error("Contas indisponíveis.");
+  const data: Record<string, unknown> = {};
+  if (patch.displayName !== undefined) data.display_name = patch.displayName;
+  if (patch.handle !== undefined) data.handle = patch.handle;
+  if (patch.bio !== undefined) data.bio = patch.bio;
+  if (patch.newsletter !== undefined) data.newsletter = patch.newsletter;
+  const { data: res, error } = await supabase.auth.updateUser({ data });
+  if (error) throw explain(error);
+  return toUser(res.user);
+}
+
+/** Troca ou define a senha da conta logada. */
+export async function setPassword(password: string): Promise<void> {
+  if (!supabase) throw new Error("Contas indisponíveis.");
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw explain(error);
+}
+
+/** Entrar com o Google (precisa do provedor Google ligado no Supabase). */
+export async function signInWithGoogle(): Promise<void> {
+  if (!supabase) throw new Error("Contas indisponíveis.");
+  const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectUrl() } });
+  if (error) throw explain(error);
 }

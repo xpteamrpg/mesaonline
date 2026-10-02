@@ -856,6 +856,11 @@ export async function joinMultiplayer(code: string): Promise<void> {
   rememberTable(code.toUpperCase());
 }
 
+/** Mestre: expulsa um jogador conectado da sala. */
+export function kickPlayer(peerId: string): boolean {
+  return multiplayer.kick(peerId);
+}
+
 export function leaveMultiplayer(): void {
   multiplayer.disconnect();
 }

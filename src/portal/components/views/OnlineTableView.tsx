@@ -8,6 +8,9 @@ import { OfficialCampaigns } from "../campaigns/OfficialCampaigns";
 import type { CampaignRecord } from "./CampaignsView";
 import { ImagePicker } from "../common/ImagePicker";
 import { SITE_ROOT } from "../../../utils/assetUrl";
+import type { CharacterSheet } from "../../types/sheet";
+import { ManageTableDialog, ParticipatingTables, ReceivedInvites } from "../campaigns/MesaAccountSections";
+import { claimTable } from "../../lib/campaigns/client";
 
 /** Arte própria da página (pintura do projeto). */
 const MESA_ONLINE_ART = imgCampanhas;
@@ -71,12 +74,14 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
     if (!requireLogin("Para criar uma mesa você precisa estar logado.")) return;
     if (!form.name.trim()) { setError("Nome da mesa é obrigatório."); return; }
     setBusy(true);
-    const payload = { ...form, kind, gmName: form.gmName || user?.email || "", seatsTotal: Number(form.seatsTotal) || 1, priceValue: Number(form.priceValue) || 0 };
+    const payload = { ...form, kind, gmName: form.gmName || user?.nickname || user?.email || "", seatsTotal: Number(form.seatsTotal) || 1, priceValue: Number(form.priceValue) || 0 };
     createTable(payload)
       .then(async (t) => {
         // A sala ao vivo usa o mesmo código da mesa: quem tem o código entra direto.
         let table = t;
         try { table = { ...(await updateTable(t.id, t.managementToken!, { liveRoomCode: t.code })), managementToken: t.managementToken }; } catch { table = { ...t, liveRoomCode: t.code }; }
+        // Liga a mesa à conta do mestre (para convidar, expulsar e aceitar personagens). Sem Supabase, segue só com o token.
+        if (table.id && table.managementToken) void claimTable(table.id, table.managementToken).catch(() => undefined);
         setCreated(table);
         addMyTable({ id: table.id, code: table.code, managementToken: table.managementToken!, name: table.name, kind, liveRoomCode: table.code, data: { ...table, managementToken: undefined } });
         onCreated();
@@ -110,7 +115,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
   return (
     <div className="rounded-lg border border-[#ded7c6] bg-white p-5 shadow-sm">
       <h2 className="font-serif text-xl font-black text-[#b92b3a]">Criar mesa privativa</h2>
-      <p className="mt-1 text-xs leading-5 text-[#726859]">Escolha se é uma campanha ou um one-shot. Gera um código e um link para você convidar quem quiser. Não precisa de conta.</p>
+      <p className="mt-1 text-xs leading-5 text-[#726859]">Escolha se é uma campanha ou um one-shot. Gera um código e um link para você convidar quem quiser. Precisa de uma conta gratuita.</p>
       <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de mesa">
         <button type="button" role="radio" aria-checked={kind === "campanha"} onClick={() => setKind("campanha")} className={`rounded border-2 py-2 text-xs font-black uppercase tracking-widest ${kind === "campanha" ? "border-[#1c5fb5] bg-[#1c5fb5] text-white" : "border-[#ded7c6] bg-white text-[#1c5fb5]"}`}>Campanha</button>
         <button type="button" role="radio" aria-checked={kind === "oneshot"} onClick={() => setKind("oneshot")} className={`rounded border-2 py-2 text-xs font-black uppercase tracking-widest ${kind === "oneshot" ? "border-[#b92b3a] bg-[#b92b3a] text-white" : "border-[#ded7c6] bg-white text-[#b92b3a]"}`}>One-shot</button>
@@ -120,7 +125,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
         <input value={form.system} onChange={(e) => setForm({ ...form, system: e.target.value })} placeholder="Sistema" className={inp} />
         <select value={form.modality} onChange={(e) => setForm({ ...form, modality: e.target.value as "online" | "presencial" })} className={inp}><option value="online">Online</option><option value="presencial">Presencial</option></select>
         <input value={form.schedule} onChange={(e) => setForm({ ...form, schedule: e.target.value })} placeholder="Horário (ex: Sábados 20h)" className={inp} />
-        <input value={form.gmName} onChange={(e) => setForm({ ...form, gmName: e.target.value })} placeholder={`Mestre responsável${user ? ` (padrão: ${user.email})` : ""}`} className={inp} />
+        <input value={form.gmName} onChange={(e) => setForm({ ...form, gmName: e.target.value })} placeholder={`Mestre responsável${user ? ` (padrão: ${user.nickname || user.email})` : ""}`} className={inp} />
         <input value={form.seatsTotal} onChange={(e) => setForm({ ...form, seatsTotal: e.target.value })} type="number" min="1" placeholder="Vagas" className={inp} />
         <select value={form.ageRating} onChange={(e) => setForm({ ...form, ageRating: e.target.value })} className={inp}>{AGE_RATINGS.map((a) => <option key={a} value={a}>{a === "livre" ? "Livre" : `${a} anos`}</option>)}</select>
         <input value={form.vttPlatform} onChange={(e) => setForm({ ...form, vttPlatform: e.target.value })} placeholder="Plataforma / VTT" className={inp} />
@@ -177,7 +182,7 @@ const JoinPrivateTable: React.FC = () => {
 };
 
 /** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
-const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry }> = ({ link, fresh }) => {
+const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (l: MyTableLink) => void }> = ({ link, fresh, onManage }) => {
   const { requireLogin } = useAuth();
   const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
   const code = link.liveRoomCode || fresh?.liveRoomCode || link.code;
@@ -199,13 +204,14 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry }> = ({ link
           <button onClick={() => navigator.clipboard?.writeText(code)} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]">Copiar</button>
         </div>
         <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: link.name, host: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
+        {!link.local && <button onClick={() => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) onManage(link); }} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Gerenciar jogadores e convites</button>}
       </div>
     </div>
   );
 };
 
 /** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
-const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void }> = ({ kind, title, campaigns = [], onManage }) => {
+const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void; onManageTable: (l: MyTableLink) => void }> = ({ kind, title, campaigns = [], onManage, onManageTable }) => {
   const { requireLogin } = useAuth();
   const [links] = useState<MyTableLink[]>(getMyTables());
   const [fresh, setFresh] = useState<Record<string, TableEntry>>({});
@@ -225,7 +231,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
         <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">{kind === "campanha" ? "Nenhuma campanha ainda. Crie uma acima escolhendo “Campanha”." : "Nenhum one-shot ainda. Crie uma acima escolhendo “One-shot”."}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} />)}
+          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} onManage={onManageTable} />)}
           {campaigns.map((c) => {
             const code = campaignRoomCode(c.id);
             return (
@@ -273,8 +279,10 @@ export function campaignRoomCode(id: string): string {
   return out.join("");
 }
 
-export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; onManageCampaigns?: () => void }> = ({ campaigns = [], onManageCampaigns }) => {
+export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; characters?: CharacterSheet[]; onManageCampaigns?: () => void }> = ({ campaigns = [], characters = [], onManageCampaigns }) => {
   const { requireLogin } = useAuth();
+  const [managing, setManaging] = useState<MyTableLink | null>(null);
+  const [refresh, setRefresh] = useState(0);
   const [tables, setTables] = useState<TableEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -303,8 +311,11 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; onManageC
         <JoinPrivateTable />
       </div>
 
-      <div className="mt-6"><MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} onManage={() => onManageCampaigns?.()} /></div>
-      <MyTablesSection kind="oneshot" title="Meus one-shots" />
+      <div className="mt-6"><ReceivedInvites onChanged={() => setRefresh((n) => n + 1)} /></div>
+      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} />
+      <MyTablesSection kind="oneshot" title="Meus one-shots" onManageTable={setManaging} />
+      <ParticipatingTables characters={characters} refreshKey={refresh} skipIds={getMyTables().map((l) => l.id)} onEnter={(name, code, asGm) => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(asGm ? { name, host: code } : { name, sala: code }); }} onManage={(t) => setManaging({ id: t.id, code: t.code, managementToken: "", name: t.name, kind: t.kind, liveRoomCode: t.liveRoomCode } as MyTableLink)} />
+      {managing && <ManageTableDialog table={{ id: managing.id, name: managing.name, code: managing.liveRoomCode || managing.code }} token={managing.managementToken} onClose={() => setManaging(null)} />}
       <div className="mb-6 [&_h2]:!text-[#f2c572]"><OfficialCampaigns /></div>
 
       <div className="mt-8 border-t-4 border-[#b92b3a] pt-6">

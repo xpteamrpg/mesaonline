@@ -21,7 +21,7 @@ export const HomeView: React.FC<{ onNavigate: (view: View) => void; characters: 
             <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-[#f2c572]">Um espaço feito por fãs para fãs</p>
             <h1 className="font-serif text-4xl font-black leading-tight sm:text-6xl">Suas aventuras de Tormenta20, reunidas em um só lugar.</h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-white/80">Crie personagens, organize campanhas, consulte o compêndio, guarde seus livros e prepare sua mesa em Arton.</p>
-            <div className="mt-6 flex flex-wrap gap-2"><button onClick={() => onNavigate(characters.length ? "characters" : "workshop")} className="rounded bg-[#b92b3a] px-5 py-2.5 text-xs font-black uppercase text-white">{characters.length ? "Meus personagens" : "Crie seu personagem agora"}</button><button onClick={() => onNavigate("campaigns")} className="rounded border border-white/50 bg-white/10 px-5 py-2.5 text-xs font-black uppercase text-white">Minhas campanhas</button></div>
+            <div className="mt-6 flex flex-wrap gap-2"><button onClick={() => onNavigate(characters.length ? "characters" : "createChar")} className="rounded bg-[#b92b3a] px-5 py-2.5 text-xs font-black uppercase text-white">{characters.length ? "Meus personagens" : "Crie seu personagem agora"}</button><button onClick={() => onNavigate("campaigns")} className="rounded border border-white/50 bg-white/10 px-5 py-2.5 text-xs font-black uppercase text-white">Minhas campanhas</button></div>
           </div>
           <div className="rounded-lg border border-white/20 bg-black/30 p-4 backdrop-blur-sm">
             <div className="text-[10px] font-black uppercase tracking-wider text-[#f2c572]">Seu espaço</div>
@@ -68,8 +68,59 @@ export const HomeView: React.FC<{ onNavigate: (view: View) => void; characters: 
   );
 };
 
+const Topic: React.FC<{ icon: string; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
+  <article className="rounded-lg border border-[#ded7c6] bg-white p-5 shadow-sm">
+    <h2 className="flex items-center gap-2 font-serif text-xl font-black text-[#b92b3a]"><span aria-hidden>{icon}</span>{title}</h2>
+    <div className="mt-2 space-y-2 text-sm leading-7 text-[#5c5446]">{children}</div>
+  </article>
+);
+
 export const AboutView: React.FC<{ onNavigate: (view: View) => void }> = ({ onNavigate }) => (
-  <div className="mx-auto max-w-[1100px] p-3 sm:p-5"><PageHead icon="🎲" title="O que é T20 Online?" subtitle="Um espaço comunitário para organizar suas aventuras de Tormenta20." />
-    <div className="grid gap-4 md:grid-cols-2"><article className="rounded-lg border border-[#ded7c6] bg-white p-5 shadow-sm"><h2 className="font-serif text-2xl font-black text-[#b92b3a]">Feito por fãs, para fãs</h2><p className="mt-3 text-sm leading-7 text-[#5c5446]">T20 Online reúne ferramentas para criação de personagens, consulta de regras, preparação de campanhas e organização de materiais pessoais. A ideia é oferecer um lugar simples para compartilhar recursos e tornar a mesa mais fácil de preparar.</p><p className="mt-3 text-sm leading-7 text-[#5c5446]">Você pode usar a Oficina de Heróis, guardar seus livros, criar campanhas, importar dados de VTT e abrir uma mesa online.</p></article><div className="grid gap-3 sm:grid-cols-2"><button onClick={() => onNavigate("workshop")} className="rounded-lg bg-[#2b261f] p-5 text-left text-white"><b className="font-serif text-xl">Oficina de Heróis</b><span className="mt-2 block text-xs text-white/70">Criação guiada de fichas.</span></button><button onClick={() => onNavigate("compendium")} className="rounded-lg bg-[#b92b3a] p-5 text-left text-white"><b className="font-serif text-xl">Compêndio</b><span className="mt-2 block text-xs text-white/70">Raças, classes, poderes, magias e ameaças.</span></button><button onClick={() => onNavigate("books")} className="rounded-lg border border-[#ded7c6] bg-white p-5 text-left"><b className="font-serif text-xl">Biblioteca</b><span className="mt-2 block text-xs text-[#726859]">Seus PDFs e materiais.</span></button><button onClick={() => onNavigate("campaigns")} className="rounded-lg border border-[#ded7c6] bg-white p-5 text-left"><b className="font-serif text-xl">Campanhas</b><span className="mt-2 block text-xs text-[#726859]">Organize sua mesa.</span></button></div></div>
+  <div className="mx-auto max-w-[900px] p-3 sm:p-5">
+    <PageHead icon="🎲" title="O que é o ModernRPG?" subtitle="Um espaço de fãs, para fãs de Tormenta20." />
+    <div className="space-y-4">
+      <article className="rounded-lg border border-[#b92b3a]/30 bg-[#2b261f] p-6 text-white shadow-md">
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f2c572]">Feito por fãs, para fãs</p>
+        <h2 className="mt-2 font-serif text-3xl font-black leading-tight">Tudo o que a sua mesa de Tormenta20 precisa, em um só lugar.</h2>
+        <p className="mt-3 text-sm leading-7 text-white/80">O ModernRPG nasceu da vontade de reunir num lugar só aquilo que jogadores e mestres de Tormenta20 costumam procurar espalhado pela internet: criar o personagem, consultar as regras, organizar a campanha e, no fim, sentar à mesa e jogar. É um projeto de fãs, sem fins comerciais, feito com carinho por quem joga.</p>
+      </article>
+
+      <Topic icon="⚒️" title="Oficina de Heróis e Meus Personagens">
+        <ul className="list-disc space-y-1 pl-5">
+          <li>Criação de personagem guiada, passo a passo, do zero ou a partir de um personagem pronto.</li>
+          <li>Ficha completa que se recalcula sozinha, com rolagens de dados.</li>
+          <li>Importação e exportação de fichas em PDF e JSON, e importação de VTT.</li>
+          <li>Cada personagem mostra as campanhas e one-shots em que está.</li>
+        </ul>
+      </Topic>
+
+      <Topic icon="📚" title="Compêndio e Livros">
+        <ul className="list-disc space-y-1 pl-5">
+          <li>Raças, classes e distinções, equipamentos, magias (grimório) e monstros, todos consultáveis num só lugar.</li>
+          <li>Parceiros e ajudantes ligados à ficha.</li>
+          <li>Uma biblioteca para guardar os seus próprios livros e PDFs.</li>
+        </ul>
+      </Topic>
+
+      <Topic icon="🧪" title="Homebrew">
+        <p>Tormenta20 tem muito mais para jogar do que o material oficial. A área de Homebrew foi pensada para ter <b>mais de uma opção além do oficial</b>: raças, classes, poderes, magias, itens, monstros e parceiros criados por jogadores e mestres, organizados e fáceis de achar.</p>
+        <p>A ideia é ser um espaço para as pessoas <b>compartilharem</b> e, se quiserem, <b>venderem</b> os seus materiais. Esse lugar eu não encontrei na internet, e por isso achei que valia a pena criar.</p>
+      </Topic>
+
+      <Topic icon="🗺️" title="Campanhas e Mesa online">
+        <p>Crie campanhas e one-shots, convide os jogadores pelo código da mesa e ligue os personagens de cada um à campanha. A Mesa online reúne mapa, fichas, combate tático com as regras de Tormenta20 e jogo em grupo, tudo no navegador.</p>
+        <p>A Mesa online foi construída <b>do zero</b>, com base em material do GitLab, em autorizações de amigos e em material encontrado em comunidades como o Discord e o GitHub. Também é de fãs, para fãs.</p>
+      </Topic>
+
+      <article className="rounded-lg border border-[#ded7c6] bg-[#efe9d6] p-5 text-sm leading-7 text-[#5c5446] shadow-sm">
+        <h2 className="font-serif text-xl font-black text-[#2b261f]">Créditos e avisos</h2>
+        <p className="mt-1">Idealizado e criado por <b className="text-[#b92b3a]">Samararash</b>, com a ajuda de amigos e da comunidade de RPG.</p>
+        <p className="mt-1 text-xs">Tormenta20 e o seu conteúdo oficial pertencem aos seus respectivos autores. Este é um projeto de fãs, sem fins comerciais, ainda em fase piloto (protótipo).</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button onClick={() => onNavigate("workshop")} className="rounded bg-[#b92b3a] px-4 py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Criar um herói</button>
+          <button onClick={() => onNavigate("online")} className="rounded border border-[#b92b3a] bg-white px-4 py-2 text-xs font-black uppercase text-[#b92b3a] hover:bg-[#fbebee]">Ir para a Mesa online</button>
+        </div>
+      </article>
+    </div>
   </div>
 );

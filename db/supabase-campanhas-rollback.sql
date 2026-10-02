@@ -1,0 +1,24 @@
+-- Desfaz db/supabase-campanhas.sql (remove só o que ele criou; não toca em mrpg_tables nem em nada do Foundry).
+begin;
+drop function if exists mrpg_my_character_links();
+drop function if exists mrpg_character_unlink(uuid);
+drop function if exists mrpg_character_decide(uuid, boolean);
+drop function if exists mrpg_character_requests(uuid);
+drop function if exists mrpg_character_link_by_code(text, text, jsonb);
+drop function if exists mrpg_character_request(uuid, text, jsonb);
+drop function if exists mrpg_table_leave(uuid);
+drop function if exists mrpg_table_kick(uuid, uuid);
+drop function if exists mrpg_invite_answer(uuid, boolean);
+drop function if exists mrpg_my_invites();
+drop function if exists mrpg_table_invite(uuid, text, text);
+drop function if exists mrpg_table_members_list(uuid);
+drop function if exists mrpg_my_tables();
+drop function if exists mrpg_table_join(text);
+drop function if exists mrpg_table_claim(uuid, text);
+drop function if exists mrpg_is_gm(uuid);
+drop function if exists mrpg_user_name(uuid);
+drop table if exists mrpg_character_links;
+drop table if exists mrpg_table_banned;
+drop table if exists mrpg_table_invites;
+drop table if exists mrpg_table_members;
+commit;

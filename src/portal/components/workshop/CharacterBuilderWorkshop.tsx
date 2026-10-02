@@ -1,3 +1,4 @@
+import { CampaignInvitesBox } from "../campaigns/CampaignInvitesBox";
 import React, { useMemo, useState } from "react";
 import type { BuilderMeta, CharacterSheet, EquipmentItem } from "../../types/sheet";
 import {
@@ -336,6 +337,7 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div><Lbl>Nome *</Lbl><input value={name} onChange={(e) => setName(e.target.value)} className={`${inp} font-bold`} placeholder="Ex.: Vharo Lumen" autoFocus /></div>
                 <div><Lbl>Campanha</Lbl><input list="campaign-options" value={campaign} onChange={(e) => setCampaign(e.target.value)} className={inp} /><datalist id="campaign-options">{campaignNames.map((name) => <option key={name} value={name} />)}</datalist></div>
+            <div className="sm:col-span-2"><CampaignInvitesBox /></div>
                 <div><Lbl>Nível inicial</Lbl><input type="number" min={1} max={20} value={level} onChange={(e) => setLevel(Math.max(1, Math.min(20, Number(e.target.value))))} className={inp} /></div>
                 <div><Lbl>Idiomas</Lbl><input value={languages} onChange={(e) => setLanguages(e.target.value)} className={inp} /></div>
                 <div className="sm:col-span-2"><ImagePicker label="Retrato do personagem (arraste a imagem no quadro para escolher o foco)" value={avatar} pos={avatarPos} onChange={(v, p) => { setAvatar(v); if (p) setAvatarPos(p); }} /></div>

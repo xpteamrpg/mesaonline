@@ -1,3 +1,4 @@
+import { CampaignInvitesBox } from "../campaigns/CampaignInvitesBox";
 import React, { useState } from "react";
 import type { CharacterSheet } from "../../types/sheet";
 import { ATTR_KEYS, T20_CLASSES, T20_DEITIES, T20_ORIGINS, T20_RACES } from "../../lib/t20/compendium";
@@ -51,6 +52,7 @@ export const EditCharacterModal: React.FC<Props> = ({ isOpen, onClose, current, 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div><label className={lbl}>Nome</label><input value={f.name} onChange={(e) => set({ name: e.target.value })} className={`${inp} font-bold`} required /></div>
             <div><label className={lbl}>Campanha</label><input list="edit-campaign-options" value={f.campaign} onChange={(e) => set({ campaign: e.target.value })} className={inp} /><datalist id="edit-campaign-options">{campaignNames.map((name) => <option key={name} value={name} />)}</datalist></div>
+            <div className="sm:col-span-2"><CampaignInvitesBox /></div>
             <div>
               <label className={lbl}>Raça</label>
               <select value={f.raceId ?? ""} onChange={(e) => set({ raceId: e.target.value })} className={inp}>

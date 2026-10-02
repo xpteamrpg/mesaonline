@@ -3,6 +3,8 @@ import type { CharacterSheet } from "../../types/sheet";
 import { defense } from "../../lib/t20/sheetRules";
 import { PageBanner } from "../layout/PageBanner";
 import { AvatarZoom } from "../common/AvatarZoom";
+import { useAuth } from "../../lib/auth/AuthContext";
+import { myCharacterLinks, type MyCharacterLink } from "../../lib/campaigns/client";
 import imgPersonagens from "../../assets/menu/personagens.jpg";
 
 interface Props {
@@ -27,6 +29,12 @@ export const CharactersListView: React.FC<Props> = ({ characters, activeId, onSe
   const [camp, setCamp] = useState("");
   const [menuId, setMenuId] = useState<string | null>(null);
   const file = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const [links, setLinks] = useState<MyCharacterLink[]>([]);
+  useEffect(() => {
+    if (!user) { setLinks([]); return; }
+    myCharacterLinks().then(setLinks).catch(() => setLinks([]));
+  }, [user?.id]);
 
   useEffect(() => {
     if (!menuId) return;
@@ -76,7 +84,7 @@ export const CharactersListView: React.FC<Props> = ({ characters, activeId, onSe
                     <span title="Pontos de vida"><span className="text-[#e03131]">♥</span> {c.hp.current}/{c.hp.max}</span>
                     <span title="Defesa"><span className="text-[#1c7ed6]">⛨</span> {def.total}</span>
                   </div>
-                  {c.campaign && c.campaign !== "Campanha livre" && <div className="mt-1.5 text-xs text-[#7a705d]">Campanha: <span className="rounded-full border border-[#b92b3a]/50 bg-white px-2 py-0.5 text-[11px] text-[#b92b3a]">{c.campaign}</span></div>}
+                  <div className="mt-1.5 flex min-h-[22px] flex-wrap items-center gap-1 text-xs text-[#7a705d]">Mesas Online: {links.filter((l) => l.characterId === c.id).map((l) => <span key={l.id} title={l.status === "solicitado" ? "Aguardando o mestre aceitar" : l.status === "recusado" ? "O mestre recusou" : l.kind === "campanha" ? "Campanha" : "One-shot"} className={`rounded-full border bg-white px-2 py-0.5 text-[11px] ${l.kind === "campanha" ? "border-[#1c5fb5]/60 text-[#1c5fb5]" : "border-[#b92b3a]/60 text-[#b92b3a]"} ${l.status !== "aceito" ? "opacity-60" : ""}`}>{l.tableName}{l.status === "solicitado" ? " (aguardando)" : l.status === "recusado" ? " (recusado)" : ""}</span>)}</div>
                 </div>
               </div>
               <div className="relative flex items-center justify-end gap-1.5 border-t border-[#ddd5bb] bg-[#e6dfc8] px-3 py-2">

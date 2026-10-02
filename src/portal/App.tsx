@@ -15,6 +15,10 @@ import { VttImportModal } from "./components/sheet/VttImportModal";
 import { AboutView, HomeView } from "./components/views/PortalViews";
 import { OnlineTableView } from "./components/views/OnlineTableView";
 import { HomebrewView } from "./components/views/HomebrewView";
+import { CreateCharacterView, ReadyCharactersView } from "./components/views/CharacterCreateViews";
+import { AccountOrders, AccountOverview, AccountProfile } from "./components/views/AccountViews";
+import { SiteFooter } from "./components/layout/SiteFooter";
+import { applyCampaignDraft, hasCampaignDraft } from "./lib/campaigns/client";
 import { RequireLogin } from "./components/auth/RequireLogin";
 import { classAbilitiesFor, recalc, uid } from "./lib/t20/sheetRules";
 import { levelForXp } from "./lib/t20/xp";
@@ -161,7 +165,13 @@ export default function App() {
   const campaignNames = [...new Set([...campaigns.map((c) => c.name), ...characters.map((c) => c.campaign).filter(Boolean)])];
 
   const update = (s: CharacterSheet) => setCharacters((p) => p.map((c) => (c.id === s.id ? s : c)));
+  /** Convites/códigos de campanha escolhidos na ficha só valem quando ela é salva. */
+  const flushDraft = (s: CharacterSheet) => {
+    if (!hasCampaignDraft()) return;
+    void applyCampaignDraft(s).then((problems) => { if (problems.length) alert(["Alguns vínculos com campanhas não foram feitos:", ...problems].join("\n")); });
+  };
   const add = (s: CharacterSheet) => {
+    flushDraft(s);
     setCharacters((p) => [s, ...p.filter((c) => c.id !== s.id)]);
     setActiveId(s.id);
     navigate("sheet");
@@ -172,6 +182,7 @@ export default function App() {
     setEditingId(id);
   };
   const finishEdit = (s: CharacterSheet) => {
+    flushDraft(s);
     update(s);
     setActiveId(s.id);
     navigate("sheet");
@@ -234,10 +245,15 @@ export default function App() {
         {view === "sheet" && <RequireLogin what="a sua ficha"><T20CharacterSheet sheet={active} onUpdate={update} onRoll={setRoll} onEdit={() => startEdit(active.id)} onQuickEdit={() => setEditOpen(true)} onClone={() => clone(active.id)} onLevelUp={levelUp} /></RequireLogin>}
         {view === "workshop" && <CharacterBuilderWorkshop key={editingId ?? "novo"} initial={characters.find((c) => c.id === editingId)} campaignNames={campaignNames} onFinish={editingId ? finishEdit : add} onCancel={() => navigate("sheet")} />}
         {view === "characters" && (
-          <RequireLogin what="os seus personagens"><CharactersListView characters={characters} activeId={active.id} onSelect={(id) => { setActiveId(id); navigate("sheet"); }} onEdit={startEdit} onPdf={(id) => { setActiveId(id); navigate("sheet"); setTimeout(() => window.print(), 600); }} onOpenWorkshop={() => navigate("workshop")} onOpenJson={() => setJsonOpen(true)} onOpenPdf={() => setPdfOpen(true)} onOpenVtt={() => setVttOpen(true)} onClone={clone} onDelete={remove} onImportJson={importJson} /></RequireLogin>
+          <RequireLogin what="os seus personagens"><CharactersListView characters={characters} activeId={active.id} onSelect={(id) => { setActiveId(id); navigate("sheet"); }} onEdit={startEdit} onPdf={(id) => { setActiveId(id); navigate("sheet"); setTimeout(() => window.print(), 600); }} onOpenWorkshop={() => navigate("createChar")} onOpenJson={() => setJsonOpen(true)} onOpenPdf={() => setPdfOpen(true)} onOpenVtt={() => setVttOpen(true)} onClone={clone} onDelete={remove} onImportJson={importJson} /></RequireLogin>
         )}
         {view === "campaigns" && <RequireLogin what="as suas campanhas"><CampaignsView characters={characters} campaigns={campaigns} onChangeCampaigns={setCampaigns} onSelect={(id) => { setActiveId(id); navigate("sheet"); }} onOpenWorkshop={() => navigate("workshop")} onOpenVtt={() => setVttOpen(true)} onRoll={rollDice} /></RequireLogin>}
-        {view === "online" && <OnlineTableView campaigns={campaigns} onManageCampaigns={() => navigate("campaigns")} />}
+        {view === "createChar" && <CreateCharacterView onBlank={() => navigate("workshop")} onReady={() => navigate("readyChars")} />}
+        {view === "readyChars" && <ReadyCharactersView />}
+        {view === "account" && <AccountOverview onNavigate={navigate} />}
+        {view === "accountProfile" && <AccountProfile onNavigate={navigate} />}
+        {view === "accountOrders" && <AccountOrders onNavigate={navigate} />}
+        {view === "online" && <OnlineTableView campaigns={campaigns} characters={characters} onManageCampaigns={() => navigate("campaigns")} />}
         {view === "homebrew" && <HomebrewView onNavigate={navigate} />}
         {view === "companions" && <RequireLogin what="os seus parceiros"><CompanionsView companions={companions} characters={characters} onChange={setCompanions} /></RequireLogin>}
         {view === "compendium" && <CompendiumView onNavigate={navigate} />}
@@ -248,11 +264,12 @@ export default function App() {
         {view === "spells" && <SpellsView />}
         {view === "bestiary" && <BestiaryView onRoll={rollDice} />}
       </main>
+      <SiteFooter />
 
       <T20DiceTray activeRoll={roll} onClear={() => setRoll(null)} />
 
       <JsonFeederModal key={jsonOpen ? active.id : "closed"} isOpen={jsonOpen} onClose={() => setJsonOpen(false)} current={active} all={characters} onImport={(list) => importJson(JSON.stringify(list))} />
-      {editOpen && <EditCharacterModal campaignNames={campaignNames} isOpen onClose={() => setEditOpen(false)} current={active} onSave={update} />}
+      {editOpen && <EditCharacterModal campaignNames={campaignNames} isOpen onClose={() => setEditOpen(false)} current={active} onSave={(s) => { update(s); flushDraft(s); }} />}
       {pdfOpen && <PdfImportModal isOpen onClose={() => setPdfOpen(false)} current={active} onCreate={add} onMerge={update} />}
       {vttOpen && <VttImportModal isOpen onClose={() => setVttOpen(false)} onImport={importVtt} />}
     </div>

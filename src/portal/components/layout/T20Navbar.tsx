@@ -66,8 +66,8 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
         <button onClick={() => go("home")} className="flex items-center gap-2">
           <D20Logo className="h-9 w-9" />
           <span className="leading-none">
-            <span className="block font-serif text-xl font-black tracking-wide">Tormenta 20</span>
-            <span className="block text-[9px] font-bold uppercase tracking-[0.3em] text-[#b92b3a]">Aventuras em Arton</span>
+            <span className="block font-serif text-xl font-black tracking-wide">ModernRPG</span>
+            <span className="block text-[9px] font-bold uppercase tracking-[0.3em] text-[#b92b3a]">Tormenta 20</span>
           </span>
         </button>
         <div className="hidden flex-1 items-center gap-2 md:flex">
@@ -108,6 +108,7 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
             {acctMenu && user && (
               <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded border border-[#ded7c6] bg-white p-2 shadow-2xl">
                 <div className="truncate px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#9c9180]">{user.email}</div>
+                <button onClick={() => { go("account"); setAcctMenu(false); }} className="w-full rounded px-2 py-1.5 text-left text-xs font-bold text-[#2b261f] hover:bg-[#faf8f3]">Minha conta</button>
                 <button onClick={() => { logout(); setAcctMenu(false); }} className="w-full rounded px-2 py-1.5 text-left text-xs font-bold text-[#b92b3a] hover:bg-[#fbebee]">Sair</button>
               </div>
             )}
@@ -119,6 +120,7 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
       {/* linha de navegação (igual ao OD: INÍCIO · LOJA · LIVROS · … · OD ONLINE ▾) */}
       <nav className="mx-auto hidden max-w-[1400px] items-center gap-6 px-4 py-2 text-[13px] lg:flex">
         {link("home", "Início")}
+        {link("about", "O que é o ModernRPG?")}
         {link("books", "Livros")}
         {link("workshop", "Oficina de Heróis")}
         <button onClick={() => { setMenuOpen((v) => !v); setCharMenu(false); }} className={`flex items-center gap-1.5 font-black uppercase tracking-wide ${menuOpen || ["books", "characters", "companions", "campaigns", "races", "classes", "equipment", "spells", "bestiary", "compendium", "homebrew"].includes(view) ? "text-[#b92b3a]" : "text-[#b92b3a]"}`}>
@@ -134,7 +136,7 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
           <div className="mx-auto grid max-w-[1400px] grid-cols-2 gap-3 p-4 md:grid-cols-3 lg:grid-cols-5">
             <div className="flex flex-col gap-3">
               <button onClick={() => go("about")} className="flex h-[88px] items-center justify-center gap-2 rounded-lg bg-[#2b261f] px-3 text-center text-sm font-black uppercase tracking-wide text-white hover:bg-[#3b3428]">
-                <D20Logo className="h-5 w-5" /> O que é T20 Online?
+                <D20Logo className="h-5 w-5" /> O que é o ModernRPG?
               </button>
               <button onClick={() => go("workshop")} className="flex h-[88px] items-center justify-center rounded-lg bg-[#2b261f] px-3 text-center text-sm font-black uppercase tracking-wide text-white hover:bg-[#3b3428]">
                 Oficina de Heróis

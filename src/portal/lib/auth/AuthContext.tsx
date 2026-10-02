@@ -8,9 +8,12 @@ interface AuthState {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   /** Cria a conta. `needsConfirmation` = o e-mail de confirmação foi enviado e a pessoa só entra depois de clicar no link. */
-  register: (email: string, password: string, nickname?: string) => Promise<{ needsConfirmation: boolean }>;
+  register: (email: string, password: string, nickname?: string) => Promise<{ needsConfirmation: boolean; loggedIn: boolean }>;
   resendConfirmation: (email: string) => Promise<void>;
   logout: () => void;
+  updateProfile: (patch: sb.ProfilePatch) => Promise<void>;
+  setPassword: (password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   authModalOpen: boolean;
   /** Motivo mostrado na janela (ex.: "Para criar uma mesa você precisa estar logado."). */
   authReason: string;
@@ -47,12 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (sb.supabaseAuthEnabled) {
         const result = await sb.signUp(nickname.trim(), email, password);
         if (result.user) setUser(result.user);
-        return { needsConfirmation: result.needsConfirmation };
+        return { needsConfirmation: result.needsConfirmation, loggedIn: Boolean(result.user) };
       }
       setUser(await authClient.register(email, password));
-      return { needsConfirmation: false };
+      return { needsConfirmation: false, loggedIn: true };
     },
     resendConfirmation: (email) => (sb.supabaseAuthEnabled ? sb.resendConfirmation(email) : Promise.resolve()),
+    updateProfile: async (patch) => setUser(await sb.updateProfile(patch)),
+    setPassword: (password) => sb.setPassword(password),
+    signInWithGoogle: () => sb.signInWithGoogle(),
     logout: () => { if (sb.supabaseAuthEnabled) void sb.signOut(); else authClient.logout(); setUser(null); },
     authModalOpen,
     authReason,
