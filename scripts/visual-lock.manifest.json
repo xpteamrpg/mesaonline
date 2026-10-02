@@ -11,7 +11,7 @@
     "src/components/mesaSkin/components/Chrome.tsx": "d12ab86d198f1d13f226af1469cea39fa2d9c84f25437f43c065aad3b7684f71",
     "src/components/mesaSkin/components/ExpandedArt.tsx": "9f9d26b0b41811559967afdce74bf75f3c9389edfb6b49d77d86026809b28caa",
     "src/components/mesaSkin/components/MapArea.tsx": "b113e1f44deb046eaa56d0c0a0a52ba9ff0ba3eca40575d3a4e88a0c681990ec",
-    "src/components/mesaSkin/components/Panels.tsx": "f363a0b545d8523ae853be43847b67e7cb3da31138f8250949871861cf5142e2",
+    "src/components/mesaSkin/components/Panels.tsx": "5a2f292ee1d0c5b06aed40743454f9f8633b7d32045e55696bb450a9e0de2ebd",
     "src/components/mesaSkin/components/ui.tsx": "e500a99bd6ecbd1a76a614463abaca04ee1507098743a0d55a9b5e946762b834",
     "src/components/mesaSkin/config.ts": "01bcfe08702e57a2120eaecf4e836400560641797c90554ebe33d2586cfdd792",
     "src/components/mesaSkin/data.ts": "b85a388b8aa4779666fad2cb072f64188aa30204471d95c161575964dc810674",
@@ -22,7 +22,7 @@
     "src/components/mesaSkin/images/portrait-foe.jpg": "d3dff46f148bc3c3d11a6a0ec27a8ac5cfd1ed72cd18d7e8d7826e81cd00acdd",
     "src/components/mesaSkin/images/portrait-kael.jpg": "9c0bc665351a64a7887a4a32ab225877d80dde6627dfd0dd15ff679211ec473c",
     "src/components/mesaSkin/images/portrait-seraphine.jpg": "3ac7c89c9f1995c8ec74943a5c1a9d94fae19d08cd3ab0a7d84ffc393f87a3f3",
-    "src/components/mesaSkin/runtime.ts": "1e6847857bcee1bcb78c083b390d980b8a6a37ceb7cfc81199d026a09570c85a",
+    "src/components/mesaSkin/runtime.ts": "938c3f613030a6d2ccbf78cbd4978433b27af1cf418bdb7e3252cf4097a563be",
     "src/index.css": "93c769a0009c58d988f0db08cd98db95e8b4ec19585e106f63accd126a58ec57",
     "src/mesa-theme.css": "7d74e578b7d7dccc2e8880cb355176a713c709b6af30456e4178794aa0596097"
   },

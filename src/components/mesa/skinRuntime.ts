@@ -125,6 +125,11 @@ function focusOf(token: BoardToken | undefined, sheet: CharacterSheet | null): S
     pm: token.pm,
     pmMax: token.pmMax,
     defense: token.defense,
+    speed: {
+      walkM: sheet?.speed || token.movementM || 9,
+      flyM: sheet?.flySpeed ?? token.flyM,
+      burrowM: sheet?.burrowSpeed ?? token.burrowM,
+    },
     attributes: attributesOf(sheet, token),
   };
 }

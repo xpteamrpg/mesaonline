@@ -41,6 +41,14 @@ function Portrait({ img, src, size, ring }: { img: ImgKey; src?: string; size: n
 
 /* ------------------------------- exploration ------------------------------ */
 
+/** "9 m" (e os quadrados de 1,5 m). */
+const speedLabel = (meters: number) => `${meters.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} m`;
+const speedTitle = (speed: { walkM: number; flyM?: number; burrowM?: number }) => [
+  `${speedLabel(speed.walkM)} (${Math.round(speed.walkM / 1.5)} quadrados)`,
+  speed.flyM ? `voo ${speedLabel(speed.flyM)}` : "",
+  speed.burrowM ? `escavação ${speedLabel(speed.burrowM)}` : "",
+].filter(Boolean).join(" · ");
+
 export function GroupPanel({ links, onAction }: { links: Record<string, string>; onAction: (id: string) => void }) {
   const { group } = useSkinRuntime();
   return (
@@ -148,6 +156,13 @@ export function CharacterSheet({ links, onAction }: { links: Record<string, stri
             <div className="mt-1.5 flex items-center gap-1">
               <span className="num rounded-[5px] border border-[#c2202b]/60 bg-[color:var(--mx-2a0d0c)] px-1.5 py-[1px] text-[10px] font-semibold text-[#e8837a]">
                 P {focus?.defense ?? "—"}
+              </span>
+              <span
+                className="num rounded-[5px] border border-[#7a5227]/60 bg-[color:var(--mx-241708)] px-1.5 py-[1px] text-[10px] font-semibold text-[#e0b25c]"
+                title={focus?.speed ? speedTitle(focus.speed) : "Deslocamento"}
+                data-speed-chip
+              >
+                {focus?.speed ? `D ${speedLabel(focus.speed.walkM)}` : "D —"}
               </span>
               <span className="rounded-[5px] border border-[#7a5227]/60 bg-[color:var(--mx-241708)] px-1.5 py-[1px] text-[10px] font-semibold text-[#e0b25c]">
                 M
@@ -387,6 +402,7 @@ export function CombatActions({ links, onAction }: { links: Record<string, strin
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-[20px] leading-tight font-semibold text-[color:var(--mx-f6ead2)]">{focus?.name ?? "Nenhum personagem"}</h2>
             <p className="text-[11.5px] text-[#a6947c]">{focus?.combatSubtitle ?? "Adicione uma ficha ao mapa"}</p>
+            {focus && <p className="num text-[11.5px] text-[#e0b25c]" data-speed-line>Defesa {focus.defense} · Deslocamento {focus.speed ? speedTitle(focus.speed) : "—"}</p>}
             <div className="mt-1.5 space-y-1">
               <div className="flex items-center gap-2">
                 <span className="micro w-[22px] text-[#c9a25e]">PV</span>
@@ -516,6 +532,10 @@ export function CombatActions({ links, onAction }: { links: Record<string, strin
                   <div className="flex items-center justify-between rounded-[9px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] px-3 py-2">
                     <span className="text-[13px] text-[color:var(--mx-ddd0b6)]">Defesa</span>
                     <span className="num text-[16px] font-bold text-[color:var(--mx-f4e8ce)]">{focus?.defense ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-[9px] border border-[#7a5227]/45 bg-[color:var(--mx-120c09)] px-3 py-2" data-speed-row>
+                    <span className="text-[13px] text-[color:var(--mx-ddd0b6)]">Deslocamento</span>
+                    <span className="num text-[14px] font-bold text-[color:var(--mx-f4e8ce)]">{focus?.speed ? speedTitle(focus.speed) : "—"}</span>
                   </div>
                   <div className="px-1 pt-1">
                     <span className="micro text-[#c9a25e]">Ataques da ficha</span>

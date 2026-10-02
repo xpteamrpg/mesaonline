@@ -43,6 +43,8 @@ export type SkinFocus = {
   pm: number;
   pmMax: number;
   defense: number;
+  /** Deslocamento em metros (1 quadrado = 1,5 m), com o de voo e o de escavação quando existem. */
+  speed?: { walkM: number; flyM?: number; burrowM?: number };
   /** Seis atributos da ficha (valor = bônus), na ordem FOR…CAR. */
   attributes?: { key: string; short: string; value: number }[];
 };
