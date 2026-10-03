@@ -267,7 +267,7 @@ function RosterPanel({ snapshot, units, selectedUnit, onOpenCharacters, onOpenTh
     const mine = snapshot.multiplayer.role === "player" && unit.controlledBy === snapshot.multiplayer.peerId;
     const ownership = snapshot.multiplayer.role === "player"
       ? mine ? "Meu personagem" : unit.controlledBy ? "Outro jogador" : "Sem controlador"
-      : unit.controlledBy ? `Jogador ${shortPeerId(unit.controlledBy)}` : "Mestre";
+      : unit.controlledBy ? (snapshot.board.playerNames?.[unit.controlledBy] || `Jogador ${shortPeerId(unit.controlledBy)}`) : "Mestre";
     return <button key={unit.id} className={`${selectedUnit?.id === unit.id ? "selected" : ""} ${active ? "is-turn" : ""}`} onClick={() => pick(unit.id)}>
       <span className="mesa-mini-portrait">{unit.portrait ? <img src={unit.portrait} alt=""/> : unit.symbol}{active && <i/>}</span>
       <div><strong>{unit.name}</strong><small>PV {unit.pv}/{unit.pvMax} · PM {unit.pm}/{unit.pmMax} · DEF {unit.defense}</small><em className={mine ? "is-mine" : unit.controlledBy ? "is-owned" : ""}>{ownership}</em></div><ChevronRight/>

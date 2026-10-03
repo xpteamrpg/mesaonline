@@ -23,6 +23,8 @@ export type SkinMapToken = {
   /** selos de condição desenhados sobre o token */
   badges?: { key: string; glyph: string; label: string; tone: "danger" | "warn" | "control" | "buff" }[];
   hiddenBadges?: number;
+  /** apelido de quem controla este token (jogador); vazio = ninguém (o Mestre controla todos) */
+  controller?: string;
   /** casas que o token ocupa de lado (1 = normal; Grande 2, Enorme 3, Colossal 4) */
   footprint?: number;
   /** cavaleiro montado: aparece como um selo pequeno sobre a montaria (os dois formam um token só) */

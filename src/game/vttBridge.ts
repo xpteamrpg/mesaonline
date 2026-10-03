@@ -650,6 +650,14 @@ export function setLighting(lighting: BoardState["lighting"]): void {
   mutateBoard((board) => ({ ...board, lighting }));
 }
 
+/** Mestre: guarda o apelido de um jogador (vem dele mesmo, ao entrar na sala); aparece ao lado dos tokens que ele controla. */
+export function setPlayerName(peerId: string, name: string): void {
+  const clean = String(name || "").replace(/\s+/g, " ").trim().slice(0, 40);
+  if (!peerId || !clean) return;
+  if (BOARD.playerNames?.[peerId] === clean) return;
+  mutateBoard((board) => ({ ...board, playerNames: { ...(board.playerNames || {}), [peerId]: clean } }));
+}
+
 export function setFogSettings(settings: Partial<FogSettings>): void {
   if (forward("setFogSettings", [settings])) return;
   mutateBoard((board) => ({ ...board, fogSettings: { ...fogSettings(board.fogSettings), ...settings } }));

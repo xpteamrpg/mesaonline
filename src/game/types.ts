@@ -433,6 +433,8 @@ export interface BoardState {
   travel?: TravelState;
   /** configuracao de fog por papel (game/vision.ts) */
   fogSettings?: FogSettings;
+  /** apelido de cada jogador conectado (peerId → nome), para mostrar quem controla cada token */
+  playerNames?: Record<string, string>;
   /** encontro da viagem mostrado no palco para todos (game/travel.ts); o Mestre fecha */
   travelEvent?: TravelEvent;
   /** imagem ou vídeo que o Mestre mostrou para todos, por cima do mapa (game/stageMedia.ts); some ao recarregar a página */

@@ -17,6 +17,7 @@ import {
   onTurnStarted,
   registerRemoteCommand,
   requestRemoteCommand,
+  setPlayerName,
   setExplored,
   setShapes,
   updateToken,
@@ -317,6 +318,8 @@ export function firstFreeCell(board: { tokens: BoardToken[]; map: { cols: number
   return { x: 0, y: 0 };
 }
 
+registerRemoteCommand("setPlayerName", (args, context) => { setPlayerName(context.peerId, String(args[0] ?? "")); });
+
 registerRemoteCommand("claimCharacter", (args, context) => {
   const raw = args[0] as Partial<BoardToken> | undefined;
   if (!raw || typeof raw !== "object" || typeof raw.modernRpgCharacterId !== "string" || !raw.modernRpgCharacterId) throw new Error("Personagem inválido.");
@@ -328,7 +331,12 @@ registerRemoteCommand("claimCharacter", (args, context) => {
     return;
   }
   if (board.tokens.filter((token) => token.controlledBy === context.peerId).length >= MAX_CHARACTERS_PER_PLAYER) throw new Error(`Cada jogador pode ter até ${MAX_CHARACTERS_PER_PLAYER} personagens na mesa.`);
-  const spot = firstFreeCell(board);
+  // Casa pedida pelo jogador (clique no mapa): vale se estiver dentro do mapa e livre; senão, a primeira casa livre.
+  const wanted = args[1] as { x?: unknown; y?: unknown } | undefined;
+  const wx = Number(wanted?.x), wy = Number(wanted?.y);
+  const wantedOk = Number.isInteger(wx) && Number.isInteger(wy) && wx >= 0 && wy >= 0 && wx < board.map.cols && wy < board.map.rows
+    && !board.tokens.some((token) => token.gx === wx && token.gy === wy);
+  const spot = wantedOk ? { x: wx, y: wy } : firstFreeCell(board);
   const hpMax = Math.max(1, finite(raw.hpMax, 10));
   const pmMax = Math.max(0, finite(raw.pmMax, 0));
   const token = {

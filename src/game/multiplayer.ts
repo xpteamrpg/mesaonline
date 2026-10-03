@@ -230,7 +230,7 @@ export class ArmadaMultiplayer {
       };
       const timer = setTimeout(() => finish(new Error("O Mestre desta sala não respondeu.")), 15_000);
       peer.on("error", onError as never);
-      const connection = peer.connect(masterPeerId(roomCode), { reliable: true, serialization: "json" });
+      const connection = peer.connect(masterPeerId(roomCode), { reliable: true, serialization: "binary" }); // "json" recusa mensagem acima de ~16 KB ("Message too big for JSON channel"): o estado da mesa passa disso fácil; "binary" fatia sozinho
       this.acceptConnection(connection, false, () => finish());
     });
   }

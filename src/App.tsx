@@ -1,3 +1,4 @@
+import { accountNickname } from "./game/playerName";
 import { visionTypeFromText } from "./game/vision";
 import { requestEnvironmentSection } from "./components/mesa/MesaGlobalPanel";
 import { effectBonus } from "./tactics/engine/effectBonuses";
@@ -109,6 +110,16 @@ export default function App() {
     | null
   >(null);
   const importedPortalCharacters = useRef(false);
+  // O jogador conta o apelido dele ao Mestre ao entrar, para aparecer ao lado dos tokens que controla.
+  const sentPlayerName = useRef("");
+  useEffect(() => {
+    if (snapshot.multiplayer.role !== "player" || snapshot.multiplayer.status !== "connected" || !snapshot.multiplayer.peerId) return;
+    const name = accountNickname();
+    const key = `${snapshot.multiplayer.peerId}:${name}`;
+    if (!name || sentPlayerName.current === key) return;
+    sentPlayerName.current = key;
+    requestRemoteCommand("setPlayerName", name);
+  }, [snapshot.multiplayer.role, snapshot.multiplayer.status, snapshot.multiplayer.peerId]);
   const lastViewSwitchAt = useRef(0);
   const useEquipmentRef = useRef<(slot?: number, itemName?: string) => void>(() => undefined);
   const campaigns = useStoredCampaigns();
@@ -419,9 +430,11 @@ export default function App() {
     }
     if (token) selectToken(token.id);
     else if (snapshot.multiplayer.role === "player") {
-      // O jogador não coloca token sozinho: o pedido vai ao Mestre, que cria o token numa casa livre, já com o controle dele.
-      requestRemoteCommand("claimCharacter", boardTokenFromCharacter(sheet, { x: 0, y: 0 }));
-      appendChat({ author: "Sistema", text: `Pedi ao Mestre para colocar ${sheet.name} na mesa.`, kind: "system" });
+      // O jogador escolhe a casa clicando no mapa; o Mestre cria o token ali (já com o controle dele) — ver handleMapPoint.
+      const mine = boardTokenFromCharacter(sheet, { x: 0, y: 0 });
+      setSkinPanel(null); setDiceOpen(false); setSkinActionMode(null);
+      setMapIntent({ kind: "place-token", token: mine });
+      appendChat({ author: "Sistema", text: `Clique no mapa onde ${sheet.name} deve aparecer (Esc cancela).`, kind: "system" });
     }
     else appendChat({ author: "Sistema", text: `${sheet.name} ainda não está no mapa.`, kind: "system" });
     setProfileOpen(false);
@@ -646,7 +659,8 @@ export default function App() {
       const placed = { ...mapIntent.token, gx: ax, gy: ay };
       const blocked = coveredCells(placed).some((spot) => snapshot.board.tokens.some((entry) => !entry.hidden && !entry.defeated && tokenCovers(entry, spot.x, spot.y)) || snapshot.board.map.terrain[`${spot.x},${spot.y}`]?.type === "blocked");
       if (blocked) { appendChat({ author: "Sistema", text: "Não cabe ali (casa ocupada ou bloqueada); escolha outro ponto.", kind: "system" }); return; }
-      addToken(placed);
+      if (snapshot.multiplayer.role === "player") requestRemoteCommand("claimCharacter", placed, { x: ax, y: ay });
+      else addToken(placed);
       setMapIntent(null);
       return;
     }

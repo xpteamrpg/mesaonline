@@ -122,8 +122,14 @@ export function Token({ token, mode, index, onSelect }: { token: SkinMapToken; m
         >
           <div className="rounded-[7px] border border-[#d9a94c]/60 bg-[color:var(--mx-100b09)]/95 px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap text-[color:var(--mx-f2e8d4)] shadow-[0_10px_24px_-10px_rgba(0,0,0,0.9)]">
             {token.name}
+            {token.controller && <span className="ml-1.5 text-[9px] font-normal text-[#e0b25c]">· {token.controller}</span>}
           </div>
         </div>
+        {token.controller && (
+          <div className="pointer-events-none absolute -bottom-[19px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[5px] bg-[color:var(--mx-100b09)]/85 px-1.5 py-[1px] text-[9px] leading-tight font-semibold text-[#e0b25c] ring-1 ring-black/70" data-token-controller>
+            {token.controller}
+          </div>
+        )}
       </motion.div>
     </div>
   );

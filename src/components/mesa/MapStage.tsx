@@ -436,6 +436,7 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
       hiddenBadges: hiddenConditionCount(token.conditions),
       active: view === "combat" && snapshot.combat.active && snapshot.combat.activeTokenId === token.id,
       footprint: footprintOf(sizeOf(token)),
+      ...(token.controlledBy ? { controller: board.playerNames?.[token.controlledBy] || "Jogador" } : {}),
       ...(ridersByMount.has(token.id) ? { rider: { id: ridersByMount.get(token.id)!.id, name: ridersByMount.get(token.id)!.name, portrait: ridersByMount.get(token.id)!.side === "threats" ? "foe" as const : "kael" as const, portraitUrl: ridersByMount.get(token.id)!.imageUrl } } : {}),
     } as SkinMapToken }));
   const tokens: SkinMapToken[] = tokenEntries.map((entry) => entry.skin);
