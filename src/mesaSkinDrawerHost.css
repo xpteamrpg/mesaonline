@@ -122,3 +122,5 @@
 .mesa-intent-banner span { font-weight: 600; letter-spacing: .01em; }
 .mesa-intent-banner button { border: 1px solid #7a5227; border-radius: 7px; background: #2a1a12; color: #e0b25c; padding: 4px 10px; font-size: 12px; cursor: pointer; }
 .mesa-intent-banner button:hover { background: #3a2518; color: #f0d9a5; }
+.mesa-room-banner { max-width: min(760px, 86vw); border-color: #c2584f; }
+.mesa-room-banner span { font-weight: 500; line-height: 1.35; }

@@ -880,6 +880,16 @@ export default function App() {
         <button type="button" onClick={() => setMapIntent(null)}>Cancelar (Esc)</button>
       </div>
     )}
+    {snapshot.multiplayer.status === "error" && snapshot.multiplayer.error && !mapIntent && (
+      <div className="mesa-intent-banner mesa-room-banner" role="alert" data-room-banner>
+        <span>Sala {snapshot.multiplayer.roomCode || ""}: {snapshot.multiplayer.error}</span>
+      </div>
+    )}
+    {snapshot.multiplayer.role === "player" && snapshot.multiplayer.status === "connected" && !snapshot.multiplayer.error && !snapshot.board.tokens.some((token) => token.controlledBy === snapshot.multiplayer.peerId) && (
+      <div className="mesa-intent-banner mesa-room-banner" role="status" data-no-character-banner>
+        <span>Você entrou na sala, mas ainda não controla nenhum personagem. O Mestre precisa atribuir um a você (Elenco → o personagem → Controle do token). Até lá o mapa fica coberto: você só enxerga pelos seus personagens.</span>
+      </div>
+    )}
     <ReactionPrompt snapshot={snapshot}/>
     <ObjectDialog snapshot={snapshot}/>
     <DoorDialog snapshot={snapshot}/>

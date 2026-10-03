@@ -66,6 +66,18 @@ const PLAYER_ID_IN_USE = "Esta mesa já está aberta em outra aba deste navegado
 
 type PeerFailure = Error & { type?: string };
 
+/** Explica em português os erros mais comuns do PeerJS, mantendo o texto original no fim (ajuda a achar a causa). */
+export function describePeerError(error: PeerFailure | { message?: string; type?: string }): string {
+  const raw = String(error?.message || "").trim();
+  const type = error?.type || "";
+  let friendly = "";
+  if (/negotiation of connection|ice|webrtc/i.test(raw) || type === "webrtc") friendly = "A conexão direta entre os dois computadores não fechou (rede, roteador ou firewall bloqueando). Tentem outra rede (por exemplo, o celular como roteador) ou desliguem VPN/antivírus.";
+  else if (/could not connect to peer/i.test(raw) || type === "peer-unavailable") friendly = "Não encontrei a outra ponta da sala. Confira o código e se o Mestre já abriu a sala.";
+  else if (type === "network" || /lost connection to server|network/i.test(raw)) friendly = "Sem acesso ao servidor que apresenta os jogadores ao Mestre (internet ou bloqueio).";
+  else if (type === "server-error" || type === "socket-error" || type === "socket-closed") friendly = "O servidor que apresenta os jogadores ao Mestre está fora do ar ou bloqueado. Tente de novo em instantes.";
+  return friendly ? `${friendly} (${raw || type})` : raw || type || "Erro de conexão.";
+}
+
 function createPeer(id: string): Peer {
   const options = typeof window !== "undefined" ? window.__MODERNRPG_PEER_OPTIONS__ : undefined;
   return options ? new Peer(id, options) : new Peer(id);
@@ -171,7 +183,7 @@ export class ArmadaMultiplayer {
         peer.on("error", (raw) => {
           const error = raw as PeerFailure;
           if (settled) {
-            this.setState({ status: "error", error: error.message });
+            this.setState({ status: "error", error: describePeerError(error) });
             return;
           }
           if (error.type === "unavailable-id" && index < ID_RETRY_DELAYS_MS.length) {
@@ -252,7 +264,7 @@ export class ArmadaMultiplayer {
     });
     connection.on("data", (data) => this.receive(data as WireMessage, master, connection));
     connection.on("close", () => this.handleConnectionClosed(connection, master));
-    connection.on("error", (error) => this.setState({ status: "error", error: error.message }));
+    connection.on("error", (error) => this.setState({ status: "error", error: describePeerError(error as PeerFailure) }));
   }
 
   /**
