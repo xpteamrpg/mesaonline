@@ -6,7 +6,7 @@ import { toggleEquipped } from "./game/carga";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { coveredCells, footprintOf, parseSize, sideOf, tokenCovers } from "./game/tokenSize";
 import { freshTurnResources, turnPlan } from "./tactics/engine/actionEconomy";
-import { linkCharacterByCode } from "./portal/lib/campaigns/client";
+import { joinTable, linkCharacterByCode } from "./portal/lib/campaigns/client";
 import { getCharacterSheetById, loadCharacterSheets, loadReadyHeroSheets, setActiveCharacterId, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
 import type { CharacterSheet } from "../ficha-modernrpg/sheet";
 import MesaSkinTable from "./components/mesaSkin/MesaSkinTable";
@@ -39,7 +39,7 @@ import type { LibraryToken } from "./game/tokenLibrary";
 import { freeObjectSpot, newBoardObject } from "./game/objectPlacement";
 import { executeDropItem } from "./tactics/engine/objectCommands";
 import {
-  addToken, hostMultiplayer, joinMultiplayer, setObjects, appendChat, appendRoll, clearRollHistory, getRuntimeSnapshot, restoreMultiplayerSession, selectToken, sendSignal, setInitiativeRoll, shareAudioWithRoom, startCombat, endCombat,
+  addToken, hostMultiplayer, joinMultiplayer, leaveMultiplayer, setObjects, appendChat, appendRoll, clearRollHistory, getRuntimeSnapshot, restoreMultiplayerSession, selectToken, sendSignal, setInitiativeRoll, shareAudioWithRoom, startCombat, endCombat,
   subscribeRuntime, updateToken, requestRemoteCommand,
 } from "./game/vttBridge";
 import type { AugmentChoice } from "./tactics/interpretation/spellCasting";
@@ -157,7 +157,15 @@ export default function App() {
       // O lobby antigo (MesaLobby) fica guardado, sem uso; ?local=1 o abre só para testes.
       try {
         if (host) { await hostMultiplayer(host); }
-        else if (sala) { await joinMultiplayer(sala); }
+        else if (sala) {
+          await joinMultiplayer(sala);
+          // Entrar pelo código/link É o convite do Mestre: a pessoa vira membro da mesa já aceita. Quem foi expulso não entra com o mesmo convite.
+          try { await joinTable(sala); }
+          catch (error) {
+            const text = error instanceof Error ? error.message : "";
+            if (/removido/i.test(text)) { leaveMultiplayer(); throw new Error(text); }
+          }
+        }
         else if (LOBBY_ANTIGO) return;
         else { goToMesaOnline(); return; }
         if (!active) return;
