@@ -79,3 +79,6 @@ Combinado com o usuário em 02/10: depois do playtest, só correção se for ext
 - Visão na Penumbra no alcance de penumbra: regra do projeto, conferir com o livro.
 - Fog e Visão: o Mestre ver pela visão de um **token/jogador específico** (menu do botão direito). Organização: juntar Luz (iluminação + fontes de luz) numa gaveta só.
 - Foi achado e corrigido em 03/10: o fog era calculado certo mas **não aparecia** nas células com terreno (regra de CSS em `mesaSkinDrawerHost.css` zerava o fundo); só apareceu medindo no Chrome real.
+
+### Convites por e-mail não funcionam (relato do usuário, 03/10)
+- Convidar jogador para a mesa por e-mail (Mesa online → Gerenciar jogadores e convites) não está funcionando. Investigar a causa antes de corrigir: o convite é gravado pela função `mrpg_table_invite` (`db/supabase-campanhas.sql`) e aparece ao convidado em "Convites recebidos" depois de entrar no site com aquele e-mail; **o site não envia e-mail** (o Supabase só limita 2 e-mails por hora para confirmação de conta e não há SMTP próprio). Conferir se o problema é o convite não aparecer para o convidado, o erro ao convidar, ou a expectativa de receber um e-mail de aviso. Testar com duas contas reais.
