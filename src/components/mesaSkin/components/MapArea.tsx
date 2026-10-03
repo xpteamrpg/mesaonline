@@ -138,7 +138,7 @@ export function Token({ token, mode, index, onSelect, onMenu }: { token: SkinMap
         </div>
         {token.controller && (
           <div className="pointer-events-none absolute -bottom-[19px] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[5px] bg-[color:var(--mx-100b09)]/85 px-1.5 py-[1px] text-[9px] leading-tight font-semibold text-[#e0b25c] ring-1 ring-black/70" data-token-controller>
-            {token.controller}
+            {token.name}
           </div>
         )}
       </motion.div>
@@ -358,7 +358,7 @@ export function MapArea({
         <>
           <Embers />
         </>
-      ) : (
+      ) : runtime.stage ? null : (
         <>
           <div
             className="animate-torch pointer-events-none absolute top-[18%] left-[16%] h-52 w-52 rounded-full"

@@ -172,7 +172,7 @@ function PortalApp() {
   /** Convites/códigos de campanha escolhidos na ficha só valem quando ela é salva. */
   const flushDraft = (s: CharacterSheet) => {
     if (!hasCampaignDraft()) return;
-    void applyCampaignDraft(s).then((problems) => { if (problems.length) alert(["Alguns vínculos com campanhas não foram feitos:", ...problems].join("\n")); });
+    void applyCampaignDraft(s).then((problems) => { if (problems.length) alert(["Alguns vínculos com mesas online não foram feitos:", ...problems].join("\n")); });
   };
   const add = (s: CharacterSheet) => {
     flushDraft(s);

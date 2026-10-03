@@ -51,7 +51,7 @@ export const EditCharacterModal: React.FC<Props> = ({ isOpen, onClose, current, 
         <form onSubmit={submit} className="flex-1 space-y-4 overflow-y-auto pr-1 text-xs text-[#2b261f]">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div><label className={lbl}>Nome</label><input value={f.name} onChange={(e) => set({ name: e.target.value })} className={`${inp} font-bold`} required /></div>
-            <div><label className={lbl}>Campanha</label><input list="edit-campaign-options" value={f.campaign} onChange={(e) => set({ campaign: e.target.value })} className={inp} /><datalist id="edit-campaign-options">{campaignNames.map((name) => <option key={name} value={name} />)}</datalist></div>
+            <div><label className={lbl}>Mesa online</label><input list="edit-campaign-options" value={f.campaign} onChange={(e) => set({ campaign: e.target.value })} className={inp} /><datalist id="edit-campaign-options">{campaignNames.map((name) => <option key={name} value={name} />)}</datalist></div>
             <div className="sm:col-span-2"><CampaignInvitesBox /></div>
             <div>
               <label className={lbl}>Raça</label>

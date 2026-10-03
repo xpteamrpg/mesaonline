@@ -39,7 +39,7 @@ import type { LibraryToken } from "./game/tokenLibrary";
 import { freeObjectSpot, newBoardObject } from "./game/objectPlacement";
 import { executeDropItem } from "./tactics/engine/objectCommands";
 import {
-  addToken, hostMultiplayer, joinMultiplayer, leaveMultiplayer, setObjects, appendChat, appendRoll, clearRollHistory, getRuntimeSnapshot, restoreMultiplayerSession, selectToken, sendSignal, setInitiativeRoll, shareAudioWithRoom, startCombat, endCombat,
+  addToken, removeToken, hostMultiplayer, joinMultiplayer, leaveMultiplayer, setObjects, appendChat, appendRoll, clearRollHistory, getRuntimeSnapshot, restoreMultiplayerSession, selectToken, sendSignal, setInitiativeRoll, shareAudioWithRoom, startCombat, endCombat,
   subscribeRuntime, updateToken, requestRemoteCommand,
 } from "./game/vttBridge";
 import type { AugmentChoice } from "./tactics/interpretation/spellCasting";
@@ -208,6 +208,24 @@ export default function App() {
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
   }, [mapIntent]);
+
+  // Delete apaga o token selecionado (só o Mestre; fora de campos de texto).
+  useEffect(() => {
+    if (mesaStage === "lobby") return;
+    const onDelete = (event: KeyboardEvent) => {
+      if (event.key !== "Delete") return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) return;
+      const snap = getRuntimeSnapshot();
+      if (snap.multiplayer.role === "player") return;
+      const ids = snap.board.selectedTokenIds.filter((id) => snap.board.tokens.some((token) => token.id === id));
+      if (!ids.length) return;
+      event.preventDefault();
+      ids.forEach((id) => removeToken(id));
+    };
+    window.addEventListener("keydown", onDelete);
+    return () => window.removeEventListener("keydown", onDelete);
+  }, [mesaStage]);
 
   // Teclas 1 a 5 usam o item da hotkey do personagem em foco (fora de campos de texto).
   useEffect(() => {

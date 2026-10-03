@@ -436,9 +436,38 @@ export class ArmadaMultiplayer {
     return sent;
   }
 
+  /** Jogadores cuja conexão estava cheia na última mudança: recebem o estado mais recente assim que esvaziar. */
+  private stale = new Set<string>();
+  private staleTimer: ReturnType<typeof setTimeout> | null = null;
+
   broadcast() {
     if (this.state.role !== "master") return;
-    for (const connection of this.connections.values()) this.sendState(connection);
+    for (const connection of this.connections.values()) this.sendOrDefer(connection);
+  }
+
+  /**
+   * Cada mudança reenvia o estado inteiro (pode ter centenas de KB com as imagens dos tokens). Se a conexão ainda não
+   * escoou o envio anterior, empilhar mais cópias fazia a mudança chegar minutos depois: em vez disso marca o jogador
+   * como defasado e manda só a versão mais nova quando o canal esvaziar.
+   */
+  private sendOrDefer(connection: DataConnection) {
+    if (!connection.open) { this.stale.delete(connection.peer); return; }
+    const channel = (connection as unknown as { dataChannel?: { bufferedAmount?: number } }).dataChannel;
+    const queued = (connection as unknown as { bufferSize?: number }).bufferSize ?? 0;
+    if ((channel?.bufferedAmount ?? 0) > 256 * 1024 || queued > 0) {
+      this.stale.add(connection.peer);
+      if (!this.staleTimer) this.staleTimer = setTimeout(() => { this.staleTimer = null; this.flushStale(); }, 60);
+      return;
+    }
+    this.stale.delete(connection.peer);
+    this.sendState(connection);
+  }
+
+  private flushStale() {
+    for (const peer of [...this.stale]) {
+      const connection = this.connections.get(peer);
+      if (connection) this.sendOrDefer(connection); else this.stale.delete(peer);
+    }
   }
 
   private sendState(connection: DataConnection) {

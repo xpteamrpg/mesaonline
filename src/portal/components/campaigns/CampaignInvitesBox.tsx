@@ -29,6 +29,12 @@ export const CampaignInvitesBox: React.FC = () => {
   }, [open, user?.id]);
 
   const update = (next: CampaignDraft) => { setDraft(next); setCampaignDraft(next); };
+  // O que está digitado no campo já vale ao salvar, mesmo sem apertar "Adicionar".
+  useEffect(() => {
+    const typed = extract(code);
+    const current = getCampaignDraft();
+    if ((current.pendingCode || "") !== (typed && typed.length >= 6 ? typed : "")) { const next = { ...current, pendingCode: typed && typed.length >= 6 ? typed : undefined }; setDraft(next); setCampaignDraft(next); }
+  }, [code]);
   const toggleTable = (id: string) => update({ ...draft, tables: draft.tables.includes(id) ? draft.tables.filter((x) => x !== id) : [...draft.tables, id] });
   const toggleInvite = (inv: TableInvite) => {
     const has = draft.invites.some((i) => i.inviteId === inv.inviteId);

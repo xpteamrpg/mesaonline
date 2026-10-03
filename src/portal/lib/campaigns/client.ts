@@ -62,20 +62,22 @@ export const myCharacterLinks = () => rpc<MyCharacterLink[]>("mrpg_my_character_
  * Escolhas feitas na aba "Convites de campanha" enquanto a ficha ainda está sendo criada ou editada.
  * Só valem quando a ficha é salva (`applyCampaignDraft`), para o personagem aparecer em "Mesas Online" com a campanha.
  */
-export interface CampaignDraft { codes: string[]; invites: Array<{ inviteId: string; tableId: string }>; tables: string[] }
+/** `pendingCode`: código digitado no campo e ainda não confirmado em "Adicionar" (quem digita e já aperta Salvar não perde o vínculo). */
+export interface CampaignDraft { codes: string[]; invites: Array<{ inviteId: string; tableId: string }>; tables: string[]; pendingCode?: string }
 const emptyDraft = (): CampaignDraft => ({ codes: [], invites: [], tables: [] });
 let draft: CampaignDraft = emptyDraft();
 export const getCampaignDraft = () => draft;
 export const setCampaignDraft = (next: CampaignDraft) => { draft = next; };
 export const clearCampaignDraft = () => { draft = emptyDraft(); };
-export const hasCampaignDraft = () => draft.codes.length + draft.invites.length + draft.tables.length > 0;
+export const hasCampaignDraft = () => draft.codes.length + draft.invites.length + draft.tables.length > 0 || Boolean(draft.pendingCode);
 
 /** Aplica o rascunho à ficha salva e devolve o que não deu certo (para avisar a pessoa). */
 export async function applyCampaignDraft(sheet: CharacterSheet): Promise<string[]> {
   const todo = draft;
   clearCampaignDraft();
   const problems: string[] = [];
-  for (const code of todo.codes) { try { await linkCharacterByCode(code, sheet); } catch (e) { problems.push(`Código ${code}: ${e instanceof Error ? e.message : "falhou"}`); } }
+  const codes = todo.pendingCode && !todo.codes.includes(todo.pendingCode) ? [...todo.codes, todo.pendingCode] : todo.codes;
+  for (const code of codes) { try { await linkCharacterByCode(code, sheet); } catch (e) { problems.push(`Código ${code}: ${e instanceof Error ? e.message : "falhou"}`); } }
   for (const inv of todo.invites) { try { await answerInvite(inv.inviteId, true); await requestCharacter(inv.tableId, sheet); } catch (e) { problems.push(e instanceof Error ? e.message : "Convite falhou"); } }
   for (const id of todo.tables) { try { await requestCharacter(id, sheet); } catch (e) { problems.push(e instanceof Error ? e.message : "Pedido falhou"); } }
   return problems;

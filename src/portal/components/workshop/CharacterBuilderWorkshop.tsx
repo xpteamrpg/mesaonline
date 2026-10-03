@@ -339,7 +339,7 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
             <Box title="1. Conceito do personagem">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div><Lbl>Nome *</Lbl><input value={name} onChange={(e) => setName(e.target.value)} className={`${inp} font-bold`} placeholder="Ex.: Vharo Lumen" autoFocus /></div>
-                <div><Lbl>Campanha</Lbl><input list="campaign-options" value={campaign} onChange={(e) => setCampaign(e.target.value)} className={inp} /><datalist id="campaign-options">{campaignNames.map((name) => <option key={name} value={name} />)}</datalist></div>
+                <div><Lbl>Mesa online</Lbl><input list="campaign-options" value={campaign} onChange={(e) => setCampaign(e.target.value)} className={inp} /><datalist id="campaign-options">{campaignNames.map((name) => <option key={name} value={name} />)}</datalist></div>
             <div className="sm:col-span-2"><CampaignInvitesBox /></div>
                 <div><Lbl>Nível inicial</Lbl><input type="number" min={1} max={20} value={level} onChange={(e) => setLevel(Math.max(1, Math.min(20, Number(e.target.value))))} className={inp} /></div>
                 <div><Lbl>Idiomas</Lbl><input value={languages} onChange={(e) => setLanguages(e.target.value)} className={inp} /></div>
@@ -658,7 +658,7 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
             <Box title="9. Revisão">
               <div className="rounded border border-[#ded7c6] bg-[#fbf9f4] p-4 text-xs">
                 <div className="font-serif text-base font-bold text-[#b92b3a]">{name || "—"} — {race.nome} {cls.nome}{path ? ` (${pathLabel(path)})` : ""} {level}º nível</div>
-                <div className="mt-1 text-[#5c5446]">Campanha: {campaign}{origin ? ` · Origem: ${origin.nome}` : ""}{deity ? ` · Devoto de ${deity.nome}` : ""}{distinction ? ` · Distinção: ${distinction.nome}` : ""}</div>
+                <div className="mt-1 text-[#5c5446]">Mesa online: {campaign}{origin ? ` · Origem: ${origin.nome}` : ""}{deity ? ` · Devoto de ${deity.nome}` : ""}{distinction ? ` · Distinção: ${distinction.nome}` : ""}</div>
                 <div className="mt-2 grid grid-cols-6 gap-1 text-center">{ATTR_KEYS.map((k) => <div key={k} className="rounded border border-[#ded7c6] bg-white p-1"><div className="text-[9px] font-bold text-[#726859]">{k.toUpperCase()}</div><div className="font-serif text-sm font-black">{sign(finalAttrs[k])}</div></div>)}</div>
                 <div className="mt-2 text-[#5c5446]"><strong>Perícias:</strong> {[...autoTrained, ...extraSkills].map(skillName).join(", ") || "—"}</div>
                 <div className="text-[#5c5446]"><strong>Poderes:</strong> {powerIds.length} · <strong>Magias:</strong> {spellIds.length} · <strong>Itens:</strong> {items.length} · <strong>T$</strong> {startMoney - spent}</div>
