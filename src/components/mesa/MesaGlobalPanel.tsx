@@ -63,6 +63,7 @@ import TokenEditorDialog from "./TokenEditorDialog";
 import { OBJECT_KIND_LABEL, freeObjectSpot, newBoardObject } from "../../game/objectPlacement";
 import { linkFromJson } from "../../game/tokenJson";
 import { loadCharacterSheets, loadReadyHeroSheets } from "../../../ficha-modernrpg/characterRoute";
+import type { CharacterSheet } from "../../../ficha-modernrpg/sheet";
 
 export type MesaPanelId = "scenes" | "roster" | "combat" | "environment" | "history" | "jukebox" | "automation" | "map-context" | "compendium" | "undo" | "online" | "settings" | "tokens" | "master";
 
@@ -107,6 +108,8 @@ interface Props {
   onEndTurn?: () => void;
   /** Coloca no mapa um token da biblioteca (imagem importada pela pessoa). */
   onAddLibraryToken?: (token: LibraryToken) => void;
+  /** usar um personagem da conta (Meus personagens): o Mestre o coloca no mapa; o jogador pede ao Mestre */
+  onUseCharacter?: (sheet: CharacterSheet) => void;
   /** Encontro aleatório: coloca no mapa N tokens da ameaça sorteada. */
   onSpawnThreats?: (template: ThreatTemplate, count: number) => void;
   /** Encontro aleatório sem criatura (viajante etc.): cria um token genérico com o nome. */
@@ -1349,7 +1352,7 @@ function MasterPanel({ snapshot, onSpawnThreats, onSpawnNpc }: { snapshot: Runti
 
 /** Biblioteca de tokens: importar imagens de miniatura e colocá-las no mapa. */
 /** Tokens: a caixa com os tokens da pessoa; o primeiro lugar, fixo, é o "+" que abre a janela Novo token. */
-function TokensPanel({ onAddLibraryToken }: Props) {
+function TokensPanel({ onAddLibraryToken, onUseCharacter, snapshot }: Props) {
   const [items, setItems] = useState<LibraryToken[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -1387,7 +1390,18 @@ function TokensPanel({ onAddLibraryToken }: Props) {
     await deleteLibraryToken(id);
     setItems(await listLibraryTokens());
   }
+  const isPlayer = snapshot.multiplayer.role === "player";
   return <div className="mesa-panel-stack mesa-token-stack">
+    <div className="mesa-panel-section" data-my-characters><h4>MEUS PERSONAGENS · {sheets.length}</h4>
+      {sheets.length === 0 && <p className="mesa-block-empty">Você ainda não tem personagem. Crie ou importe um na Oficina de Heróis do site.</p>}
+      <div className="mesa-roster-list">{sheets.map((sheet) => {
+        const onMap = snapshot.board.tokens.find((token) => token.modernRpgCharacterId === sheet.id);
+        return <button key={sheet.id} onClick={() => onUseCharacter?.(sheet)} title={onMap ? "Já está na mesa: selecionar" : isPlayer ? "Pedir ao Mestre para colocar na mesa" : "Colocar no mapa"}>
+          <span className="mesa-mini-portrait">{sheet.avatar ? <img src={sheet.avatar} alt=""/> : <ScrollText/>}</span>
+          <div><strong>{sheet.name}</strong><small>{[sheet.race, sheet.class].filter(Boolean).join(" · ")} · Nv {sheet.level} · PV {sheet.hp.current}/{sheet.hp.max}</small><em>{onMap ? "Na mesa" : isPlayer ? "Entrar na mesa com ele" : "Colocar no mapa"}</em></div>
+        </button>;
+      })}</div>
+    </div>
     <p className="mesa-block-empty">Seus tokens ficam nesta caixa. {account ? "Você está logado: os tokens novos vão para a sua conta e aparecem em qualquer navegador." : "Sem login, os tokens ficam só neste navegador. Entre na sua conta no Portal para guardá-los na conta."}</p>
     {account && localOnly > 0 && <div className="mesa-panel-actions"><button disabled={busy} onClick={() => void sendToAccount()}><Upload/>Enviar {localOnly} token(s) deste navegador para a conta</button></div>}
     {notice && <p className="mesa-block-empty" role="status">{notice}</p>}

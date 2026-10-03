@@ -38,7 +38,7 @@ import { freeObjectSpot, newBoardObject } from "./game/objectPlacement";
 import { executeDropItem } from "./tactics/engine/objectCommands";
 import {
   addToken, hostMultiplayer, joinMultiplayer, setObjects, appendChat, appendRoll, clearRollHistory, getRuntimeSnapshot, restoreMultiplayerSession, selectToken, sendSignal, setInitiativeRoll, shareAudioWithRoom, startCombat, endCombat,
-  subscribeRuntime, updateToken,
+  subscribeRuntime, updateToken, requestRemoteCommand,
 } from "./game/vttBridge";
 import type { AugmentChoice } from "./tactics/interpretation/spellCasting";
 import { executeTacticalAction, executeTacticalEndTurn, executeTacticalMove } from "./tactics/engine/runtimeCommands";
@@ -418,7 +418,12 @@ export default function App() {
       try { token = addToken(boardTokenFromCharacter(sheet, freePosition(board.tokens, "heroes"))); } catch (error) { appendChat({ author: "Sistema", text: (error as Error).message, kind: "system" }); }
     }
     if (token) selectToken(token.id);
-    else appendChat({ author: "Sistema", text: `${sheet.name} ainda não está no mapa. Peça ao Mestre para colocá-lo.`, kind: "system" });
+    else if (snapshot.multiplayer.role === "player") {
+      // O jogador não coloca token sozinho: o pedido vai ao Mestre, que cria o token numa casa livre, já com o controle dele.
+      requestRemoteCommand("claimCharacter", boardTokenFromCharacter(sheet, { x: 0, y: 0 }));
+      appendChat({ author: "Sistema", text: `Pedi ao Mestre para colocar ${sheet.name} na mesa.`, kind: "system" });
+    }
+    else appendChat({ author: "Sistema", text: `${sheet.name} ainda não está no mapa.`, kind: "system" });
     setProfileOpen(false);
   }
 
@@ -835,6 +840,7 @@ export default function App() {
       onOpenCharacters={() => setCharactersOpen(true)}
       onOpenThreats={() => setThreatsOpen(true)}
       onAddLibraryToken={spawnLibraryToken}
+      onUseCharacter={(sheet) => { if (snapshot.multiplayer.role === "player") pickCharacter(sheet); else addCharacterToBoard(sheet); setSkinPanel(null); }}
       onSpawnThreats={(template, count) => { for (let index = 0; index < count; index += 1) spawnThreat(template, undefined, undefined, count > 1); }}
       onSpawnNpc={(name) => spawnLibraryToken({ id: "npc", name, image: "", addedAt: Date.now() })}
       onOpenPanel={(panel) => openSkinPanel(panel)}

@@ -7,6 +7,7 @@ import { rangeM } from "./targeting";
 import type { ActionKind, BoardToken, GameAction } from "../../game/types";
 import { isTokenOwnedByPeer } from "../../game/permissions";
 import {
+  addToken,
   appendChat,
   endTurn,
   getBoard,
@@ -300,6 +301,49 @@ registerRemoteCommand("explorationMove", (args, context) => {
   const [actorId, x, y, mode] = args;
   assertPeerControls(context.peerId, String(actorId || ""));
   resolveExplorationMove(String(actorId), Number(x), Number(y), mode);
+});
+
+/**
+ * O jogador entra na mesa com o personagem da conta dele ("Meus personagens → Usar"). Só o Mestre coloca tokens no mapa, então o pedido vem
+ * como comando: o Mestre cria o token numa casa livre, como aliado e já controlado por quem pediu. Um personagem já na mesa só é reassumido
+ * se estiver sem dono ou for da mesma pessoa.
+ */
+const MAX_CHARACTERS_PER_PLAYER = 4;
+const finite = (value: unknown, fallback: number) => (typeof value === "number" && Number.isFinite(value) ? value : fallback);
+
+export function firstFreeCell(board: { tokens: BoardToken[]; map: { cols: number; rows: number } }): { x: number; y: number } {
+  const taken = new Set(board.tokens.map((token) => `${token.gx},${token.gy}`));
+  for (let y = 1; y < board.map.rows; y += 1) for (let x = 1; x < board.map.cols; x += 1) if (!taken.has(`${x},${y}`)) return { x, y };
+  return { x: 0, y: 0 };
+}
+
+registerRemoteCommand("claimCharacter", (args, context) => {
+  const raw = args[0] as Partial<BoardToken> | undefined;
+  if (!raw || typeof raw !== "object" || typeof raw.modernRpgCharacterId !== "string" || !raw.modernRpgCharacterId) throw new Error("Personagem inválido.");
+  const board = getBoard();
+  const existing = board.tokens.find((token) => token.modernRpgCharacterId === raw.modernRpgCharacterId);
+  if (existing) {
+    if (existing.controlledBy && existing.controlledBy !== context.peerId) throw new Error(`${existing.name} já está sendo usado por outro jogador.`);
+    updateToken(existing.id, { controlledBy: context.peerId });
+    return;
+  }
+  if (board.tokens.filter((token) => token.controlledBy === context.peerId).length >= MAX_CHARACTERS_PER_PLAYER) throw new Error(`Cada jogador pode ter até ${MAX_CHARACTERS_PER_PLAYER} personagens na mesa.`);
+  const spot = firstFreeCell(board);
+  const hpMax = Math.max(1, finite(raw.hpMax, 10));
+  const pmMax = Math.max(0, finite(raw.pmMax, 0));
+  const token = {
+    ...raw,
+    id: `token-${crypto.randomUUID()}`,
+    name: String(raw.name || "Personagem").slice(0, 80),
+    side: "heroes",
+    gx: spot.x, gy: spot.y,
+    hp: Math.min(hpMax, Math.max(0, finite(raw.hp, hpMax))), hpMax,
+    pm: Math.min(pmMax, Math.max(0, finite(raw.pm, pmMax))), pmMax,
+    controlledBy: context.peerId,
+    hidden: false, defeated: false, locked: false,
+    effects: undefined, loot: undefined, pendingLoot: undefined, mountId: undefined, riderId: undefined,
+  } as BoardToken;
+  addToken(token);
 });
 
 registerRemoteCommand("tacticalMove", (args, context) => {
