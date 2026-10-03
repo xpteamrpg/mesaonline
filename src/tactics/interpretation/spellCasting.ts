@@ -74,6 +74,10 @@ interface CuratedEnhancement {
   execucao?: GameAction["kind"];
   /** muda o alcance da magia ("curto", "toque"...) */
   alcance?: string;
+  /** vira explosão com este raio a partir de quem lança */
+  areaM?: number;
+  addDamage?: string;
+  addHealing?: string;
 }
 const CURATED = enhancementsJson as unknown as Record<string, { baseMods?: Record<string, number>; aprimoramentos: CuratedEnhancement[] }>;
 
@@ -109,13 +113,15 @@ export interface NormalizedAugment {
   todosOsAlvos?: boolean;
   /** valores que o aprimoramento troca no efeito ("muda a RD para 20") */
   define?: Record<string, number>;
+  /** vira área de explosão com este raio, a partir de quem lança ("muda o alcance para pessoal e a área para explosão de 6m de raio") */
+  areaM?: number;
   /** só vale junto de outro aprimoramento (índice): "muda o bônus de dano do aprimoramento acima" */
   exige?: number;
 }
 
 const EXECUTION_WORDS: Record<string, GameAction["kind"]> = { padrao: "standard", reacao: "reaction", livre: "free", movimento: "movement", completa: "full" };
 
-type ParsedAugment = Pick<NormalizedAugment, "execucao" | "addHealing" | "addDamage" | "alcance" | "todosOsAlvos" | "define" | "requerCirculo">;
+type ParsedAugment = Pick<NormalizedAugment, "execucao" | "addHealing" | "addDamage" | "alcance" | "todosOsAlvos" | "define" | "requerCirculo" | "areaM">;
 
 /** O que um aprimoramento de texto livre sabe fazer sozinho (o resto é cobrado em PM e aplicado à mão). */
 function parseAugmentEffects(desc: string): ParsedAugment {
@@ -131,6 +137,8 @@ function parseAugmentEffects(desc: string): ParsedAugment {
   if (dmg) out.addDamage = dmg;
   const range = text.match(/muda o alcance para (pessoal|toque|curto|medio|longo)/);
   if (range) out.alcance = range[1] === "medio" ? "Médio" : range[1][0].toUpperCase() + range[1].slice(1);
+  const burst = text.match(/muda o alcance para pessoal e (?:o alvo|a area) para (?:area de )?explosao (?:de|com) (\d+(?:[.,]\d+)?) ?m de raio/);
+  if (burst) out.areaM = Number(burst[1].replace(",", "."));
   if (/alvo para criaturas escolhidas|afeta todos os alvos validos|todos os alvos validos/.test(text)) out.todosOsAlvos = true;
   const rd = text.match(/muda (?:os pv temporarios ou )?a rd para (\d+)/);
   if (rd) out.define = { rd: Number(rd[1]) };
@@ -168,7 +176,7 @@ export function normalizeAugments(entry: CanonicalSpellEntry): NormalizedAugment
         custo: option.custo,
         tipo: option.tipo,
         rotulo: option.rotulo,
-        manual: !option.soma && !targetsAuto,
+        manual: !option.soma && !targetsAuto && !option.addDamage && !option.addHealing && !option.areaM,
         extraTargets: targetsAuto ? targets : undefined,
         soma: option.soma,
         limiteBonus: option.limiteBonus,
@@ -176,6 +184,9 @@ export function normalizeAugments(entry: CanonicalSpellEntry): NormalizedAugment
         requerCirculo: option.requerCirculo,
         execucao: option.execucao,
         alcance: option.alcance,
+        areaM: option.areaM,
+        addDamage: option.addDamage,
+        addHealing: option.addHealing,
         exige: option.exige,
       };
     });
@@ -271,6 +282,8 @@ export interface CastPlan {
   kind?: GameAction["kind"];
   /** alcance novo, quando um aprimoramento o muda */
   alcance?: string;
+  /** a magia vira explosão em área com este raio, centrada em quem lança */
+  areaM?: number;
   /** dados somados à cura e ao dano pelos aprimoramentos */
   addHealing: string[];
   addDamage: string[];
@@ -322,6 +335,7 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
   let allTargets = false;
   let kind: GameAction["kind"] | undefined;
   let alcance: string | undefined;
+  let areaM: number | undefined;
   const addHealing: string[] = [];
   const addDamage: string[] = [];
   let used = 0;
@@ -357,6 +371,7 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
     if (option.exige !== undefined && !(choice.counts[option.exige] > 0)) fail(`"${option.rotulo}" só vale junto do aprimoramento ${option.exige + 1}.`);
     if (option.execucao) kind = option.execucao;
     if (option.alcance) alcance = option.alcance;
+    if (option.areaM) areaM = option.areaM;
     if (option.todosOsAlvos) allTargets = true;
     for (const [mod, value] of Object.entries(option.define || {})) mods[mod] = value;
     for (let n = 0; n < uses; n += 1) {
@@ -385,10 +400,11 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
     cost,
     mods,
     error,
-    maxTargets: allTargets ? 99 : Math.max(1, (info.entry.alvo?.max || 1) + extraTargets),
+    maxTargets: allTargets || areaM ? 99 : Math.max(1, (info.entry.alvo?.max || 1) + extraTargets),
     manualNotes,
     kind,
     alcance,
+    areaM,
     addHealing,
     addDamage,
   };

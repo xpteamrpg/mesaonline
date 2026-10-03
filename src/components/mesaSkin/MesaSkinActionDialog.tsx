@@ -174,8 +174,15 @@ export default function MesaSkinActionDialog({ mode, snapshot, units, onClose, o
         ) : cast && actor ? (
           <CastStep actor={actor} action={cast.action} counts={cast.counts} weaponId={cast.weaponId} element={cast.element} onChange={(counts, weaponId, element) => setCast({ action: cast.action, counts, weaponId, element })} onBack={() => setCast(null)} onContinue={(augment, plan, weaponSpell) => {
             // Com os aprimoramentos, a ação, o alcance e o limite de alvos podem ter mudado.
-            const shown: GameAction = { ...cast.action, kind: plan.kind ?? cast.action.kind, rangeM: plan.alcance ? parseRangeM(plan.alcance, cast.action.rangeM) : cast.action.rangeM };
+            const shown: GameAction = { ...cast.action, kind: plan.kind ?? cast.action.kind, rangeM: plan.alcance ? parseRangeM(plan.alcance, cast.action.rangeM) : cast.action.rangeM, ...(plan.areaM ? { target: "area" as const, areaM: plan.areaM, rangeM: 0 } : {}) };
             setCast(null);
+            // Explosão pessoal (aprimoramento): atinge os inimigos dentro do raio, a partir de quem lança.
+            if (plan.areaM) {
+              const caster = snapshot.board.tokens.find((token) => token.id === actor.id);
+              const hit = snapshot.board.tokens.filter((token) => caster && token.id !== actor.id && !token.hidden && !token.defeated && token.hp > 0 && token.side !== actor.side && rangeM(caster, token) <= plan.areaM! + 0.001).map((token) => token.id);
+              run(shown, hit, augment);
+              return;
+            }
             if (weaponSpell || shown.target === "self") { run(shown, [actor.id], augment); return; }
             if (shown.target === "area" || shown.target === "cell") { onArmAreaAction(shown, augment); onClose(); return; }
             if (plan.maxTargets <= 1) { onArmTargetAction(shown, augment); onClose(); return; }

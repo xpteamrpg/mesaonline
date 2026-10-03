@@ -186,6 +186,8 @@ function augmentedSpellAction(actor: BoardToken, action: GameAction, choice: Aug
   // Aprimoramentos que mudam a execução, o alcance ou somam dados à cura e ao dano.
   if (plan.kind) next.kind = plan.kind;
   if (plan.alcance) next.rangeM = parseRangeM(plan.alcance, action.rangeM);
+  // "Muda o alcance para pessoal e a área para explosão": vira área centrada em quem lança.
+  if (plan.areaM) { next.target = "area"; next.areaM = plan.areaM; next.rangeM = 0; }
   if (plan.addHealing.length && action.healing) next.healing = [action.healing, ...plan.addHealing].join("+");
   if (plan.addDamage.length && action.damage) next.damage = [action.damage, ...plan.addDamage].join("+");
   return { action: next, maxTargets: plan.maxTargets, mods: plan.mods };
@@ -228,6 +230,8 @@ function resolveAction(actorId: string, actionId: string, targetIds: string[], t
   // A ação que a magia gasta pode ter mudado com o aprimoramento (ex.: livre → padrão).
   assertActorCanAct(actor, action.kind);
   const weapon = weaponForSpell(actor, action, augment || null);
+  // Área pessoal (explosão a partir de quem lança): o centro é o próprio personagem.
+  if (action.target === "area" && !targetCell && action.rangeM <= 0) targetCell = { x: actor.gx, y: actor.gy };
   const targets = validatedTargets(actor, action, targetIds, targetCell);
   if (targets.length > maxTargets) throw new Error(`Esta magia afeta no máximo ${maxTargets} alvo(s) com os aprimoramentos escolhidos.`);
   const resolved = action;

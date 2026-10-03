@@ -16,7 +16,7 @@ export interface CastInfo {
     alvo?: { lado?: string; adjacentes?: boolean; alcanceM?: number; incluiSi?: boolean; max?: number };
     duracao?: { tipo: string; n?: number; rotulo?: string };
     efeito?: { rotulo?: string; mods?: Record<string, number> };
-    aprimoramentos?: { custo: number; tipo: "aumenta" | "muda" | "truque" | "extra"; rotulo: string; manual?: boolean; extraTargets?: number; soma?: Record<string, number>; limiteBonus?: "circulo"; altera?: string[]; requerCirculo?: number; execucao?: "standard" | "reaction" | "free" | "movement" | "full"; addHealing?: string; addDamage?: string; alcance?: string; todosOsAlvos?: boolean; define?: Record<string, number>; exige?: number }[];
+    aprimoramentos?: { custo: number; tipo: "aumenta" | "muda" | "truque" | "extra"; rotulo: string; manual?: boolean; extraTargets?: number; soma?: Record<string, number>; limiteBonus?: "circulo"; altera?: string[]; requerCirculo?: number; execucao?: "standard" | "reaction" | "free" | "movement" | "full"; addHealing?: string; addDamage?: string; alcance?: string; todosOsAlvos?: boolean; define?: Record<string, number>; exige?: number; areaM?: number }[];
   };
 }
 

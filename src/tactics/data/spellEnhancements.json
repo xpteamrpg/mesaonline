@@ -734,7 +734,7 @@
     "custo": 2,
     "tipo": "aumenta",
     "rotulo": "Aumenta o dano em +1d8+2",
-    "manual": true
+    "addDamage": "1d8+2"
    },
    {
     "custo": 2,
@@ -784,7 +784,8 @@
      "alcance",
      "alvo"
     ],
-    "manual": true
+    "areaM": 6,
+    "alcance": "Pessoal"
    }
   ],
   "alvo": {
