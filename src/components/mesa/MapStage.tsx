@@ -413,13 +413,15 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
     });
   }
 
-  const visibleOptions = { visible: vision.visible, isMaster: !isPlayer, masterSeesPreview: fogCfg.masterSeesPreview, fogEnabled: fogCfg.playerFogEnabled };
+  // Jogador: só os personagens dele enxergam por ele; aliados de outros jogadores só aparecem se estiverem à vista (vision.ts: tokenVisible).
+  const ownedIds = isPlayer ? new Set(board.tokens.filter((token) => token.controlledBy && token.controlledBy === snapshot.multiplayer.peerId).map((token) => token.id)) : undefined;
+  const visibleOptions = { visible: vision.visible, isMaster: !isPlayer, masterSeesPreview: fogCfg.masterSeesPreview, fogEnabled: fogCfg.playerFogEnabled, ownedIds };
   // Montaria: o cavaleiro vira um selo sobre a montaria (um token só no mapa); clicar nele seleciona o cavaleiro, que comanda o par.
   const ridersByMount = new Map(board.tokens.filter((token) => token.mountId && board.tokens.some((mount) => mount.id === token.mountId)).map((rider) => [rider.mountId as string, rider]));
   const tokenEntries = board.tokens
     .filter((token) => !(token.mountId && ridersByMount.get(token.mountId)?.id === token.id))
     .filter((token) => !token.hidden && floorOf(token) === andar)
-    .filter((token) => tokenVisible({ x: token.gx, y: token.gy, side: token.side }, visibleOptions))
+    .filter((token) => tokenVisible({ x: token.gx, y: token.gy, side: token.side, id: token.id }, visibleOptions))
     .map((token) => ({ gx: token.gx, gy: token.gy, skin: {
       id: token.id,
       name: token.name,

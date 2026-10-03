@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_FOG_SETTINGS, boardLighting, computeVisibility, effectiveVisionRadius,
-  fogForVision, fogSettings, lightedCells, visionForTokens, wallBlocksVision,
+  fogForVision, fogSettings, lightedCells, tokenVisible, visionForTokens, wallBlocksVision,
 } from "../src/game/vision";
 import type { BoardWall } from "../src/game/types";
 import { makeBoard, makeToken } from "./helpers";
@@ -112,5 +112,37 @@ describe("fog derivado da visao", () => {
       "darknessRevealedOnlyByLights", "exploreOnMove", "keepExploredDim",
       "masterSeesPreview", "opacity", "ownVisionCells", "playerFogEnabled",
     ]);
+  });
+});
+
+describe("cada jogador vê pelos próprios personagens", () => {
+  const a = () => makeToken({ id: "a", name: "A", side: "heroes", gx: 2, gy: 2, controlledBy: "jogadorA" });
+  const b = () => makeToken({ id: "b", name: "B", side: "heroes", gx: 12, gy: 12, controlledBy: "jogadorB" });
+
+  it("na escuridão, sem luz, o personagem de outro jogador não aparece; os meus sim", () => {
+    const board = makeBoard([a(), b()], { lighting: "darknight", fogSettings: { playerFogEnabled: true } });
+    const mineB = board.tokens.filter((t) => t.controlledBy === "jogadorB");
+    const { visible } = visionForTokens(board, mineB, fogSettings(board.fogSettings));
+    const opts = { visible, isMaster: false, masterSeesPreview: false, fogEnabled: true, ownedIds: new Set(["b"]) };
+    expect(tokenVisible({ x: 12, y: 12, side: "heroes", id: "b" }, opts)).toBe(true);   // o meu
+    expect(tokenVisible({ x: 2, y: 2, side: "heroes", id: "a" }, opts)).toBe(false);    // outro jogador, no escuro
+  });
+
+  it("com uma tocha acesa perto dele, o outro jogador passa a ver; quem tem Visão no Escuro vê sem luz", () => {
+    const torch = { id: "l1", x: 2, y: 3, type: "torch", name: "Tocha", radius: 6, intensity: 1, color: "#ffcc66", enabled: true } as never;
+    const lit = makeBoard([a(), b()], { lighting: "darknight", lights: [torch] });
+    const { visible } = visionForTokens(lit, lit.tokens.filter((t) => t.controlledBy === "jogadorB"), fogSettings(lit.fogSettings));
+    const opts = { visible, isMaster: false, masterSeesPreview: false, fogEnabled: true, ownedIds: new Set(["b"]) };
+    expect(tokenVisible({ x: 2, y: 2, side: "heroes", id: "a" }, opts)).toBe(true);     // iluminado pela tocha
+
+    const dark = makeBoard([a(), { ...b(), gx: 6, gy: 2, visionType: "dark" }], { lighting: "darknight" });
+    const darkVisible = visionForTokens(dark, dark.tokens.filter((t) => t.controlledBy === "jogadorB"), fogSettings(dark.fogSettings)).visible;
+    expect(tokenVisible({ x: 2, y: 2, side: "heroes", id: "a" }, { ...opts, visible: darkVisible })).toBe(true); // a 4 casas, dentro dos 9 m da Visão no Escuro
+  });
+
+  it("parede entre os dois esconde o outro personagem mesmo em plena luz", () => {
+    const board = makeBoard([a(), { ...b(), gx: 6, gy: 2 }], { lighting: "sunny", walls: [{ id: "w", type: "wall", x1: 4, y1: 0, x2: 4, y2: 14 }] as never });
+    const { visible } = visionForTokens(board, board.tokens.filter((t) => t.controlledBy === "jogadorB"), fogSettings(board.fogSettings));
+    expect(tokenVisible({ x: 2, y: 2, side: "heroes", id: "a" }, { visible, isMaster: false, masterSeesPreview: false, fogEnabled: true, ownedIds: new Set(["b"]) })).toBe(false);
   });
 });

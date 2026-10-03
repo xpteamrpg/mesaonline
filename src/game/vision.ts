@@ -78,11 +78,15 @@ export function visionTypeFromText(...fontes: Array<string | undefined | null>):
  */
 export function tokenVisible(
   unit: { x: number; y: number; side?: string; id?: string },
-  options: { visible: Set<string>; isMaster: boolean; masterSeesPreview: boolean; fogEnabled: boolean },
+  options: { visible: Set<string>; isMaster: boolean; masterSeesPreview: boolean; fogEnabled: boolean; ownedIds?: Set<string> },
 ): boolean {
   if (!options.fogEnabled) return true;
   if (options.isMaster && !options.masterSeesPreview) return true;
-  if (unit.side === "heroes") return true; // o jogador sempre ve os aliados da cena
+  if (unit.side === "heroes") {
+    // Sem a lista dos meus tokens (telas antigas), o jogador vê todos os aliados. Com ela, vale a regra da mesa: os meus eu sempre vejo;
+    // o personagem de outro jogador só aparece se estiver dentro do campo de visão (iluminado) de um dos meus.
+    if (!options.ownedIds || options.isMaster || (unit.id && options.ownedIds.has(unit.id))) return true;
+  }
   return options.visible.has(`${unit.x},${unit.y}`);
 }
 
