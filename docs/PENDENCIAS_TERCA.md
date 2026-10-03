@@ -68,3 +68,7 @@ Combinado com o usuário em 02/10: depois do playtest, só correção se for ext
 5. **Ataques da ameaça** (ex.: Gnoll Capanga: espada curta +9 e mordida +9): são **dois ataques diferentes**; hoje rola um só juntando os dois e só aparecem "espada curta" e "bote" em Agir, com descrição errada. Só com o poder Bote os dois acontecem juntos, contra a mesma criatura.
 6. **Token novo colocado no mapa** não rola iniciativa, não entra na lista, não seleciona; só funciona depois de reiniciar o combate. Deve entrar com iniciativa na hora.
 7. **Combate → clicar no token → Agir → atacar** abre uma janela; deveria só pedir a área/alvo do ataque (como antes). A janela só vale para Ficha e Inventário. Na aba Poderes não dá para selecionar o poder para aparecer em Agir (Bote, ação completa).
+
+### Esclarecimentos de 03/10 (tarde)
+- **Investida**: não existe no código (nem a ação básica do T20 nem o poder Bote). Regra do usuário: ação completa, move até o **dobro** do deslocamento em linha reta (jogador escolhe o ponto) e faz o ataque; com Bote faz os **dois** ataques. Falta implementar (conferir o texto no livro, regras básicas pág. 233 em diante).
+- Feito em 03/10: ataque de alvo único agora é escolhido **clicando no token no mapa** (sem janela); mover com um clique.

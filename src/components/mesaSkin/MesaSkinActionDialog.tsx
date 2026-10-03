@@ -22,6 +22,8 @@ export type MesaSkinActionDialogProps = {
   onClose: () => void;
   onArmMove: () => void;
   onArmAreaAction: (action: GameAction, augment?: AugmentChoice) => void;
+  /** alvo único: a escolha é feita clicando no token no mapa (sem janela de lista) */
+  onArmTargetAction: (action: GameAction, augment?: AugmentChoice) => void;
   /** Ação escolhida por uma hotkey: já abre com ela selecionada. */
   preselectActionId?: string | null;
 };
@@ -34,7 +36,7 @@ const CONDITION_SUGGESTIONS = [...CONDITION_NAMES, "Amedrontado"].sort((x, y) =>
  * to the existing combat/runtime commands and deliberately does not replace
  * the table's visual layout while closed.
  */
-export default function MesaSkinActionDialog({ mode, snapshot, units, onClose, onArmMove, onArmAreaAction, preselectActionId }: MesaSkinActionDialogProps) {
+export default function MesaSkinActionDialog({ mode, snapshot, units, onClose, onArmMove, onArmAreaAction, onArmTargetAction, preselectActionId }: MesaSkinActionDialogProps) {
   const selectedToken = snapshot.board.tokens.find((token) => token.id === snapshot.board.selectedTokenIds[0]);
   const isPlayer = snapshot.multiplayer.role === "player";
   // O jogador age com o token que controla (mesmo fora do turno, para reagir); Mestre/local seguem o turno ativo.
@@ -87,7 +89,8 @@ export default function MesaSkinActionDialog({ mode, snapshot, units, onClose, o
       onClose();
       return;
     }
-    setTargeting({ action, maxTargets: 1 });
+    onArmTargetAction(action);
+    onClose();
   }
 
   // Hotkey de ataque ou poder: escolhe a ação assim que o diálogo abre (o alvo é indicado em seguida).
@@ -175,6 +178,7 @@ export default function MesaSkinActionDialog({ mode, snapshot, units, onClose, o
             setCast(null);
             if (weaponSpell || shown.target === "self") { run(shown, [actor.id], augment); return; }
             if (shown.target === "area" || shown.target === "cell") { onArmAreaAction(shown, augment); onClose(); return; }
+            if (plan.maxTargets <= 1) { onArmTargetAction(shown, augment); onClose(); return; }
             setTargeting({ action: shown, augment, maxTargets: plan.maxTargets });
           }}/>
         ) : (

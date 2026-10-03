@@ -36,6 +36,8 @@ interface Props {
   view: "explore" | "combat";
   /** Uma ferramenta armada pelo App (porta, área, gatilho, objeto, mover em combate) recebe o clique. */
   intentActive: boolean;
+  /** escolhendo o alvo de uma ação: clicar num token vale como alvo (em vez de só selecionar) */
+  targetIntent?: boolean;
   /** área de efeito sendo posicionada pelo Mestre: forma, ponto de origem (se já escolhido) e tamanho */
   areaPreview?: { kind: ShapeKind; anchor: { x: number; y: number } | null; sizeM?: number } | null;
   onIntentPoint: (point: { x: number; y: number }) => void;
@@ -54,7 +56,7 @@ const THREAT_RING = "#c2202b";
  * luzes, paredes/portas, terreno, áreas, objetos, clima, régua e ping.
  * Não cria controles: as ferramentas vêm da gaveta Macros → Mapa e objetos.
  */
-export default function MapStage({ snapshot, view, intentActive, areaPreview, onIntentPoint, moveFor, onDropItem }: Props) {
+export default function MapStage({ snapshot, view, intentActive, targetIntent, areaPreview, onIntentPoint, moveFor, onDropItem }: Props) {
   const board = snapshot.board;
   const map = board.map;
   const isPlayer = snapshot.multiplayer.role === "player";
@@ -365,8 +367,7 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
     const tool = stageControl.tool;
     if (moveFor) {
       if (!landable(x, y)) { say("Destino fora do deslocamento ou bloqueado."); return; }
-      if (pendingMove === `${x},${y}`) { setPendingMove(null); onIntentPoint({ x: (x + .5) / map.cols, y: (y + .5) / map.rows }); return; }
-      setPendingMove(`${x},${y}`);
+      onIntentPoint({ x: (x + .5) / map.cols, y: (y + .5) / map.rows });
       return;
     }
     if (intentActive) { onIntentPoint({ x: (x + .5) / map.cols, y: (y + .5) / map.rows }); return; }
@@ -400,8 +401,6 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
       if (selectedToken.locked) { say(`${selectedToken.name} está travado pelo Mestre.`); return; }
       if (snapshot.combat.active) { say("Em combate, use Mover no menu de ações."); return; }
       if (!landable(x, y)) { say("Destino fora do deslocamento ou bloqueado."); return; }
-      if (pendingMove !== `${x},${y}`) { setPendingMove(`${x},${y}`); return; }
-      setPendingMove(null);
       executeExplorationMove(selectedToken.id, x, y, effectiveMoveMode(selectedToken, stageControl.moveMode));
       if (fogCfg.exploreOnMove) markExplored(visionForTokens(board, [{ ...selectedToken, gx: x, gy: y }], fogCfg).visible);
       return;
@@ -538,7 +537,7 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
             ))}
           <div className="pointer-events-none absolute inset-0" style={{ zIndex: 9 }}>
             {tokens.map((token, index) => (
-              <Token key={token.id} token={token} mode={view} index={index} onSelect={() => { selectToken(token.rider?.id ?? token.id); if (stageControl.tool !== "select") setStageTool("select"); }}/>
+              <Token key={token.id} token={token} mode={view} index={index} onSelect={() => { if (targetIntent) { const real = board.tokens.find((entry) => entry.id === token.id); if (real) { onIntentPoint({ x: (real.gx + .5) / map.cols, y: (real.gy + .5) / map.rows }); return; } } selectToken(token.rider?.id ?? token.id); if (stageControl.tool !== "select") setStageTool("select"); }}/>
             ))}
           </div>
           {rulerWithHover.length > 1 && (

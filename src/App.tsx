@@ -95,6 +95,7 @@ export default function App() {
     | { kind: "move" }
     | { kind: "place-token"; token: BoardToken }
     | { kind: "area-action"; action: GameAction; augment?: AugmentChoice }
+    | { kind: "target-action"; action: GameAction; augment?: AugmentChoice }
     | {
       kind: "map-tool";
       tool: Extract<MapToolId, "door" | "shape" | "trigger" | "object">;
@@ -676,7 +677,13 @@ export default function App() {
       if (mapIntent.kind === "move") executeTacticalMove(actorId, cell.x, cell.y, effectiveMoveMode(snapshot.board.tokens.find((token) => token.id === actorId), getStageControl().moveMode));
       else {
         const action = mapIntent.action;
-        const targets = action.target === "area" ? actionTargetsForArea(actor, action, cell) : [];
+        let targets: string[] = [];
+        if (mapIntent.kind === "target-action") {
+          // O clique vale no token que ocupa a casa (blocos grandes inclusive).
+          const hit = snapshot.board.tokens.find((token) => !token.hidden && !token.defeated && token.hp > 0 && coveredCells(token).some((c) => c.x === cell.x && c.y === cell.y));
+          if (!hit) { appendChat({ author: "Sistema", text: `Clique no alvo de ${action.name} (Esc cancela).`, kind: "system" }); return; }
+          targets = [hit.id];
+        } else if (action.target === "area") targets = actionTargetsForArea(actor, action, cell);
         executeTacticalAction(actorId, action.id, targets, cell, mapIntent.augment || null);
       }
       setMapIntent(null);
@@ -808,7 +815,7 @@ export default function App() {
             assign: (slot, itemId) => { const sheetId = focusedToken()?.modernRpgCharacterId; if (sheetId) assignHotkey(sheetId, slot, itemId); },
             clear: (slot) => { const sheetId = focusedToken()?.modernRpgCharacterId; if (sheetId) clearHotkey(sheetId, slot); },
           },
-          stage: <MapStage snapshot={snapshot} view={mesaStage === "combat" ? "combat" : "explore"} intentActive={mapIntent !== null} areaPreview={mapIntent?.kind === "map-tool" && mapIntent.tool === "shape" && mapIntent.shapeKind && mapIntent.shapeKind !== "cells" ? { kind: mapIntent.shapeKind, anchor: mapIntent.shapeAnchor ?? null, sizeM: mapIntent.shapeSizeM } : null} onIntentPoint={handleMapPoint} onDropItem={dropItemToGround} moveFor={mapIntent?.kind === "move" ? (snapshot.combat.activeTokenId || snapshot.board.selectedTokenIds[0]) : undefined}/>,
+          stage: <MapStage snapshot={snapshot} view={mesaStage === "combat" ? "combat" : "explore"} intentActive={mapIntent !== null} targetIntent={mapIntent?.kind === "target-action"} areaPreview={mapIntent?.kind === "map-tool" && mapIntent.tool === "shape" && mapIntent.shapeKind && mapIntent.shapeKind !== "cells" ? { kind: mapIntent.shapeKind, anchor: mapIntent.shapeAnchor ?? null, sizeM: mapIntent.shapeSizeM } : null} onIntentPoint={handleMapPoint} onDropItem={dropItemToGround} moveFor={mapIntent?.kind === "move" ? (snapshot.combat.activeTokenId || snapshot.board.selectedTokenIds[0]) : undefined}/>,
         }}
       />
     )}
@@ -845,6 +852,12 @@ export default function App() {
       preselectActionId={hotkeyAction}
       onClose={() => { setSkinActionMode(null); setHotkeyAction(null); }}
       onArmMove={armMove}
+      onArmTargetAction={(action, augment) => {
+        setSkinPanel(null);
+        setStageTool("select");
+        setMapIntent({ kind: "target-action", action, augment });
+        appendChat({ author: "Sistema", text: `Clique no alvo de ${action.name} no mapa.`, kind: "system" });
+      }}
       onArmAreaAction={(action, augment) => {
         setSkinPanel(null);
         setStageTool("select");
