@@ -250,8 +250,8 @@ function PortalApp() {
       />
 
       {user && sync.error && <div role="alert" className="no-print bg-[#fff0f0] px-4 py-2 text-center text-xs font-bold text-[#c92a2a]">Não foi possível sincronizar os personagens com a sua conta: {sync.error}</div>}
-      {/* espaço fixo (14rem ≈ 5,5 cm) entre o fim do conteúdo e a faixa preta do rodapé, em todas as páginas */}
-      <main className="flex-1 pb-56">
+      {/* espaço fixo de 20 cm entre o fim do conteúdo e a faixa preta do rodapé, em todas as páginas (proposital: o rodapé só aparece rolando) */}
+      <main className="flex-1 pb-[20cm]">
         {view === "home" && <HomeView characters={characters} onNavigate={navigate} />}
         {view === "about" && <AboutView onNavigate={navigate} />}
         {view === "sheet" && <RequireLogin what="a sua ficha">{!activeOrNone ? <NoCharacters loading={!!user && !sync.ready && !sync.error} onCreate={() => navigate("createChar")} /> : <T20CharacterSheet sheet={active} onUpdate={update} onRoll={setRoll} onEdit={() => startEdit(active.id)} onQuickEdit={() => setEditOpen(true)} onClone={() => clone(active.id)} onLevelUp={levelUp} />}</RequireLogin>}
