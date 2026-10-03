@@ -18,6 +18,8 @@ export interface JukeboxState {
   loop: boolean;
   /** de onde vem o som: arquivo/URL de áudio ou vídeo do YouTube (só o áudio toca) */
   source: "audio" | "youtube";
+  /** por que a faixa não toca (ex.: vídeo que não permite incorporação) */
+  error?: string;
 }
 
 const LISTENERS = new Set<() => void>();
@@ -29,7 +31,7 @@ function yt(): YoutubeTrack {
   if (!youtube) {
     youtube = new YoutubeTrack({
       onEnded: () => { state = { ...state, playing: false }; emit(); },
-      onError: () => { state = { ...state, playing: false }; emit(); },
+      onError: (message) => { state = { ...state, playing: false, error: message || "O YouTube não conseguiu tocar este link." }; emit(); },
       onPlaying: (playing) => { if (state.source === "youtube" && state.playing !== playing) { state = { ...state, playing }; emit(); } },
     });
   }
@@ -70,11 +72,11 @@ export function loadTrack(url: string, title?: string): void {
   if (videoId) {
     // Link do YouTube: o áudio sai do player oficial escondido; o <audio> fica parado.
     try { player?.pause(); } catch { /* ambiente sem media (jsdom) */ }
-    state = { ...state, url, title: title || "YouTube", playing: false, source: "youtube" };
+    state = { ...state, url, title: title || "YouTube", playing: false, source: "youtube", error: undefined };
     void yt().load(videoId, state.volume, state.loop);
   } else {
     if (state.source === "youtube") yt().stop();
-    state = { ...state, url, title: title || titleFromUrl(url), playing: false, source: "audio" };
+    state = { ...state, url, title: title || titleFromUrl(url), playing: false, source: "audio", error: undefined };
     if (player) { player.src = url; player.loop = state.loop; player.volume = state.volume; }
   }
   emit();

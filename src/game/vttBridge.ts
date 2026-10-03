@@ -386,7 +386,36 @@ export function addToken(token: BoardToken): BoardToken {
   if (BOARD.tokens.some((entry) => entry.id === token.id)) throw new Error("Já existe um token com esse ID.");
   mutateBoard((board) => ({ ...board, tokens: [...board.tokens, token] }));
   logToJournal(`${token.name} entrou na cena.`);
+  if (combatState.active && !token.hidden && !token.defeated) joinCombat(token.id);
   return token;
+}
+
+/** Token que entra com o combate em andamento: rola a iniciativa na hora e entra na ordem e na lista (sem reiniciar o combate). */
+function joinCombat(tokenId: string): void {
+  const token = BOARD.tokens.find((entry) => entry.id === tokenId);
+  if (!token || combatState.combatants.some((entry) => entry.tokenId === tokenId)) return;
+  const natural = rollDie(20);
+  const initiative = natural + token.initiative;
+  BOARD = { ...BOARD, tokens: BOARD.tokens.map((entry) => (entry.id === tokenId ? { ...entry, initiativeRoll: initiative } : entry)) };
+  SCENES = SCENES.map((scene) => (scene.id === activeSceneId ? { ...scene, board: BOARD } : scene));
+  const combatants = [...combatState.combatants, { tokenId, initiative, conditions: [...(token.conditions || [])] }];
+  const valueOf = new Map(combatants.map((entry) => [entry.tokenId, entry.initiative]));
+  const nameOf = (id: string) => BOARD.tokens.find((entry) => entry.id === id)?.name || "";
+  const order = [...combatState.order, tokenId].sort((x, y) => (valueOf.get(y) ?? -999) - (valueOf.get(x) ?? -999) || nameOf(x).localeCompare(nameOf(y)));
+  const roll: DiceResolution = {
+    id: uid("initiative"), actor: token.name, target: "Ordem de iniciativa", action: "Iniciativa", kind: "system",
+    modifier: token.initiative, total: initiative, formula: `1d20 + ${token.initiative}`, rolls: [natural], outcome: `Iniciativa ${initiative}`, success: true, timestamp: Date.now(),
+  };
+  combatState = {
+    ...combatState,
+    combatants,
+    order,
+    resources: { ...combatState.resources, [tokenId]: defaultResources() },
+    rolls: [roll, ...combatState.rolls].slice(0, 100),
+    log: [{ id: uid("log"), type: "initiative" as const, title: `${token.name} entrou no combate`, detail: `Iniciativa ${initiative}.`, tone: "neutral" as const, timestamp: Date.now() }, ...combatState.log].slice(0, 100),
+    revision: combatState.revision + 1,
+  };
+  saveAndNotify();
 }
 
 /**

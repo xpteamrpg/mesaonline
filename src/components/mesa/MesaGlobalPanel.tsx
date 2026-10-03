@@ -808,7 +808,7 @@ function JukeboxPresetsSection() {
         {preset.file && <button className="preset-clear" onClick={() => void clearFile(index)} title="Remover o arquivo desta faixa" aria-label={`Remover arquivo da faixa ${index + 1}`}><Trash2/></button>}
       </div>;
     })}</div>
-    {status && <p className="mesa-module-note">{status}</p>}
+    {(status || juke.error) && <p className="mesa-module-note">{status || juke.error}</p>}
     <p className="mesa-module-note">Prepare as faixas da cena e, na hora, é só apertar play. O que tocar aqui todos ouvem (Mestre e jogadores). Arquivos do computador são enviados aos jogadores pela sala (até 25 MB).</p>
   </div>;
 }

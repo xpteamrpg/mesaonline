@@ -45,9 +45,17 @@ function loadApi(): Promise<void> {
   return apiPromise;
 }
 
+/** Motivo (em português) de um código de erro do player do YouTube. */
+export function youtubeErrorText(code: number | undefined): string {
+  if (code === 101 || code === 150) return "O dono deste vídeo não permite tocar fora do YouTube. Use outro link.";
+  if (code === 100) return "Vídeo não encontrado ou privado.";
+  if (code === 2 || code === 5) return "O link do YouTube não pôde ser lido.";
+  return "O YouTube não conseguiu tocar este link.";
+}
+
 export interface YoutubeEvents {
   onEnded: () => void;
-  onError: () => void;
+  onError: (message?: string) => void;
   onPlaying: (playing: boolean) => void;
 }
 
@@ -56,6 +64,8 @@ export class YoutubeTrack {
   private player: any = null;
   private starting: Promise<void> | null = null;
   private videoId = "";
+  /** id que o player já carregou para tocar (cue sozinho não toca: o play usa loadVideoById) */
+  private started = "";
   private volume = 0.4;
   private loop = true;
 
@@ -67,12 +77,13 @@ export class YoutubeTrack {
       this.starting = loadApi().then(() => new Promise<void>((resolve) => {
         const host = document.createElement("div");
         host.setAttribute("aria-hidden", "true");
-        host.style.cssText = "position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:0;pointer-events:none;overflow:hidden";
+        // O YouTube só toca em player de pelo menos 200x200: fica fora da tela, não minúsculo.
+        host.style.cssText = "position:fixed;left:-400px;bottom:0;width:200px;height:200px;pointer-events:none;overflow:hidden";
         const slot = document.createElement("div");
         host.appendChild(slot);
         document.body.appendChild(host);
         this.player = new window.YT.Player(slot, {
-          width: "2", height: "2", videoId: this.videoId || id,
+          width: "200", height: "200", videoId: this.videoId || id,
           playerVars: { controls: 0, disablekb: 1, playsinline: 1, rel: 0, modestbranding: 1 },
           events: {
             onReady: () => { this.player.setVolume(Math.round(this.volume * 100)); resolve(); },
@@ -82,7 +93,7 @@ export class YoutubeTrack {
               } else if (event.data === 1) this.events.onPlaying(true);
               else if (event.data === 2) this.events.onPlaying(false);
             },
-            onError: () => this.events.onError(),
+            onError: (event: { data: number }) => this.events.onError(youtubeErrorText(event?.data)),
           },
         });
       })).catch(() => { this.starting = null; this.events.onError(); });
@@ -92,13 +103,20 @@ export class YoutubeTrack {
 
   async load(id: string, volume: number, loop: boolean): Promise<void> {
     this.videoId = id; this.volume = volume; this.loop = loop;
+    this.started = "";
     await this.ensure(id);
-    try { this.player?.cueVideoById(id); this.player?.setVolume(Math.round(volume * 100)); } catch { /* player ainda subindo */ }
+    try { this.player?.setVolume(Math.round(volume * 100)); } catch { /* player ainda subindo */ }
   }
 
-  async play(): Promise<void> { await this.ensure(this.videoId); try { this.player?.playVideo(); } catch { /* sem player */ } }
+  async play(): Promise<void> {
+    await this.ensure(this.videoId);
+    try {
+      if (this.started !== this.videoId) { this.started = this.videoId; this.player?.loadVideoById(this.videoId); }
+      else this.player?.playVideo();
+    } catch { /* sem player */ }
+  }
   pause(): void { try { this.player?.pauseVideo(); } catch { /* sem player */ } }
-  stop(): void { try { this.player?.stopVideo(); } catch { /* sem player */ } }
+  stop(): void { this.started = ""; try { this.player?.stopVideo(); } catch { /* sem player */ } }
   setVolume(volume: number): void { this.volume = volume; try { this.player?.setVolume(Math.round(volume * 100)); } catch { /* sem player */ } }
   setLoop(loop: boolean): void { this.loop = loop; }
 }

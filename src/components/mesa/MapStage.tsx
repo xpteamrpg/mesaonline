@@ -449,7 +449,7 @@ export default function MapStage({ snapshot, view, intentActive, areaPreview, on
       data-map-stage
       data-tool={stageControl.tool}
       className="absolute inset-0 overflow-hidden"
-      style={{ touchAction: "none", cursor: dragToken ? "grabbing" : stageControl.tool === "pan" ? "grab" : stageControl.tool === "align" && !isPlayer ? "move" : "default", "--fog-opacity": fogCfg.opacity } as CSSProperties}
+      style={{ touchAction: "none", cursor: dragToken ? "grabbing" : stageControl.tool === "pan" ? "grab" : stageControl.tool === "align" && !isPlayer ? "move" : "crosshair", "--fog-opacity": fogCfg.opacity } as CSSProperties}
       onPointerDown={beginPan}
       onPointerMove={panCamera}
       onPointerUp={endPan}
