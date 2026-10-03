@@ -871,6 +871,15 @@ export default function App() {
         appendChat({ author: "Sistema", text: `Escolha o ponto de ${action.name} no mapa.`, kind: "system" });
       }}
     />}
+    {mapIntent && mapIntent.kind !== "map-tool" && (
+      <div className="mesa-intent-banner" role="status" data-intent-banner>
+        <span>{mapIntent.kind === "place-token" ? `Clique no mapa onde ${mapIntent.token.name} deve aparecer`
+          : mapIntent.kind === "target-action" ? `Clique no alvo de ${mapIntent.action.name}`
+          : mapIntent.kind === "area-action" ? `Clique no ponto de ${mapIntent.action.name}`
+          : "Clique no destino"}</span>
+        <button type="button" onClick={() => setMapIntent(null)}>Cancelar (Esc)</button>
+      </div>
+    )}
     <ReactionPrompt snapshot={snapshot}/>
     <ObjectDialog snapshot={snapshot}/>
     <DoorDialog snapshot={snapshot}/>

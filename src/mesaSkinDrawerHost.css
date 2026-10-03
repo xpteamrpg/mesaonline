@@ -116,3 +116,9 @@
 .mesa-entrando p { max-width: 460px; color: #e8dcc2; font-family: "Barlow", sans-serif; font-size: 15px; line-height: 1.4; }
 .mesa-entrando div { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .mesa-entrando button { background: #7b1220; color: #fff0c4; border: 1px solid #d9a94c; border-radius: 8px; padding: 9px 16px; font-weight: 700; cursor: pointer; }
+
+/* Aviso fixo enquanto a Mesa espera um clique no mapa (onde colocar o token, qual o alvo, qual o ponto da área). */
+.mesa-intent-banner { position: fixed; top: 74px; left: 50%; transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; padding: 9px 14px; border: 1px solid #d9a94c; border-radius: 10px; background: rgba(30, 18, 10, .94); color: #f4e8ce; font-size: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, .55), 0 0 0 1px rgba(217, 169, 76, .25); }
+.mesa-intent-banner span { font-weight: 600; letter-spacing: .01em; }
+.mesa-intent-banner button { border: 1px solid #7a5227; border-radius: 7px; background: #2a1a12; color: #e0b25c; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+.mesa-intent-banner button:hover { background: #3a2518; color: #f0d9a5; }
