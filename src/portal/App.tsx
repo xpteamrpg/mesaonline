@@ -1,3 +1,4 @@
+import { getMyTables } from "./lib/tables/myTables";
 import { useEffect, useState } from "react";
 import type { CharacterSheet } from "./types/sheet";
 import { INITIAL_CHARACTERS } from "./data/characters";
@@ -156,7 +157,8 @@ function PortalApp() {
   const activeOrNone = characters.find((c) => c.id === activeId) ?? characters[0];
   /** Sem personagens, as janelas de importação ainda precisam de uma ficha-base; ela nunca aparece na lista. */
   const active = activeOrNone ?? INITIAL_CHARACTERS[0];
-  const campaignNames = [...new Set([...campaigns.map((c) => c.name), ...characters.map((c) => c.campaign).filter(Boolean)])];
+  // Campanhas do Portal, mesas criadas em Mesa online (campanha e one-shot) e as já usadas nas fichas.
+  const campaignNames = [...new Set([...campaigns.map((c) => c.name), ...getMyTables().map((t) => t.name), ...characters.map((c) => c.campaign).filter(Boolean)])];
 
   const update = (s: CharacterSheet) => setCharacters((p) => p.map((c) => (c.id === s.id ? s : c)));
   /** Convites/códigos de campanha escolhidos na ficha só valem quando ela é salva. */

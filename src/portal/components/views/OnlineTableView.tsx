@@ -183,7 +183,7 @@ const JoinPrivateTable: React.FC = () => {
 };
 
 /** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
-const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, onManage, characters, onOpenCharacter }) => {
+const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (l: MyTableLink) => void; onEdit: (l: MyTableLink, current: Partial<TableEntry>) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, onManage, onEdit, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
   const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
   const code = link.liveRoomCode || fresh?.liveRoomCode || link.code;
@@ -206,7 +206,74 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (
         </div>
         {!link.local && <PartyStrip tableId={link.id} characters={characters} onOpenOwn={onOpenCharacter} />}
         <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: link.name, host: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
+        <button onClick={() => onEdit(link, t)} className="mt-2 w-full rounded border border-[#b92b3a] bg-white py-1.5 text-[11px] font-black uppercase text-[#b92b3a] hover:bg-[#fdeef0]" data-edit-table>Editar mesa</button>
         {!link.local && <button onClick={() => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) onManage(link); }} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Gerenciar jogadores e convites</button>}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Editar uma mesa que você criou: nome, tipo (campanha ou one-shot), sistema, horário, vagas, classificação, preço, capa, contato, descrição
+ * e se aparece no catálogo público. Salva no servidor de mesas (com o token de quem criou) e na cópia deste navegador.
+ */
+const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry>; onClose: () => void; onSaved: (t: TableEntry) => void }> = ({ link, current, onClose, onSaved }) => {
+  const [kind, setKind] = useState<"campanha" | "oneshot">(link.kind ?? current.kind ?? "oneshot");
+  const [form, setForm] = useState({
+    name: link.name, system: current.system ?? "Tormenta20", modality: (current.modality ?? "online") as "online" | "presencial", schedule: current.schedule ?? "",
+    gmName: current.gmName ?? "", seatsTotal: String(current.seatsTotal ?? 4), ageRating: current.ageRating ?? "livre", vttPlatform: current.vttPlatform ?? "Mesa de Arton (deste site)",
+    description: current.description ?? "", imageUrl: current.imageUrl ?? "", priceType: (current.priceType ?? "gratuita") as "gratuita" | "paga", priceValue: String(current.priceValue ?? ""),
+    contactInfo: current.contactInfo ?? "", isPublic: Boolean(current.isPublic),
+  });
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setError("");
+    if (!form.name.trim()) { setError("O nome da mesa é obrigatório."); return; }
+    setBusy(true);
+    const patch = { ...form, kind, name: form.name.trim(), seatsTotal: Math.max(1, Number(form.seatsTotal) || 1), priceValue: Number(form.priceValue) || 0 };
+    let saved: TableEntry = { ...(link.data ?? {}), ...current, ...patch, id: link.id, code: link.code } as TableEntry;
+    try {
+      if (!link.local && link.managementToken && link.managementToken !== "local") saved = { ...(await updateTable(link.id, link.managementToken, patch)), managementToken: undefined };
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível salvar no servidor de mesas.");
+      setBusy(false);
+      return;
+    }
+    addMyTable({ ...link, name: patch.name, kind, data: { ...saved, managementToken: undefined } });
+    setBusy(false);
+    onSaved(saved);
+  };
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Editar mesa" data-edit-table-dialog>
+      <div className="my-auto w-full max-w-2xl rounded-lg bg-white p-5 shadow-2xl">
+        <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#ded7c6] pb-2"><h2 className="font-serif text-lg font-black text-[#2b261f]">Editar mesa · {link.name}</h2><button onClick={onClose} aria-label="Fechar" className="text-lg font-black text-[#726859]">×</button></div>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de mesa">
+          <button type="button" role="radio" aria-checked={kind === "campanha"} onClick={() => setKind("campanha")} className={`rounded border-2 py-2 text-xs font-black uppercase tracking-widest ${kind === "campanha" ? "border-[#1c5fb5] bg-[#1c5fb5] text-white" : "border-[#ded7c6] bg-white text-[#1c5fb5]"}`}>Campanha</button>
+          <button type="button" role="radio" aria-checked={kind === "oneshot"} onClick={() => setKind("oneshot")} className={`rounded border-2 py-2 text-xs font-black uppercase tracking-widest ${kind === "oneshot" ? "border-[#b92b3a] bg-[#b92b3a] text-white" : "border-[#ded7c6] bg-white text-[#b92b3a]"}`}>One-shot</button>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nome da mesa *" className={`${inp} font-bold sm:col-span-2`} />
+          <input value={form.system} onChange={(e) => setForm({ ...form, system: e.target.value })} placeholder="Sistema" className={inp} />
+          <select value={form.modality} onChange={(e) => setForm({ ...form, modality: e.target.value as "online" | "presencial" })} className={inp}><option value="online">Online</option><option value="presencial">Presencial</option></select>
+          <input value={form.schedule} onChange={(e) => setForm({ ...form, schedule: e.target.value })} placeholder="Horário (ex: Sábados 20h)" className={inp} />
+          <input value={form.gmName} onChange={(e) => setForm({ ...form, gmName: e.target.value })} placeholder="Mestre responsável" className={inp} />
+          <input value={form.seatsTotal} onChange={(e) => setForm({ ...form, seatsTotal: e.target.value })} type="number" min="1" placeholder="Vagas" className={inp} />
+          <select value={form.ageRating} onChange={(e) => setForm({ ...form, ageRating: e.target.value })} className={inp}>{AGE_RATINGS.map((a) => <option key={a} value={a}>{a === "livre" ? "Livre" : `${a} anos`}</option>)}</select>
+          <input value={form.vttPlatform} onChange={(e) => setForm({ ...form, vttPlatform: e.target.value })} placeholder="Plataforma / VTT" className={inp} />
+          <select value={form.priceType} onChange={(e) => setForm({ ...form, priceType: e.target.value as "gratuita" | "paga" })} className={inp}><option value="gratuita">Gratuita</option><option value="paga">Paga</option></select>
+          {form.priceType === "paga" && <input value={form.priceValue} onChange={(e) => setForm({ ...form, priceValue: e.target.value })} type="number" min="0" step="0.01" placeholder="Valor (R$)" className={inp} />}
+          <div className="sm:col-span-2"><ImagePicker label="Imagem de capa" aspect={2.5} bake maxSize={800} value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} /></div>
+          <input value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="Contato (e-mail/WhatsApp, opcional)" className={`${inp} sm:col-span-2`} />
+          <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição da mesa" rows={4} className={`${inp} sm:col-span-2`} />
+          <label className="flex items-center gap-2 text-[11px] text-[#726859] sm:col-span-2"><input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} /> Anunciar esta mesa publicamente no catálogo</label>
+          {link.local && <p className="rounded border border-[#e0c98c] bg-[#fff8e6] p-2 text-[11px] leading-4 text-[#7a5a14] sm:col-span-2">Esta mesa existe só neste navegador (o servidor de mesas estava desligado ao criá-la): a edição também fica só aqui.</p>}
+          {error && <p className="text-[11px] font-bold text-[#b92b3a] sm:col-span-2">{error}</p>}
+          <div className="flex gap-2 sm:col-span-2">
+            <button onClick={() => void save()} disabled={busy} className="flex-1 rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d] disabled:opacity-50">{busy ? "Salvando…" : "Salvar alterações"}</button>
+            <button onClick={onClose} className="rounded border border-[#ded7c6] px-4 py-2 text-xs font-bold uppercase text-[#726859]">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -215,7 +282,8 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (
 /** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
 const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], onManage, onManageTable, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
-  const [links] = useState<MyTableLink[]>(getMyTables());
+  const [links, setLinks] = useState<MyTableLink[]>(getMyTables());
+  const [editing, setEditing] = useState<{ link: MyTableLink; current: Partial<TableEntry> } | null>(null);
   const [fresh, setFresh] = useState<Record<string, TableEntry>>({});
   useEffect(() => {
     links.filter((l) => !l.local).forEach((l) => { getTableByCode(l.code).then((t) => setFresh((prev) => ({ ...prev, [l.id]: t }))).catch(() => {}); });
@@ -225,6 +293,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
   const color = kind === "campanha" ? "text-[#1c5fb5]" : "text-[#b92b3a]";
   return (
     <div className="mb-6 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
+      {editing && <EditTableDialog link={editing.link} current={editing.current} onClose={() => setEditing(null)} onSaved={(saved) => { setFresh((prev) => ({ ...prev, [editing.link.id]: saved })); setLinks(getMyTables()); setEditing(null); }} />}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className={`font-serif text-base font-black ${color}`}>{title}</h2>
         {kind === "campanha" && onManage && <button onClick={onManage} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#726859] hover:bg-[#eae4d5]">Gerenciar campanhas</button>}
@@ -233,7 +302,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
         <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">{kind === "campanha" ? "Nenhuma campanha ainda. Crie uma acima escolhendo “Campanha”." : "Nenhum one-shot ainda. Crie uma acima escolhendo “One-shot”."}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} onManage={onManageTable} characters={characters} onOpenCharacter={onOpenCharacter} />)}
+          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} onManage={onManageTable} onEdit={(link, current) => setEditing({ link, current })} characters={characters} onOpenCharacter={onOpenCharacter} />)}
           {campaigns.map((c) => {
             const code = campaignRoomCode(c.id);
             return (
