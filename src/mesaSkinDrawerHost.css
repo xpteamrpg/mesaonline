@@ -41,6 +41,8 @@
 [data-map-stage]:not([data-tool="terrain"]) .next-grid > button.has-elevation { box-shadow: none; }
 [data-map-stage]:not([data-tool="terrain"]) .next-grid > button.has-elevation::after { content: none; }
 [data-map-stage][data-tool="terrain"] .next-grid > button { border-color: rgba(var(--mxr-246-238-219), .12); }
+/* Fog por cima de tudo: a regra acima zera o fundo de qualquer célula com "terrain-*" e fazia o fog sumir nas células de terreno (a Mesa mostrava o mapa inteiro mesmo com a visão calculada). */
+[data-map-stage]:not([data-tool="x"]) .next-grid > button.fog[class*="fog"] { background: rgba(22, 18, 20, var(--fog-opacity, .94)); border-color: rgba(33, 42, 51, .9); box-shadow: none; }
 
 /*
  * Prévia de movimento: usa as cores azuis que a própria máscara já tem no

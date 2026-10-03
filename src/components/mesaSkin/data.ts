@@ -15,6 +15,7 @@ import {
   Disc,
   Drama,
   Dumbbell,
+  CloudRain,
   Eye,
   EyeOff,
   Flag,
@@ -83,6 +84,8 @@ export const NAV: NavItem[] = [
 export const CHROME_ICONS: { id: string; icon: LucideIcon; title: string; masterOnly?: boolean }[] = [
   { id: "ping", icon: Target, title: "Ping: marcar um ponto no mapa" },
   { id: "theme", icon: Sun, title: "Iluminação da mesa" },
+  { id: "climate", icon: CloudRain, title: "Clima", masterOnly: true },
+  { id: "vision", icon: Eye, title: "Visão e fog", masterOnly: true },
   { id: "undo", icon: RotateCcw, title: "Desfazer última rolagem", masterOnly: true },
   { id: "home", icon: Home, title: "Voltar ao site" },
   { id: "settings", icon: Settings, title: "Preferências" },

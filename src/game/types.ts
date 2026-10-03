@@ -248,7 +248,7 @@ export interface BoardToken {
   /** travado pelo Mestre: nao se move (recuperado do cadeado do VTT antigo) */
   locked?: boolean;
   /** tipo de visao: normal, penumbra ou "dark" (Visao no Escuro / darkvision) */
-  visionType?: "normal" | "penumbra" | "dark";
+  visionType?: "normal" | "penumbra" | "dark" | "magic";
   /** alcance de visao em casas; sem valor usa o padrao das FogSettings */
   visionCells?: number;
   /** cavaleiro: id da montaria em que está (game/mount.ts) */

@@ -1,3 +1,4 @@
+import { requestEnvironmentSection } from "./components/mesa/MesaGlobalPanel";
 import { effectBonus } from "./tactics/engine/effectBonuses";
 import { toggleEquipped } from "./game/carga";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -700,6 +701,8 @@ export default function App() {
     // O ícone já existente é literalmente rotulado "Iluminação da mesa".
     // Ele abre o submenu de ambiente já disponível, sem alterar a máscara.
     if (action === "theme") { openSkinPanel("environment"); return; }
+    // Clima e Visão direto no cabeçalho: abrem o painel de ambiente já na seção certa.
+    if (action === "climate" || action === "vision") { requestEnvironmentSection(action === "climate" ? "clima" : "visao"); openSkinPanel("environment"); return; }
     if (action === "undo") { openSkinPanel("undo"); return; }
     // Grupo e Elenco são o mesmo botão: abre a lista da cena (jogador só vê).
     if (action === "group") { openSkinPanel("roster"); return; }

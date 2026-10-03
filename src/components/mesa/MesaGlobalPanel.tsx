@@ -355,7 +355,7 @@ function RosterEditor({ snapshot, unit }: { snapshot: RuntimeSnapshot; unit: Tac
     <button className="mesa-remove-token" onClick={() => { if (confirm(`Remover ${unit.name} da cena? O token sai do tabuleiro e da ordem de iniciativa.`)) removeToken(unit.id); }}><Trash2/>Remover da cena</button>
     <button className="mesa-more-toggle" aria-expanded={more} onClick={() => setMore((open) => !open)}>{more ? "Menos opções" : "Mais opções do mestre"}</button>
     {more && <>
-      <label>Visão<select value={token.visionType || "normal"} onChange={(event) => updateToken(token.id, { visionType: event.target.value as "normal" | "penumbra" | "dark" })}><option value="normal">Normal</option><option value="penumbra">Penumbra (visão na penumbra)</option><option value="dark">Visão no escuro</option></select></label>
+      <label>Visão<select value={token.visionType || "normal"} onChange={(event) => updateToken(token.id, { visionType: event.target.value as "normal" | "penumbra" | "dark" | "magic" })}><option value="normal">Normal</option><option value="penumbra">Penumbra (visão na penumbra)</option><option value="dark">Visão no escuro</option></select></label>
       <label>Alcance da visão (casas)<input type="number" min={0} max={60} placeholder="padrão da cena" value={token.visionCells ?? ""} onChange={(event) => updateToken(token.id, { visionCells: event.target.value === "" ? undefined : Math.max(0, Math.min(60, Math.round(Number(event.target.value)) || 0)) })}/></label>
       <label className="mesa-controller-field">Controle do token<select value={unit.controlledBy || ""} onChange={(event) => updateToken(unit.id, { controlledBy: event.target.value || undefined })}><option value="">Mestre / sem jogador</option>{snapshot.multiplayer.peers.map((peerId) => <option key={peerId} value={peerId}>Jogador {shortPeerId(peerId)}</option>)}{unit.controlledBy && !snapshot.multiplayer.peers.includes(unit.controlledBy) && <option value={unit.controlledBy}>Jogador {shortPeerId(unit.controlledBy)} (offline)</option>}</select></label>
       <label className="mesa-controller-field">Imagem do token<input type="file" accept="image/*" onChange={async (event) => {
@@ -551,9 +551,22 @@ function CombatPanel({ snapshot, units, selectedUnit, onEndTurn }: Props) {
 
 type EnvironmentSection = "clima" | "fog" | "luz" | "visao" | "paredes" | "portas";
 
+/** Seção do ambiente pedida pelos botões do cabeçalho (Clima, Visão): o painel a lê ao abrir e também se já estiver aberto. */
+let requestedEnvironmentSection: EnvironmentSection | null = null;
+export function requestEnvironmentSection(section: EnvironmentSection): void {
+  requestedEnvironmentSection = section;
+  window.dispatchEvent(new CustomEvent("mesa:environment-section", { detail: section }));
+}
+
 /** Ambiente da cena: um menu com Clima, Fog, Luz, Visão, Paredes e Portas; cada um abre só a sua configuração. */
 function EnvironmentPanel({ snapshot, onSelectStageTool, onArmMapTool }: { snapshot: RuntimeSnapshot; onSelectStageTool?: (tool: MapToolId) => void; onArmMapTool?: Props["onArmMapTool"] }) {
-  const [section, setSection] = useState<EnvironmentSection | null>(null);
+  const [section, setSection] = useState<EnvironmentSection | null>(() => requestedEnvironmentSection);
+  useEffect(() => {
+    requestedEnvironmentSection = null; // já consumida (limpar fora do inicializador: o modo estrito do React o executa duas vezes)
+    const open = (event: Event) => { const wanted = (event as CustomEvent<EnvironmentSection>).detail; if (wanted) { requestedEnvironmentSection = null; setSection(wanted); } };
+    window.addEventListener("mesa:environment-section", open);
+    return () => window.removeEventListener("mesa:environment-section", open);
+  }, []);
   const stage = useStageControl();
   const board = snapshot.board;
   const isPlayer = snapshot.multiplayer.role === "player";

@@ -19,7 +19,7 @@ import { type GridSettings, activeGrid } from "./distance";
 import { activeFloor, floorOf } from "./floors";
 
 /** Tipo de visão do token. `dark` é a Visão no Escuro (darkvision) do T20. */
-export type VisionType = "normal" | "penumbra" | "dark";
+export type VisionType = "normal" | "penumbra" | "dark" | "magic";
 
 /** Iluminação ambiente da cena. */
 export type LightingType = "sunny" | "twilight" | "starnight" | "darknight" | "cave";
@@ -29,7 +29,7 @@ export const LIGHTING_LABEL: Record<LightingType, string> = {
   twilight: "Penumbra",
   starnight: "Noite estrelada",
   darknight: "Escuridão",
-  cave: "Caverna",
+  cave: "Escuridão mágica",
 };
 
 export interface FogSettings {
@@ -95,9 +95,8 @@ export function fogSettings(partial?: Partial<FogSettings> | null): FogSettings 
 }
 
 /** Iluminação implícita quando a cena não define uma. */
-export function lightingFromWeather(weather: WeatherType): LightingType {
-  if (weather === "fog" || weather === "embers") return "twilight";
-  if (weather === "rain" || weather === "snow" || weather === "storm" || weather === "tormenta") return "twilight";
+export function lightingFromWeather(_weather: WeatherType): LightingType {
+  // As regras de clima ainda não existem: o clima é só visual e não altera a visão (decisão do usuário, 03/10).
   return "sunny";
 }
 
@@ -166,10 +165,13 @@ export function effectiveVisionRadius(
     return Math.ceil(base * 0.35);
   }
 
-  if (lighting === "darknight" || lighting === "cave") {
-    if (visionType === "dark") return shortRange;
+  if (lighting === "darknight") {
+    if (visionType === "dark" || visionType === "magic") return shortRange;
     return 0;
   }
+
+  // Escuridão mágica (chave interna "cave"): nem a Visão no Escuro comum enxerga; só quem tem habilidade para ver a escuridão mágica.
+  if (lighting === "cave") return visionType === "magic" ? shortRange : 0;
 
   return base;
 }

@@ -39,7 +39,7 @@ describe("barra esquerda", () => {
 
 describe("cabeçalho", () => {
   it("tem o botão Combate; dentro do combate vira Encerrar combate; sem o ícone de grupo", () => {
-    expect(CHROME_ICONS.map((item) => item.id)).toEqual(["ping", "theme", "undo", "home", "settings"]);
+    expect(CHROME_ICONS.map((item) => item.id)).toEqual(["ping", "theme", "climate", "vision", "undo", "home", "settings"]);
     const explore = render(<TopBar links={{}} onAction={() => undefined} view="explore" onCombat={() => undefined} />, runtimeFor(true));
     const combat = render(<TopBar links={{}} onAction={() => undefined} view="combat" onCombat={() => undefined} />, runtimeFor(true));
     expect(explore).toContain(">Combate<");

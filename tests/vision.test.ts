@@ -101,10 +101,24 @@ describe("fog derivado da visao", () => {
     expect(comMemoria.has("1,1")).toBe(false);
   });
 
-  it("a iluminacao cai para o clima quando a cena nao define", () => {
-    expect(boardLighting(makeBoard([], { weather: "clear" }))).toBe("sunny");
-    expect(boardLighting(makeBoard([], { weather: "fog" }))).toBe("twilight");
+  it("o clima NÃO altera a iluminação nem o alcance de visão (regras de clima ainda não existem)", () => {
+    for (const weather of ["clear", "rain", "snow", "embers", "fog", "tormenta", "storm"] as const) {
+      expect(boardLighting(makeBoard([], { weather }))).toBe("sunny");
+    }
+    expect(boardLighting(makeBoard([], { weather: "fog", lighting: "darknight" }))).toBe("darknight"); // o que o Mestre escolheu vale
     expect(boardLighting(makeBoard([], { weather: "clear", lighting: "cave" }))).toBe("cave");
+  });
+
+  it("Escuridão mágica: nem a Visão no Escuro comum enxerga; só quem tem a habilidade para isso", () => {
+    const comum = makeToken({ id: "c", visionType: "normal" });
+    const escuro = makeToken({ id: "d", visionType: "dark" });
+    const magico = makeToken({ id: "m", visionType: "magic" });
+    expect(effectiveVisionRadius(comum, "cave")).toBe(0);
+    expect(effectiveVisionRadius(escuro, "cave")).toBe(0);
+    expect(effectiveVisionRadius(magico, "cave")).toBe(6);
+    // escuridão comum continua igual: a Visão no Escuro enxerga 9 m
+    expect(effectiveVisionRadius(escuro, "darknight")).toBe(6);
+    expect(effectiveVisionRadius(comum, "darknight")).toBe(0);
   });
 
   it("as configuracoes padrao existem e sao completas", () => {

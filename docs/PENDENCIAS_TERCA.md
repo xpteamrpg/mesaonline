@@ -72,3 +72,10 @@ Combinado com o usuário em 02/10: depois do playtest, só correção se for ext
 ### Esclarecimentos de 03/10 (tarde)
 - **Investida**: não existe no código (nem a ação básica do T20 nem o poder Bote). Regra do usuário: ação completa, move até o **dobro** do deslocamento em linha reta (jogador escolhe o ponto) e faz o ataque; com Bote faz os **dois** ataques. Falta implementar (conferir o texto no livro, regras básicas pág. 233 em diante).
 - Feito em 03/10: ataque de alvo único agora é escolhido **clicando no token no mapa** (sem janela); mover com um clique.
+
+### REVISAR NA TERÇA — clima e visão (lembrete pedido em 03/10)
+- Hoje o **clima não altera a visão nem o alcance** (antes chuva, neve, tempestade, névoa, cinzas e tormenta viravam penumbra em `lightingFromWeather`, sobrepondo a configuração do Mestre). Na terça, com as regras de clima do usuário: penalidades de observação e o que mais vier. Teste que trava isso: `tests/vision.test.ts` ("o clima NÃO altera...").
+- **Escuridão mágica** (substituiu "Caverna"): só enxerga quem tem habilidade para ver a escuridão mágica — o usuário disse que são **duas no sistema inteiro**; falta ele dizer quais para eu ligar à ficha (hoje ninguém tem o tipo de visão "magic", então ninguém enxerga nela, só quem o Mestre marcar no token). Escuridão comum fica: Visão no Escuro enxerga 9 m.
+- Visão na Penumbra no alcance de penumbra: regra do projeto, conferir com o livro.
+- Fog e Visão: o Mestre ver pela visão de um **token/jogador específico** (menu do botão direito). Organização: juntar Luz (iluminação + fontes de luz) numa gaveta só.
+- Foi achado e corrigido em 03/10: o fog era calculado certo mas **não aparecia** nas células com terreno (regra de CSS em `mesaSkinDrawerHost.css` zerava o fundo); só apareceu medindo no Chrome real.
