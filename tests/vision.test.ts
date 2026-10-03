@@ -160,3 +160,16 @@ describe("cada jogador vê pelos próprios personagens", () => {
     expect(tokenVisible({ x: 2, y: 2, side: "heroes", id: "a" }, { visible, isMaster: false, masterSeesPreview: false, fogEnabled: true, ownedIds: new Set(["b"]) })).toBe(false);
   });
 });
+
+describe("quem enxerga a Escuridão mágica", () => {
+  it("só Visão nas Trevas e Percepção às Cegas dão a visão mágica; Visão no Escuro não", async () => {
+    const { visionTypeFromText } = await import("../src/game/vision");
+    expect(visionTypeFromText("Humano", "Visão nas Trevas: você enxerga...")).toBe("magic");
+    expect(visionTypeFromText("Elfo", "Percepção às Cegas: ...")).toBe("magic");
+    expect(visionTypeFromText("Anão", "Visão no Escuro")).toBe("dark");
+    expect(visionTypeFromText("Elfo", "Visão na Penumbra")).toBe("penumbra");
+    expect(visionTypeFromText("Humano")).toBe("normal");
+    // quem tem as duas coisas fica com a mágica (também enxerga o escuro comum)
+    expect(visionTypeFromText("x", "Visão no Escuro e Percepção às Cegas")).toBe("magic");
+  });
+});

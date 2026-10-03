@@ -207,14 +207,20 @@ describe("Amedrontar", () => {
   };
 
   it("falhou na Vontade: apavorado por 1 rodada e abalado pelo resto da cena", async () => {
-    const { bridge, target } = await cast(-100);
-    expect(target.conditions).toEqual(expect.arrayContaining(["Apavorado", "Abalado"]));
-    const effects = target.effects ?? [];
-    expect(effects.find((e) => e.condition === "Apavorado")?.kind).toBe("rounds");
-    expect(effects.find((e) => e.condition === "Abalado")?.kind).toBe("scene");
-    const save = bridge.getCombatState().rolls.find((r) => r.kind === "save")!;
-    expect(save.actor).toBe("Alvo");
-    expect(save.success).toBe(false);
+    // d20 natural 20 sempre passa: repete até o alvo falhar (Vontade −100 falha em qualquer natural, exceto o 20)
+    for (let tentativa = 0; tentativa < 40; tentativa += 1) {
+      vi.resetModules(); localStorage.clear();
+      const { bridge, target } = await cast(-100);
+      const save = bridge.getCombatState().rolls.find((r) => r.kind === "save")!;
+      if (save.success) continue;
+      expect(target.conditions).toEqual(expect.arrayContaining(["Apavorado", "Abalado"]));
+      const effects = target.effects ?? [];
+      expect(effects.find((e) => e.condition === "Apavorado")?.kind).toBe("rounds");
+      expect(effects.find((e) => e.condition === "Abalado")?.kind).toBe("scene");
+      expect(save.actor).toBe("Alvo");
+      return;
+    }
+    throw new Error("o alvo nunca falhou no teste de Vontade");
   });
 
   it("passou na Vontade: só abalado por 1d4 rodadas", async () => {

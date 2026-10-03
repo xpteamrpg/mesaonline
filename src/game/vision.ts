@@ -66,7 +66,9 @@ export const DEFAULT_FOG_SETTINGS: FogSettings = {
  */
 export function visionTypeFromText(...fontes: Array<string | undefined | null>): VisionType {
   const texto = fontes.filter(Boolean).join(" · ").toLowerCase();
-  if (/vis[aã]o\s+no\s+escuro|darkvision|vis[aã]o\s+nas\s+trevas/.test(texto)) return "dark";
+  // Só duas habilidades do sistema enxergam a Escuridão mágica (informado pelo usuário em 03/10): Visão nas Trevas e Percepção às Cegas.
+  if (/vis[aã]o\s+nas\s+trevas|percep[cç][aã]o\s+[aà]s\s+cegas/.test(texto)) return "magic";
+  if (/vis[aã]o\s+no\s+escuro|darkvision/.test(texto)) return "dark";
   if (/vis[aã]o\s+na\s+penumbra|penumbra|low-?light/.test(texto)) return "penumbra";
   return "normal";
 }

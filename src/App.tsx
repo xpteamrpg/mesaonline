@@ -1,3 +1,4 @@
+import { visionTypeFromText } from "./game/vision";
 import { requestEnvironmentSection } from "./components/mesa/MesaGlobalPanel";
 import { effectBonus } from "./tactics/engine/effectBonuses";
 import { toggleEquipped } from "./game/carga";
@@ -369,6 +370,8 @@ export default function App() {
       actionIds: template.actions || [], tacticalActions: template.customActions || [],
       fortitude: template.fortitude, reflexes: template.reflexes, will: template.will,
       attrs: template.attrs, skillBonuses: template.skillBonuses, abilities: template.abilities, size: template.size,
+      // Visão no Escuro / na Penumbra / Visão nas Trevas / Percepção às Cegas vêm do texto das habilidades da ameaça.
+      visionType: visionTypeFromText(...(template.abilities || []).map((ability) => `${ability.name} ${ability.description || ""}`)),
       conditions: [], loot: template.loot,
     };
     placeOrAddToken(token, immediate);
