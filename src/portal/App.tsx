@@ -19,7 +19,7 @@ import { HomebrewView } from "./components/views/HomebrewView";
 import { CreateCharacterView, ReadyCharactersView } from "./components/views/CharacterCreateViews";
 import { AccountOrders, AccountOverview, AccountProfile } from "./components/views/AccountViews";
 import { SiteFooter } from "./components/layout/SiteFooter";
-import { applyCampaignDraft, hasCampaignDraft } from "./lib/campaigns/client";
+import { applyCampaignDraft, hasCampaignDraft, myTables } from "./lib/campaigns/client";
 import { RequireLogin } from "./components/auth/RequireLogin";
 import { classAbilitiesFor, recalc, uid } from "./lib/t20/sheetRules";
 import { levelForXp } from "./lib/t20/xp";
@@ -118,6 +118,14 @@ export default function App() {
 
 function PortalApp() {
   const { user, loading: authLoading } = useAuth();
+  /** Nomes das mesas de que a pessoa participa (como mestre ou jogador, pela conta): entram na lista "Campanha" da ficha. */
+  const [joinedTableNames, setJoinedTableNames] = useState<string[]>([]);
+  useEffect(() => {
+    if (!user) { setJoinedTableNames([]); return; }
+    let alive = true;
+    myTables().then((list) => { if (alive) setJoinedTableNames(list.map((entry) => entry.table.name).filter(Boolean)); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [user?.id]);
   const [characters, setCharacters] = useState<CharacterSheet[]>(loadInitialCharacters);
   const [activeId, setActiveId] = useState<string>(() => localStorage.getItem(STORAGE_KEY + ":active") || "");
   const sync = useAccountCharacters({ userId: user?.id ?? null, authLoading, characters, setCharacters });
@@ -158,7 +166,7 @@ function PortalApp() {
   /** Sem personagens, as janelas de importação ainda precisam de uma ficha-base; ela nunca aparece na lista. */
   const active = activeOrNone ?? INITIAL_CHARACTERS[0];
   // Campanhas do Portal, mesas criadas em Mesa online (campanha e one-shot) e as já usadas nas fichas.
-  const campaignNames = [...new Set([...campaigns.map((c) => c.name), ...getMyTables().map((t) => t.name), ...characters.map((c) => c.campaign).filter(Boolean)])];
+  const campaignNames = [...new Set([...campaigns.map((c) => c.name), ...getMyTables().map((t) => t.name), ...joinedTableNames, ...characters.map((c) => c.campaign).filter(Boolean)])];
 
   const update = (s: CharacterSheet) => setCharacters((p) => p.map((c) => (c.id === s.id ? s : c)));
   /** Convites/códigos de campanha escolhidos na ficha só valem quando ela é salva. */

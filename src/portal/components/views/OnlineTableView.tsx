@@ -11,7 +11,7 @@ import { SITE_ROOT } from "../../../utils/assetUrl";
 import type { CharacterSheet } from "../../types/sheet";
 import { ManageTableDialog, ParticipatingTables, PartyStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
 import { CopyButton } from "../common/CopyButton";
-import { claimTable } from "../../lib/campaigns/client";
+import { claimTable, joinTable } from "../../lib/campaigns/client";
 
 /** Arte própria da página (pintura do projeto). */
 const MESA_ONLINE_ART = imgCampanhas;
@@ -175,7 +175,12 @@ const JoinPrivateTable: React.FC = () => {
           <div className="mt-1 text-white/70">{[found.system, found.modality, found.schedule].filter(Boolean).join(" · ")}</div>
           {found.gmName && <div className="text-white/70">Mestre: {found.gmName}</div>}
           <div className="mt-1 text-white/70">Vagas: {found.seatsFilled}/{found.seatsTotal}</div>
-          <button onClick={() => { if (requireLogin("Para entrar numa mesa você precisa estar logado.")) openMesa({ name: found.name, sala: found.liveRoomCode || found.code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white">🎲 Entrar na mesa</button>
+          <button onClick={() => {
+            if (!requireLogin("Para entrar numa mesa você precisa estar logado.")) return;
+            // Entrar pelo código também faz a pessoa membro da mesa: só assim a mesa aparece nas listas dela (campanha da ficha, Minhas campanhas).
+            void joinTable(found.code).catch(() => undefined);
+            openMesa({ name: found.name, sala: found.liveRoomCode || found.code });
+          }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white">🎲 Entrar na mesa</button>
         </div>
       )}
     </div>
