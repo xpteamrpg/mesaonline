@@ -46,7 +46,10 @@ export function parseRangeM(value: unknown, fallback = 1.5): number {
 export function parseAreaM(value: unknown): number | undefined {
   const text = String(value ?? "");
   if (!/área|area|cone|linha|esfera|explos|quadrado|cubo|raio/i.test(text)) return undefined;
-  const explicit = Number(text.match(/(?:raio|cone|linha|esfera|quadrado|cubo|explos[aã]o)(?:\s+de)?\s*(\d+(?:[.,]\d+)?)\s*m/i)?.[1]?.replace(",", "."));
+  // "esfera com 6m de raio", "cone de 4,5m", "área com 6m de raio", "raio de 3m"
+  const match = text.match(/(\d+(?:[.,]\d+)?)\s*m\s+de\s+raio/i)
+    ?? text.match(/(?:raio|cone|linha|esfera|cilindro|quadrado|cubo|explos[aã]o)(?:\s+(?:de|com))?\s*(\d+(?:[.,]\d+)?)\s*m/i);
+  const explicit = Number(match?.[1]?.replace(",", "."));
   return Number.isFinite(explicit) && explicit > 0 ? explicit : 3;
 }
 

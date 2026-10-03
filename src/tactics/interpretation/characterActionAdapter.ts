@@ -1,3 +1,4 @@
+import { findSpellEntry } from "./spellCasting";
 import { classifySpellEffect, spellDamageType } from "./spellClassification";
 import { type CombatLoadout, readLoadout } from "../../game/combatLoadout";
 import type { Ability, CharacterSheet, AttackItem, PowerEntry, SpellItem, EquipmentItem } from "../../../ficha-modernrpg/sheet";
@@ -82,12 +83,14 @@ function powerAction(power: PowerEntry): GameAction {
 
 function spellAction(spell: SpellItem): GameAction {
   const dice = spellDiceFormula(spell);
-  const text = `${spell.name}. ${spell.execution || ""}. ${spell.range || ""}. ${spell.resistance || ""}. ${baseSpellText(spell.description)}. ${dice || ""}`;
+  const text = `${spell.name}. ${spell.execution || ""}. ${spell.range || ""}. ${spell.resistance || ""}. ${baseSpellText(spell.description)}`;
   const formulas = dice ? [dice] : [];
   const healing = /cura|curar|recupera|restaura|regenera/i.test(text) && !/causa[^.]*dano/i.test(text);
   const fields = inferActionFields(text);
   const personal = /pessoal/i.test(spell.range || "") || /você mesmo|voce mesmo/i.test(text);
-  const areaM = fields.areaM ?? parseAreaM(text);
+  // O texto da ficha pode vir sem o campo "alvo" ("esfera com 6m de raio"): ele está no catálogo da magia.
+  const catalogTarget = findSpellEntry({ sourceId: spell.id, name: spell.name, category: "spell" })?.alvo ?? "";
+  const areaM = (catalogTarget ? parseAreaM(catalogTarget) : undefined) ?? fields.areaM ?? parseAreaM(text);
   return {
     id: `character:spell:${spell.id}`,
     source: "character",
@@ -100,11 +103,11 @@ function spellAction(spell: SpellItem): GameAction {
     description: spell.description || `${spell.circle}º círculo · ${spell.school || spell.type || "Magia"}`,
     pmCost: spell.cost || Math.max(1, spell.circle * 2 - 1),
     rangeM: parseRangeM(spell.range, personal ? 0 : 9),
-    areaM,
     damage: healing ? undefined : dice,
     damageType: healing ? undefined : spellDamageType(`${spell.effect || ""} ${spell.description || ""}`),
     healing: healing ? dice || "1d8" : undefined,
     ...fields,
+    areaM,
     color: /fogo|chama|lava/i.test(text) ? "fire" : healing ? "gold" : /trevas|morte|necrom|sangue/i.test(text) ? "blood" : "arcane",
   };
 }

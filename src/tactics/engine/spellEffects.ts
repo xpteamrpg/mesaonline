@@ -141,7 +141,10 @@ export function resolveSpellEffect(request: ResolveSpellEffectRequest): SpellEff
   const known = SPELL_EFFECTS[key];
   if (known) return resolveKnown(request, key, known);
 
-  const text = `${baseSpellText(request.spell.description)} ${request.spell.effect || ""} ${request.spell.resistance || ""}`;
+  // O dado do efeito só entra se não estiver no texto (senão a mesma fórmula conta duas vezes e vira "dano extra").
+  const baseText = baseSpellText(request.spell.description);
+  const effectText = request.spell.effect && !baseText.replace(/\s/g, "").includes(String(request.spell.effect).replace(/\s/g, "")) ? request.spell.effect : "";
+  const text = `${baseText} ${effectText} ${request.spell.resistance || ""}`;
   const inferred = inferActionFields(text);
   const action: GameAction = {
     ...request.action,
