@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import type { View } from "../../types/view";
 import { renderPdfCoverToDataUrl } from "../../lib/pdf/renderPdfCover";
 import { PublicBooksView } from "./PublicBooksView";
+import { AccountBooksView } from "./AccountBooksView";
 import { PageBanner } from "../layout/PageBanner";
 import imgRacasWide from "../../assets/menu/racas-wide.jpg";
 import imgClasses from "../../assets/menu/classes.jpg";
@@ -326,7 +327,7 @@ export interface BookEntry {
 
 export const BooksView: React.FC<{ books: BookEntry[]; onChange: (b: BookEntry[]) => void }> = ({ books, onChange }) => {
   const [form, setForm] = useState<Partial<BookEntry>>({});
-  const [tab, setTab] = useState<"meus" | "publicos">("meus");
+  const [tab, setTab] = useState<"meus" | "publicos" | "conta">("meus");
   const pdfInput = useRef<HTMLInputElement>(null);
   const add = () => {
     if (!form.title?.trim()) return;
@@ -340,9 +341,12 @@ export const BooksView: React.FC<{ books: BookEntry[]; onChange: (b: BookEntry[]
       <div className="mb-4 flex gap-1.5">
         <Pill active={tab === "meus"} onClick={() => setTab("meus")}>📚 Meus Livros ({books.length})</Pill>
         <Pill active={tab === "publicos"} onClick={() => setTab("publicos")}>🌐 Livros disponíveis</Pill>
+        <Pill active={tab === "conta"} onClick={() => setTab("conta")}>🧾 Na minha conta</Pill>
       </div>
       {tab === "publicos" ? (
         <PublicBooksView />
+      ) : tab === "conta" ? (
+        <AccountBooksView />
       ) : (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm lg:col-span-4">

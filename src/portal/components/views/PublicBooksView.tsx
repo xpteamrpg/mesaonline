@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth/AuthContext";
-import { deletePublicBook, listPublicBooks, publishBook, type PublicBook } from "../../lib/books/client";
+import { acquireBook, deletePublicBook, listMyBooks, listPublicBooks, publishBook, type PublicBook } from "../../lib/books/client";
 
 const inp = "w-full rounded border border-[#ded7c6] bg-[#fbf9f4] p-2 text-xs";
 
@@ -13,6 +13,17 @@ export const PublicBooksView: React.FC = () => {
   const [q, setQ] = useState("");
   const [priceType, setPriceType] = useState("");
   const [loadError, setLoadError] = useState("");
+  /** ids dos livros que já estão na minha conta (adquiridos ou publicados por mim) */
+  const [mine, setMine] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!user) { setMine(new Set()); return; }
+    listMyBooks().then((r) => setMine(new Set([...r.published, ...r.acquired].map((b) => b.id)))).catch(() => undefined);
+  }, [user]);
+  const acquire = (b: PublicBook) => {
+    acquireBook(b.id)
+      .then((full) => { setMine((prev) => new Set(prev).add(b.id)); setBooks((prev) => prev.map((x) => (x.id === b.id ? { ...x, downloadCount: full.downloadCount, fileUrl: full.fileUrl } : x))); if (full.fileUrl) window.open(full.fileUrl, "_blank", "noopener,noreferrer"); })
+      .catch((e) => setLoadError(e instanceof Error ? e.message : "Não foi possível adquirir o livro."));
+  };
 
   const [form, setForm] = useState<{ title: string; authorName: string; system: string; coverUrl: string; fileUrl: string; priceType: "gratuita" | "paga"; priceValue: string; description: string; declaresOriginal: boolean }>({
     title: "", authorName: "", system: "Tormenta20", coverUrl: "", fileUrl: "", priceType: "gratuita", priceValue: "", description: "", declaresOriginal: false,
@@ -100,9 +111,14 @@ export const PublicBooksView: React.FC = () => {
                 <div className="text-[10px] text-[#9c9180]">por {b.authorName}</div>
                 {b.description && <div className="mt-1 text-[10px] leading-4 text-[#726859]">{b.description}</div>}
                 <div className="mt-1 text-[10px] font-bold text-[#2b8a3e]">{b.priceType === "paga" ? `R$ ${b.priceValue.toFixed(2)}` : "Gratuito"}</div>
+                <div className="text-[10px] text-[#9c9180]" data-book-count>{b.downloadCount ?? 0} {b.downloadCount === 1 ? "aquisição" : "aquisições"}</div>
               </div>
               <div className="mt-2 flex gap-1">
-                <a href={b.fileUrl} target="_blank" rel="noreferrer" className="flex-1 rounded bg-[#b92b3a] py-1 text-center text-[10px] font-bold text-white">Abrir material</a>
+                {mine.has(b.id) && b.fileUrl
+                  ? <a href={b.fileUrl} target="_blank" rel="noreferrer" className="flex-1 rounded bg-[#2b8a3e] py-1 text-center text-[10px] font-bold text-white">Abrir (na sua conta)</a>
+                  : user
+                    ? <button onClick={() => acquire(b)} className="flex-1 rounded bg-[#b92b3a] py-1 text-center text-[10px] font-bold text-white" data-book-acquire>{b.priceType === "paga" ? `Adquirir · R$ ${b.priceValue.toFixed(2)}` : "Adquirir (grátis)"}</button>
+                    : <span className="flex-1 rounded border border-[#ded7c6] py-1 text-center text-[10px] text-[#726859]">Entre na conta para adquirir</span>}
                 {user?.id === b.ownerId && <button onClick={() => remove(b.id)} className="rounded border border-[#ded7c6] px-2 text-[10px]">✕</button>}
               </div>
             </div>
