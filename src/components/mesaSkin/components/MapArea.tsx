@@ -9,7 +9,7 @@ import { Action, cx } from "./ui";
 
 const BADGE_TONE = { danger: "#e3564c", warn: "#e0b25c", control: "#c07be0", buff: "#67c957" } as const;
 
-export function Token({ token, mode, index, onSelect }: { token: SkinMapToken; mode: View; index: number; onSelect: () => void }) {
+export function Token({ token, mode, index, onSelect, onMenu }: { token: SkinMapToken; mode: View; index: number; onSelect: () => void; onMenu?: (x: number, y: number) => void }) {
   const [hover, setHover] = useState(false);
   const size = token.footprint && token.footprint > 1 ? token.footprint * 52 - 6 : mode === "combat" ? 52 : 46;
   return (
@@ -20,6 +20,7 @@ export function Token({ token, mode, index, onSelect }: { token: SkinMapToken; m
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={(event) => { event.stopPropagation(); onSelect(); }}
+      onContextMenu={onMenu ? (event) => { event.preventDefault(); event.stopPropagation(); onMenu(event.clientX, event.clientY); } : undefined}
       role="button"
       tabIndex={0}
       onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelect(); } }}
@@ -85,6 +86,16 @@ export function Token({ token, mode, index, onSelect }: { token: SkinMapToken; m
             </div>
           )}
         </div>
+
+        {token.pm !== undefined && token.pmMax !== undefined && (
+          <div className="pointer-events-none absolute top-1/2 left-full ml-[3px] flex h-[70%] -translate-y-1/2 gap-[2px]" data-token-stats title={`PV ${token.hp}/${token.hpMax} · PM ${token.pm}/${token.pmMax}`}>
+            {([[token.hp, token.hpMax, "#67c957"], [token.pm, token.pmMax, "#4aa3e0"]] as const).map(([value, max, color], i) => (
+              <div key={i} className="relative h-full w-[4px] overflow-hidden rounded-full bg-[color:var(--mx-070404)] ring-1 ring-black/80">
+                <div className="absolute inset-x-0 bottom-0 rounded-full" style={{ height: `${max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0}%`, background: color }} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {token.rider && (
           <img

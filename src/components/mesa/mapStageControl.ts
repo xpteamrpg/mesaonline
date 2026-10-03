@@ -25,9 +25,11 @@ interface StageControl {
   editObjectId: string | null;
   /** modo de movimento preferido (andar, voar, escavar); vale para o token que o tem */
   moveMode: MoveMode;
+  /** Mestre: token pelos olhos do qual o mapa é mostrado (visão e neblina dele); só local, não sincroniza */
+  viewAsTokenId: string | null;
 }
 
-let state: StageControl = { tool: "select", brush: "add", terrain: { type: "difficult", elevation: 0 }, lightPreset: "torch", view: "2d", rotation: 0, focusedObjectId: null, focusedDoorId: null, editObjectId: null, moveMode: "walk" };
+let state: StageControl = { tool: "select", brush: "add", terrain: { type: "difficult", elevation: 0 }, lightPreset: "torch", view: "2d", rotation: 0, focusedObjectId: null, focusedDoorId: null, editObjectId: null, moveMode: "walk", viewAsTokenId: null };
 const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
 const emit = () => listeners.forEach((listener) => listener());
@@ -44,6 +46,7 @@ export function requestObjectEdit(id: string) { state = { ...state, focusedObjec
 export function clearObjectEditRequest() { if (state.editObjectId) { state = { ...state, editObjectId: null }; emit(); } }
 export function openDoorDialog(id: string) { state = { ...state, focusedDoorId: id }; emit(); }
 export function closeDoorDialog() { if (state.focusedDoorId) { state = { ...state, focusedDoorId: null }; emit(); } }
+export function setViewAs(viewAsTokenId: string | null) { if (state.viewAsTokenId !== viewAsTokenId) { state = { ...state, viewAsTokenId }; emit(); } }
 export function setMoveMode(moveMode: MoveMode) { if (state.moveMode !== moveMode) { state = { ...state, moveMode }; emit(); } }
 export function setStageView(view: StageViewMode) { if (state.view !== view) { state = { ...state, view }; emit(); } }
 export function rotateStage(direction: 1 | -1) { state = { ...state, rotation: nextRotation(state.rotation, direction) }; emit(); }

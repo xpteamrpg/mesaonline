@@ -1,4 +1,5 @@
 import { Lightbulb, PackageOpen, Ruler } from "lucide-react";
+import { createPortal } from "react-dom";
 import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Token } from "../mesaSkin/components/MapArea";
 import type { SkinMapToken } from "../mesaSkin/runtime";
@@ -12,7 +13,7 @@ import { applyMapTool, barrierAt, previewAreaCells, useMapTools } from "../../ga
 import type { ShapeKind } from "../../game/shapes";
 import { footprintOccupied } from "../../tactics/engine/movement";
 import { blockCenter, footprintOf, sideOf, sizeOf } from "../../game/tokenSize";
-import { appendChat, closeStageMedia, closeTravelEvent, markExplored, selectToken, sendSignal, switchScene, updateMap, upsertLight } from "../../game/vttBridge";
+import { appendChat, closeStageMedia, closeTravelEvent, markExplored, selectToken, sendSignal, switchScene, updateMap, updateToken, upsertLight } from "../../game/vttBridge";
 import StageMediaOverlay from "./StageMediaOverlay";
 import TravelEventOverlay from "./TravelEventOverlay";
 import { onSignals } from "../../game/signals";
@@ -24,7 +25,7 @@ import { CELL_PX, boardPixelSize, clampZoom, fitScale, focusCamera, imagePlaceme
 import { toggleBarrier } from "../../tactics/engine/boardTools";
 import { reachableWithPaths, moverOf, EXPLORATION_BUDGET_M } from "../../tactics/engine/movement";
 import { executeExplorationMove, executeTacticalMove } from "../../tactics/engine/runtimeCommands";
-import { onCameraCommand, openDoorDialog, openObjectDialog, setStageTool, useStageControl } from "./mapStageControl";
+import { onCameraCommand, openDoorDialog, openObjectDialog, setStageTool, setViewAs, useStageControl } from "./mapStageControl";
 import { isShaking } from "../../game/chest";
 import { effectiveMoveMode } from "../../game/movementMode";
 
@@ -98,6 +99,15 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
   const live = useRef({ camera: { scale: 1, x: 0, y: 0 }, selectedToken: undefined as typeof selectedToken, map, tool: stageControl.tool, isPlayer, boardSize, iso, rotation });
   // Prévia de movimento (V3): casas alcançáveis + destino pendente, confirmado no segundo clique.
   const [pendingMove, setPendingMove] = useState<string | null>(null);
+  const [tokenMenu, setTokenMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!tokenMenu) return;
+    const close = () => setTokenMenu(null);
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
+    window.addEventListener("click", close);
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("click", close); window.removeEventListener("keydown", onKey); };
+  }, [tokenMenu]);
   const [hoverCell, setHoverCell] = useState<{ x: number; y: number } | null>(null);
   const areaCells = useMemo(() => (areaPreview && hoverCell ? new Set(previewAreaCells(areaPreview.kind, areaPreview.anchor, hoverCell, areaPreview.sizeM)) : null), [areaPreview, hoverCell]);
   // Arrastar o próprio token (botão esquerdo): mostra as casas alcançáveis e move ao soltar.
@@ -183,27 +193,30 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
   useEffect(() => { if (mapTools.tool !== stageControl.tool) setStageTool(mapTools.tool); }, [mapTools.tool]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // CADEIA LUZ → VISÃO → FOG (game/vision.ts).
+  // Mestre "vendo pelo token": a neblina e a visão passam a ser as desse token, mesmo com a prévia desligada.
+  const viewAsToken = !isPlayer && stageControl.viewAsTokenId ? board.tokens.find((token) => token.id === stageControl.viewAsTokenId) : undefined;
+  const visionCfg = useMemo(() => (viewAsToken ? { ...fogCfg, playerFogEnabled: true, masterSeesPreview: true } : fogCfg), [fogCfg, viewAsToken?.id]);
   const vision = useMemo(() => {
     const owned = board.tokens.filter((token) => token.controlledBy && token.controlledBy === snapshot.multiplayer.peerId);
-    const eyes = owned.length ? owned : board.tokens.filter((token) => token.side === "heroes");
+    const eyes = viewAsToken ? [viewAsToken] : owned.length ? owned : board.tokens.filter((token) => token.side === "heroes");
     // Sem neblina ligada ninguém usa a visão: nem calcula (era o gargalo, mesmo com a neblina desligada).
-    if (!fogCfg.playerFogEnabled) return { visible: new Set<string>() } as ReturnType<typeof visionForTokens>;
-    return visionForTokens(board, eyes, fogCfg);
-  }, [board, fogCfg, snapshot.multiplayer.peerId]);
+    if (!visionCfg.playerFogEnabled) return { visible: new Set<string>() } as ReturnType<typeof visionForTokens>;
+    return visionForTokens(board, eyes, visionCfg);
+  }, [board, visionCfg, viewAsToken?.id, snapshot.multiplayer.peerId]);
   const fog = useMemo(() => {
     const manual = new Set(board.fog);
-    if (!fogCfg.playerFogEnabled) return manual;
-    if (!isPlayer && !fogCfg.masterSeesPreview) return manual;
+    if (!visionCfg.playerFogEnabled) return manual;
+    if (!isPlayer && !visionCfg.masterSeesPreview) return manual;
     const covered = new Set(manual);
     const explored = new Set(board.explored || []);
     for (let x = 0; x < map.cols; x += 1) for (let y = 0; y < map.rows; y += 1) {
       const key = `${x},${y}`;
       if (vision.visible.has(key)) { covered.delete(key); continue; }
-      if (fogCfg.keepExploredDim && explored.has(key)) continue;
+      if (visionCfg.keepExploredDim && explored.has(key)) continue;
       covered.add(key);
     }
     return covered;
-  }, [board, fogCfg, isPlayer, vision, map.cols, map.rows]);
+  }, [board, visionCfg, isPlayer, vision, map.cols, map.rows]);
 
   const fitCamera = useCallback(() => {
     const rect = zoneRef.current?.getBoundingClientRect();
@@ -415,7 +428,7 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
 
   // Jogador: só os personagens dele enxergam por ele; aliados de outros jogadores só aparecem se estiverem à vista (vision.ts: tokenVisible).
   const ownedIds = isPlayer ? new Set(board.tokens.filter((token) => token.controlledBy && token.controlledBy === snapshot.multiplayer.peerId).map((token) => token.id)) : undefined;
-  const visibleOptions = { visible: vision.visible, isMaster: !isPlayer, masterSeesPreview: fogCfg.masterSeesPreview, fogEnabled: fogCfg.playerFogEnabled, ownedIds };
+  const visibleOptions = { visible: vision.visible, isMaster: !isPlayer, masterSeesPreview: visionCfg.masterSeesPreview, fogEnabled: visionCfg.playerFogEnabled, ownedIds };
   // Montaria: o cavaleiro vira um selo sobre a montaria (um token só no mapa); clicar nele seleciona o cavaleiro, que comanda o par.
   const ridersByMount = new Map(board.tokens.filter((token) => token.mountId && board.tokens.some((mount) => mount.id === token.mountId)).map((rider) => [rider.mountId as string, rider]));
   const tokenEntries = board.tokens
@@ -427,11 +440,13 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
       name: token.name,
       portrait: token.side === "threats" ? "foe" : "kael",
       portraitUrl: token.imageUrl,
-      ring: token.side === "threats" ? THREAT_RING : HERO_RING,
+      ring: token.ringColor || (token.side === "threats" ? THREAT_RING : HERO_RING),
       x: (blockCenter(token).x / map.cols) * 100,
       y: (blockCenter(token).y / map.rows) * 100,
       hp: token.hp,
       hpMax: token.hpMax,
+      // PV/PM ao lado do token: o Mestre vê todos; o jogador só os próprios.
+      ...(!isPlayer || (token.controlledBy && token.controlledBy === snapshot.multiplayer.peerId) ? { pm: token.pm, pmMax: token.pmMax } : {}),
       badges: conditionBadges(token.conditions),
       hiddenBadges: hiddenConditionCount(token.conditions),
       active: view === "combat" && snapshot.combat.active && snapshot.combat.activeTokenId === token.id,
@@ -540,7 +555,7 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
             ))}
           <div className="pointer-events-none absolute inset-0" style={{ zIndex: 9 }}>
             {tokens.map((token, index) => (
-              <Token key={token.id} token={token} mode={view} index={index} onSelect={() => { if (targetIntent) { const real = board.tokens.find((entry) => entry.id === token.id); if (real) { onIntentPoint({ x: (real.gx + .5) / map.cols, y: (real.gy + .5) / map.rows }); return; } } selectToken(token.rider?.id ?? token.id); if (stageControl.tool !== "select") setStageTool("select"); }}/>
+              <Token key={token.id} token={token} mode={view} index={index} onSelect={() => { if (targetIntent) { const real = board.tokens.find((entry) => entry.id === token.id); if (real) { onIntentPoint({ x: (real.gx + .5) / map.cols, y: (real.gy + .5) / map.rows }); return; } } selectToken(token.rider?.id ?? token.id); if (stageControl.tool !== "select") setStageTool("select"); }} onMenu={isPlayer ? undefined : (x, y) => setTokenMenu({ id: token.id, x, y })}/>
             ))}
           </div>
           {rulerWithHover.length > 1 && (
@@ -573,6 +588,31 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
         </div>}
       </div>
       {measured > 0 && <div className="next-measure" style={{ position: "absolute", left: 12, top: 12, zIndex: 12 }}><Ruler/>{formatDistance(measured, activeGrid())}</div>}
+      {viewAsToken && (
+        <div className="mesa-intent-banner" role="status" data-view-as-banner>
+          <span>Vendo pela visão de {viewAsToken.name}</span>
+          <button type="button" onClick={() => setViewAs(null)}>Sair</button>
+        </div>
+      )}
+      {tokenMenu && (() => {
+        const target = board.tokens.find((token) => token.id === tokenMenu.id);
+        if (!target) return null;
+        const colors = ["#d9a94c", "#c2202b", "#2f7fd1", "#3d8c2c", "#8a4fc7", "#e07a1f", "#ffffff"];
+        return createPortal(
+          <div className="mesa-token-menu" role="menu" data-token-menu style={{ left: Math.min(tokenMenu.x, window.innerWidth - 230), top: Math.min(tokenMenu.y, window.innerHeight - 190) }} onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()}>
+            <strong>{target.name}</strong>
+            <button type="button" role="menuitem" onClick={() => { selectToken(target.id); setTokenMenu(null); }}>Selecionar</button>
+            <button type="button" role="menuitem" onClick={() => { selectToken(target.id); window.dispatchEvent(new CustomEvent("mesa:open-panel", { detail: "roster" })); setTokenMenu(null); }}>Abrir no Elenco (ajustes)</button>
+            <button type="button" role="menuitem" onClick={() => { setViewAs(viewAsToken?.id === target.id ? null : target.id); setTokenMenu(null); }}>{viewAsToken?.id === target.id ? "Sair da visão deste token" : "Ver pela visão deste token"}</button>
+            <div className="mesa-token-menu-colors" aria-label="Cor da borda">
+              <span>Borda</span>
+              {colors.map((color) => <button key={color} type="button" role="menuitem" aria-label={`Borda ${color}`} className={target.ringColor === color ? "on" : ""} style={{ background: color }} onClick={() => { updateToken(target.id, { ringColor: color }); setTokenMenu(null); }}/>)}
+              <button type="button" role="menuitem" className="reset" onClick={() => { updateToken(target.id, { ringColor: undefined }); setTokenMenu(null); }}>padrão</button>
+            </div>
+          </div>,
+          document.body,
+        );
+      })()}
     </div>
   );
 }

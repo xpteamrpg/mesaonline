@@ -19,6 +19,9 @@ export type SkinMapToken = {
   y: number;
   hp: number;
   hpMax: number;
+  /** PM; só vem preenchido quando quem olha pode ver os números (Mestre ou dono do token) */
+  pm?: number;
+  pmMax?: number;
   active?: boolean;
   /** selos de condição desenhados sobre o token */
   badges?: { key: string; glyph: string; label: string; tone: "danger" | "warn" | "control" | "buff" }[];

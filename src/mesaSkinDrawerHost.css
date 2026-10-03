@@ -124,3 +124,14 @@
 .mesa-intent-banner button:hover { background: #3a2518; color: #f0d9a5; }
 .mesa-room-banner { max-width: min(760px, 86vw); border-color: #c2584f; }
 .mesa-room-banner span { font-weight: 500; line-height: 1.35; }
+
+/* Menu de botão direito no token (só Mestre): ações do token sem procurar em outra gaveta. */
+.mesa-token-menu { position: fixed; z-index: 90; width: 220px; display: flex; flex-direction: column; gap: 3px; padding: 8px; border: 1px solid #d9a94c; border-radius: 10px; background: rgba(30, 18, 10, .97); color: #f4e8ce; font-size: 13px; box-shadow: 0 8px 28px rgba(0, 0, 0, .6); }
+.mesa-token-menu strong { color: #e0b25c; font-size: 12px; padding: 0 4px 4px; border-bottom: 1px solid #5a3d1d; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mesa-token-menu > button { text-align: left; border: 0; border-radius: 6px; background: transparent; color: #f4e8ce; padding: 6px 8px; cursor: pointer; }
+.mesa-token-menu > button:hover { background: #3a2518; color: #f0d9a5; }
+.mesa-token-menu-colors { display: flex; align-items: center; gap: 5px; padding: 6px 4px 2px; flex-wrap: wrap; }
+.mesa-token-menu-colors span { font-size: 11px; color: #c9b48a; margin-right: 2px; }
+.mesa-token-menu-colors button { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #1a0f08; cursor: pointer; padding: 0; }
+.mesa-token-menu-colors button.on { outline: 2px solid #f2d68f; }
+.mesa-token-menu-colors button.reset { width: auto; height: auto; border-radius: 6px; border: 1px solid #7a5227; background: #2a1a12; color: #e0b25c; font-size: 11px; padding: 2px 7px; }

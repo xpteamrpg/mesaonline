@@ -213,6 +213,8 @@ export interface BoardToken {
   hpMax: number;
   pm: number;
   pmMax: number;
+  /** cor da borda do token escolhida no menu de botão direito (vazio = a do lado: herói ou ameaça) */
+  ringColor?: string;
   defense: number;
   initiative: number;
   initiativeRoll: number;
