@@ -6,6 +6,7 @@ import { toggleEquipped } from "./game/carga";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { coveredCells, footprintOf, parseSize, sideOf, tokenCovers } from "./game/tokenSize";
 import { freshTurnResources, turnPlan } from "./tactics/engine/actionEconomy";
+import { linkCharacterByCode } from "./portal/lib/campaigns/client";
 import { getCharacterSheetById, loadCharacterSheets, loadReadyHeroSheets, setActiveCharacterId, upsertCharacterSheet } from "../ficha-modernrpg/characterRoute";
 import type { CharacterSheet } from "../ficha-modernrpg/sheet";
 import MesaSkinTable from "./components/mesaSkin/MesaSkinTable";
@@ -145,14 +146,15 @@ export default function App() {
   const [entryError, setEntryError] = useState("");
   useEffect(() => {
     let active = true;
-    void restoreMultiplayerSession().then(async (restored) => {
+    // A entrada é a página "Mesa online" do Portal: ela abre a Mesa já na sala (?host= para o Mestre, ?sala= para o jogador).
+    // O código que o site mandou SEMPRE vence: a sala guardada do último uso só é retomada (F5) quando a URL não traz código.
+    const params = new URLSearchParams(window.location.search);
+    const host = params.get("host")?.trim().toUpperCase();
+    const sala = params.get("sala")?.trim().toUpperCase();
+    void (host || sala ? Promise.resolve(false) : restoreMultiplayerSession()).then(async (restored) => {
       if (!active) return;
       if (restored) { setMesaStage("exploration"); setEntry("done"); return; }
-      // A entrada é a página "Mesa online" do Portal: ela abre a Mesa já na sala (?host= para o Mestre, ?sala= para o jogador).
       // O lobby antigo (MesaLobby) fica guardado, sem uso; ?local=1 o abre só para testes.
-      const params = new URLSearchParams(window.location.search);
-      const host = params.get("host")?.trim().toUpperCase();
-      const sala = params.get("sala")?.trim().toUpperCase();
       try {
         if (host) { await hostMultiplayer(host); }
         else if (sala) { await joinMultiplayer(sala); }
@@ -432,6 +434,9 @@ export default function App() {
     else if (snapshot.multiplayer.role === "player") {
       // O jogador escolhe a casa clicando no mapa; o Mestre cria o token ali (já com o controle dele) — ver handleMapPoint.
       const mine = boardTokenFromCharacter(sheet, { x: 0, y: 0 });
+      // O código da sala é o da mesa: quem entra e escolhe o personagem vira membro e o personagem fica ligado (aceito) na campanha do site.
+      const room = snapshot.multiplayer.roomCode;
+      if (room) void linkCharacterByCode(room, sheet).catch((error) => appendChat({ author: "Sistema", text: `Personagem na sala, mas não ligado à mesa do site: ${error instanceof Error ? error.message : "falha"}`, kind: "system" }));
       setSkinPanel(null); setDiceOpen(false); setSkinActionMode(null);
       setMapIntent({ kind: "place-token", token: mine });
       appendChat({ author: "Sistema", text: `Clique no mapa onde ${sheet.name} deve aparecer (Esc cancela).`, kind: "system" });
@@ -907,7 +912,8 @@ export default function App() {
     )}
     {snapshot.multiplayer.role === "player" && snapshot.multiplayer.status === "connected" && !snapshot.multiplayer.error && !snapshot.board.tokens.some((token) => token.controlledBy === snapshot.multiplayer.peerId) && (
       <div className="mesa-intent-banner mesa-room-banner" role="status" data-no-character-banner>
-        <span>Você entrou na sala, mas ainda não controla nenhum personagem. O Mestre precisa atribuir um a você (Elenco → o personagem → Controle do token). Até lá o mapa fica coberto: você só enxerga pelos seus personagens.</span>
+        <span>Você entrou na sala. Escolha o seu personagem em Tokens → Meus personagens e clique no mapa onde ele deve entrar.</span>
+        <button type="button" onClick={() => openSkinPanel("tokens")}>Escolher personagem</button>
       </div>
     )}
     <ReactionPrompt snapshot={snapshot}/>

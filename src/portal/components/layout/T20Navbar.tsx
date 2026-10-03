@@ -161,7 +161,7 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
             <button onClick={() => go("online")} className="rounded bg-[#9b6c21] px-2 py-2 text-white">Mesa online</button>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-            {[["sheet", "Início"], ["workshop", "Forja de Heróis"], ["compendium", "Compêndio"], ...MENU_CARDS.map((c) => [c.view, c.label] as const)].map(([v, l]) => (
+            {[["sheet", "Início"], ["workshop", "Oficina de Heróis"], ["compendium", "Compêndio"], ...MENU_CARDS.map((c) => [c.view, c.label] as const)].map(([v, l]) => (
                     <button key={v} onClick={() => go(v as View)} className={`rounded border px-2 py-2 text-left ${view === v ? "border-[#b92b3a] bg-[#fbebee] text-[#b92b3a]" : "border-[#ded7c6]"}`}>{l}</button>
             ))}
           </div>

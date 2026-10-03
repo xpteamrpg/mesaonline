@@ -6,7 +6,7 @@ import { clearCampaignDraft, getCampaignDraft, myInvites, myTables, setCampaignD
 const extract = (raw: string) => (raw.toUpperCase().match(/[A-Z0-9]{8}/)?.[0] ?? raw.trim().toUpperCase());
 
 /**
- * Aba "Convites de campanha" da criação/edição do personagem.
+ * Aba "Convites para mesa online" da criação/edição do personagem.
  * A pessoa cola o código que o mestre mandou, ou marca um convite/campanha da conta. Nada é gravado agora:
  * quando a ficha é salva, o personagem passa a aparecer em "Mesas Online" com a campanha (ver applyCampaignDraft).
  */
@@ -37,14 +37,14 @@ export const CampaignInvitesBox: React.FC = () => {
   const addCode = async () => {
     const c = extract(code);
     if (!c) return;
-    if (!user) { openAuthModal("Para usar o código de uma campanha você precisa estar logado."); return; }
+    if (!user) { openAuthModal("Para usar o código de uma mesa online você precisa estar logado."); return; }
     setMsg("");
     try {
       const t = await getTableByCode(c);
       setNames((n) => ({ ...n, [c]: t.name }));
       if (!draft.codes.includes(c)) update({ ...draft, codes: [...draft.codes, c] });
       setCode("");
-    } catch { setMsg("Não achei nenhuma campanha com esse código."); }
+    } catch { setMsg("Não achei nenhuma mesa online com esse código."); }
   };
 
   const count = draft.codes.length + draft.invites.length + draft.tables.length;
@@ -52,11 +52,11 @@ export const CampaignInvitesBox: React.FC = () => {
   return (
     <div className="rounded border border-[#ded7c6] bg-[#fbf9f4]">
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-black uppercase tracking-wide text-[#1c5fb5]" aria-expanded={open}>
-        <span>Convites de campanha{count > 0 ? ` (${count} para salvar)` : ""}</span><span className="text-[10px]">{open ? "▲" : "▼"}</span>
+        <span>Convites para mesa online{count > 0 ? ` (${count} para salvar)` : ""}</span><span className="text-[10px]">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div className="space-y-3 border-t border-[#ded7c6] p-3">
-          {!user && <p className="text-xs text-[#726859]">Entre na sua conta para usar convites e códigos de campanha. <button type="button" onClick={() => openAuthModal("Para usar convites de campanha você precisa estar logado.")} className="font-bold text-[#b92b3a] underline">Entrar</button></p>}
+          {!user && <p className="text-xs text-[#726859]">Entre na sua conta para usar convites e códigos de mesa online. <button type="button" onClick={() => openAuthModal("Para usar convites de mesa online você precisa estar logado.")} className="font-bold text-[#b92b3a] underline">Entrar</button></p>}
           <div>
             <label className="text-[11px] font-bold text-[#726859]">Código que o mestre te enviou</label>
             <div className="mt-1 flex gap-2">
@@ -76,13 +76,13 @@ export const CampaignInvitesBox: React.FC = () => {
           )}
           {user && tables.length > 0 && (
             <div>
-              <div className="text-[11px] font-bold text-[#726859]">Minhas campanhas e one-shots</div>
+              <div className="text-[11px] font-bold text-[#726859]">Minhas mesas online</div>
               <div className="mt-1 space-y-1">{tables.map((m) => (
                 <label key={m.table.id} className={row}><input type="checkbox" checked={draft.tables.includes(m.table.id)} onChange={() => toggleTable(m.table.id)} /><span className="truncate"><b>{m.table.name}</b> <span className="text-[#9c9180]">{m.role === "mestre" ? "você é o mestre" : "jogador"}</span></span></label>
               ))}</div>
             </div>
           )}
-          <p className="text-[11px] leading-4 text-[#9c9180]">Ao salvar o personagem, a campanha aparece em “Mesas Online”. Com o código do mestre, o personagem já entra; pelos outros caminhos o mestre precisa aceitar.</p>
+          <p className="text-[11px] leading-4 text-[#9c9180]">Ao salvar o personagem, a mesa aparece em “Mesas Online”. Com o código do mestre, o personagem já entra; pelos outros caminhos o mestre precisa aceitar.</p>
         </div>
       )}
     </div>

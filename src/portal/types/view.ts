@@ -25,7 +25,7 @@ export const VIEW_HASH: Record<View, string> = {
   home: "#/",
   about: "#/sobre",
   sheet: "#/ficha",
-  workshop: "#/forja",
+  workshop: "#/oficina",
   characters: "#/personagens",
   companions: "#/ajudantes",
   campaigns: "#/campanhas",
@@ -50,7 +50,7 @@ export function viewFromHash(): View {
   if (h.startsWith("#/oneshots")) return "online";
   const hit = (Object.entries(VIEW_HASH) as [View, string][]).sort((a, b) => b[1].length - a[1].length).find(([, hash]) => hash !== "#/" && h.startsWith(hash));
   if (hit) return hit[0];
-  if (h.includes("workshop")) return "workshop";
+  if (h.includes("workshop") || h.startsWith("#/forja")) return "workshop";
   if (h.includes("mesa-online")) return "online";
   return "home";
 }
