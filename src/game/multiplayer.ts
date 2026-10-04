@@ -1,5 +1,6 @@
 import Peer, { type DataConnection, type PeerOptions } from "peerjs";
 import type { MultiplayerState, RemoteCommandResult } from "./types";
+import { extractAssets, restoreAssets } from "./wireAssets";
 import { forgetSession, masterPeerId, normalizeRoomCode, playerPeerIdFor, rememberSession } from "./peerIdentity";
 
 export type RuntimeCommand = {
@@ -16,12 +17,94 @@ export interface RuntimeCommandContext {
 type RuntimeCommandResult = { requestId: string; ok: true } | { requestId: string; ok: false; error: string };
 
 type WireMessage =
-  | { type: "armada-runtime-state"; payload: unknown }
+  | { type: "armada-runtime-state"; payload: unknown; assets?: Record<string, string> }
+  | { type: "armada-runtime-patch"; baseRevision: number; revision: number; patch: StatePatchOperation[]; assets?: Record<string, string> }
+  | { type: "armada-runtime-resync" }
+  | { type: "armada-runtime-assets"; assets: Record<string, string> }
   | { type: "armada-runtime-command"; payload: RuntimeCommand }
   | { type: "armada-runtime-command-result"; payload: RuntimeCommandResult }
   | { type: "armada-signal"; payload: unknown }
   | { type: "armada-audio"; payload: unknown }
   | { type: "armada-kicked" };
+
+type StatePatchOperation = { path: Array<string | number>; value?: unknown; remove?: true; append?: unknown[]; setDelta?: { add: string[]; remove: string[] } };
+
+function cloneWireValue<T>(value: T): T {
+  if (value === undefined || value === null || typeof value !== "object") return value;
+  return typeof structuredClone === "function" ? structuredClone(value) : JSON.parse(JSON.stringify(value)) as T;
+}
+
+/** Diff estrutural para que uma mudança de token não retransmita a cena toda. */
+function diffWireState(previous: unknown, next: unknown, path: Array<string | number> = [], result: StatePatchOperation[] = []): StatePatchOperation[] {
+  if (Object.is(previous, next)) return result;
+  if (Array.isArray(previous) && Array.isArray(next)) {
+    const key = path[path.length - 1];
+    if (["fog", "explored", "cells", "selectedTokenIds", "targetedTokenIds"].includes(String(key))
+      && previous.every((value) => typeof value === "string") && next.every((value) => typeof value === "string")) {
+      const before = new Set(previous as string[]);
+      const after = new Set(next as string[]);
+      const add = [...after].filter((value) => !before.has(value));
+      const remove = [...before].filter((value) => !after.has(value));
+      if (add.length || remove.length) result.push({ path, setDelta: { add, remove } });
+      return result;
+    }
+    if (key === "chat" && next.length > previous.length && previous.every((item, index) => {
+      const left = item as { id?: unknown; at?: unknown; text?: unknown };
+      const right = next[index] as { id?: unknown; at?: unknown; text?: unknown };
+      return left && right && (left.id !== undefined ? left.id === right.id : left.at === right.at && left.text === right.text);
+    })) {
+      if (next.length > previous.length) result.push({ path, append: cloneWireValue(next.slice(previous.length)) });
+      return result;
+    }
+    if (previous.length !== next.length) result.push({ path, value: cloneWireValue(next) });
+    else for (let i = 0; i < next.length; i += 1) diffWireState(previous[i], next[i], [...path, i], result);
+    return result;
+  }
+  if (previous && next && typeof previous === "object" && typeof next === "object" && !Array.isArray(previous) && !Array.isArray(next)) {
+    const before = previous as Record<string, unknown>;
+    const after = next as Record<string, unknown>;
+    for (const key of Object.keys(before)) if (!(key in after)) result.push({ path: [...path, key], remove: true });
+    for (const [key, value] of Object.entries(after)) {
+      if (!(key in before)) result.push({ path: [...path, key], value: cloneWireValue(value) });
+      else diffWireState(before[key], value, [...path, key], result);
+    }
+    return result;
+  }
+  result.push({ path, value: cloneWireValue(next) });
+  return result;
+}
+
+function applyWirePatch(base: unknown, operations: StatePatchOperation[]): unknown {
+  const next = cloneWireValue(base) as Record<string | number, unknown>;
+  for (const operation of operations) {
+    if (!operation.path.length) return operation.value;
+    let target: Record<string | number, unknown> | unknown[] = next;
+    for (const part of operation.path.slice(0, -1)) {
+      if (part === "__proto__" || part === "constructor" || part === "prototype") throw new Error("Caminho de sincronização inválido.");
+      const child = (target as Record<string | number, unknown>)[part];
+      if (!child || typeof child !== "object") throw new Error("Estado base da sincronização inválido.");
+      target = child as Record<string | number, unknown> | unknown[];
+    }
+    const key = operation.path[operation.path.length - 1];
+    if (key === "__proto__" || key === "constructor" || key === "prototype") throw new Error("Caminho de sincronização inválido.");
+    if (operation.remove) {
+      if (Array.isArray(target)) target.splice(Number(key), 1);
+      else delete (target as Record<string | number, unknown>)[key];
+    } else if (operation.append) {
+      const current = (target as Record<string | number, unknown>)[key];
+      if (!Array.isArray(current)) throw new Error("Lista base da sincronização inválida.");
+      current.push(...operation.append);
+    } else if (operation.setDelta) {
+      const current = (target as Record<string | number, unknown>)[key];
+      if (!Array.isArray(current)) throw new Error("Conjunto base da sincronização inválido.");
+      const values = new Set(current as string[]);
+      operation.setDelta.remove.forEach((value) => values.delete(value));
+      operation.setDelta.add.forEach((value) => values.add(value));
+      (target as Record<string | number, unknown>)[key] = [...values];
+    } else (target as Record<string | number, unknown>)[key] = operation.value;
+  }
+  return next;
+}
 
 type Handlers = {
   /** O Mestre pode redigir o snapshot de acordo com o peer destinatário. */
@@ -84,9 +167,9 @@ function createPeer(id: string): Peer {
 }
 
 /**
- * Única conexão PeerJS do produto final. Componentes nunca instanciam Peer.
- * O mestre é autoritativo: jogadores enviam comandos; o mestre devolve BOARD,
- * SCENES e combatState no mesmo envelope.
+ * Único PeerJS do produto final. Estado de jogo e tráfego pesado usam canais
+ * separados; componentes nunca instanciam Peer. O mestre é autoritativo:
+ * jogadores enviam comandos e o mestre devolve BOARD, SCENES e combatState.
  *
  * Identidade: o Mestre usa um id derivado do código da sala e o Jogador usa a
  * identidade persistida por `peerIdentity`. Com isso `controlledBy` sobrevive a
@@ -95,6 +178,10 @@ function createPeer(id: string): Peer {
 export class ArmadaMultiplayer {
   private peer: Peer | null = null;
   private connections = new Map<string, DataConnection>();
+  private assetConnections = new Map<string, DataConnection>();
+  private sentState = new WeakMap<DataConnection, unknown>();
+  private receivedState: unknown = null;
+  private receivedRevision: number | null = null;
   /** Peers expulsos pelo Mestre nesta sessão: se tentarem voltar, a conexão é fechada na hora. */
   private banned = new Set<string>();
   /** requestId → nome do comando, para rotular o resultado que voltar. */
@@ -139,7 +226,10 @@ export class ArmadaMultiplayer {
     this.manualDisconnect = false;
     this.setState({ role: "master", status: "connecting", roomCode, peerId: "", peers: [], error: undefined, commandLog: [] });
     const peer = await this.openPeer(masterPeerId(roomCode), MASTER_ID_IN_USE);
-    peer.on("connection", (connection) => this.acceptConnection(connection, true));
+    peer.on("connection", (connection) => {
+      if (this.isAssetChannel(connection)) this.acceptAssetConnection(connection);
+      else this.acceptConnection(connection, true);
+    });
     this.setState({ status: "connected", peerId: peer.id, error: undefined });
     rememberSession({ role: "master", roomCode });
     return roomCode;
@@ -154,6 +244,9 @@ export class ArmadaMultiplayer {
     const identity = playerPeerIdFor(roomCode);
     this.setState({ role: "player", status: "connecting", roomCode, peerId: "", peers: [], error: undefined, commandLog: [] });
     const peer = await this.openPeer(identity, PLAYER_ID_IN_USE);
+    peer.on("connection", (connection) => {
+      if (this.isAssetChannel(connection)) this.acceptAssetConnection(connection);
+    });
     this.setState({ peerId: peer.id });
     await this.connectToMaster(peer, roomCode);
     rememberSession({ role: "player", roomCode });
@@ -254,17 +347,65 @@ export class ArmadaMultiplayer {
       this.reconnectAttempt = 0;
       this.setState({ status: "connected", error: undefined, peers: [...this.connections.keys()] });
       if (master) {
-        this.sendState(connection);
-        for (const signal of this.handlers.initialSignals?.() || []) connection.send({ type: "armada-signal", payload: signal } satisfies WireMessage);
-        // Quem (re)entra pode ter perdido o arquivo: reenvia o áudio em uso.
-        for (const peers of this.audioSent.values()) peers.delete(connection.peer);
-        void this.sendInitialAudio(connection);
+        void this.connectAssetChannel(connection.peer).then(() => {
+          if (!connection.open || this.connections.get(connection.peer) !== connection) return;
+          this.sendState(connection);
+          for (const signal of this.handlers.initialSignals?.() || []) connection.send({ type: "armada-signal", payload: signal } satisfies WireMessage);
+          // Quem (re)entra pode ter perdido a faixa; ela usa o canal de assets.
+          for (const peers of this.audioSent.values()) peers.delete(connection.peer);
+          void this.sendInitialAudio(connection);
+        });
       }
       onOpen?.();
     });
     connection.on("data", (data) => this.receive(data as WireMessage, master, connection));
     connection.on("close", () => this.handleConnectionClosed(connection, master));
     connection.on("error", (error) => this.setState({ status: "error", error: describePeerError(error as PeerFailure) }));
+  }
+
+  private isAssetChannel(connection: DataConnection): boolean {
+    return (connection.metadata as { armadaChannel?: string } | undefined)?.armadaChannel === "assets";
+  }
+
+  private acceptAssetConnection(connection: DataConnection, onOpen?: () => void) {
+    connection.on("open", () => {
+      this.assetConnections.set(connection.peer, connection);
+      onOpen?.();
+    });
+    connection.on("data", (data) => this.receiveAssetData(data));
+    connection.on("close", () => {
+      if (this.assetConnections.get(connection.peer) === connection) this.assetConnections.delete(connection.peer);
+    });
+    connection.on("error", () => {
+      if (this.assetConnections.get(connection.peer) === connection) this.assetConnections.delete(connection.peer);
+      onOpen?.();
+    });
+  }
+
+  private connectAssetChannel(peerId: string): Promise<void> {
+    const previous = this.assetConnections.get(peerId);
+    if (previous?.open) { try { previous.close(); } catch { /* reconecta o canal pesado */ } }
+    this.assetConnections.delete(peerId);
+    const peer = this.peer;
+    if (!peer || peer.destroyed) return Promise.resolve();
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = () => { if (!settled) { settled = true; clearTimeout(timer); resolve(); } };
+      const timer = setTimeout(finish, 3000);
+      const connection = peer.connect(peerId, { reliable: true, serialization: "binary", metadata: { armadaChannel: "assets" } });
+      this.acceptAssetConnection(connection, finish);
+    });
+  }
+
+  private receiveAssetData(raw: unknown) {
+    if (!raw || typeof raw !== "object") return;
+    const message = raw as WireMessage;
+    if (message.type === "armada-runtime-assets") {
+      for (const [hash, value] of Object.entries(message.assets)) this.assetCache.set(hash, value);
+      this.applyReceivedState();
+    } else if (message.type === "armada-audio" && this.state.role === "player") {
+      this.handlers.onAudio?.(message.payload);
+    }
   }
 
   /**
@@ -275,6 +416,8 @@ export class ArmadaMultiplayer {
     // A conexão já pode ter sido substituída por uma reconexão do mesmo peer.
     if (this.connections.get(connection.peer) !== connection) return;
     this.connections.delete(connection.peer);
+    const assetConnection = this.assetConnections.get(connection.peer);
+    if (assetConnection) { try { assetConnection.close(); } catch { /* já fechada */ } this.assetConnections.delete(connection.peer); }
     this.setState({ peers: [...this.connections.keys()] });
     if (master || this.manualDisconnect || this.state.role !== "player") return;
     this.schedulePlayerReconnect();
@@ -296,6 +439,8 @@ export class ArmadaMultiplayer {
       try { if (connection.open) connection.send({ type: "armada-kicked" } satisfies WireMessage); } catch { /* já fechada */ }
       setTimeout(() => { try { connection.close(); } catch { /* já fechada */ } }, 200);
       this.connections.delete(peerId);
+      const assetConnection = this.assetConnections.get(peerId);
+      if (assetConnection) { try { assetConnection.close(); } catch { /* já fechada */ } this.assetConnections.delete(peerId); }
       this.setState({ peers: [...this.connections.keys()] });
     }
     return true;
@@ -353,7 +498,31 @@ export class ArmadaMultiplayer {
       return;
     }
     if (message.type === "armada-runtime-state" && !master) {
-      this.handlers.applySnapshot(message.payload);
+      if (message.assets) for (const [hash, value] of Object.entries(message.assets)) this.assetCache.set(hash, value);
+      this.receivedState = cloneWireValue(message.payload);
+      this.receivedRevision = Number((message.payload as { revision?: number })?.revision) || 0;
+      this.applyReceivedState();
+      return;
+    }
+    if (message.type === "armada-runtime-patch" && !master) {
+      if (!this.receivedState || this.receivedRevision !== message.baseRevision) {
+        if (connection.open) connection.send({ type: "armada-runtime-resync" } satisfies WireMessage);
+        return;
+      }
+      if (message.assets) for (const [hash, value] of Object.entries(message.assets)) this.assetCache.set(hash, value);
+      try {
+        const next = applyWirePatch(this.receivedState, message.patch);
+        if (Number((next as { revision?: number })?.revision) !== message.revision) throw new Error("Revisão da mesa divergente.");
+        this.receivedState = next;
+        this.receivedRevision = message.revision;
+        this.applyReceivedState();
+      } catch {
+        if (connection.open) connection.send({ type: "armada-runtime-resync" } satisfies WireMessage);
+      }
+      return;
+    }
+    if (message.type === "armada-runtime-resync" && master) {
+      this.sendState(connection, true);
       return;
     }
     if (message.type === "armada-runtime-command-result" && !master) {
@@ -376,6 +545,11 @@ export class ArmadaMultiplayer {
       error: result.ok ? undefined : result.error,
       commandLog: [...this.state.commandLog, entry].slice(-COMMAND_LOG_LIMIT),
     });
+  }
+
+  private applyReceivedState() {
+    if (!this.receivedState) return;
+    this.handlers.applySnapshot(restoreAssets(cloneWireValue(this.receivedState), this.assetCache));
   }
 
   request(name: string, ...args: unknown[]): boolean {
@@ -402,7 +576,7 @@ export class ArmadaMultiplayer {
     for (const connection of this.connections.values()) {
       if (!connection.open || sent.has(connection.peer)) continue;
       sent.add(connection.peer);
-      await this.pushChunks(connection, chunks);
+      await this.pushChunks(this.assetConnections.get(connection.peer)?.open ? this.assetConnections.get(connection.peer)! : connection, chunks);
     }
   }
 
@@ -422,7 +596,8 @@ export class ArmadaMultiplayer {
     const sent = this.audioSent.get(id) || new Set<string>();
     this.audioSent.set(id, sent);
     sent.add(connection.peer);
-    await this.pushChunks(connection, chunks);
+    const assetConnection = this.assetConnections.get(connection.peer);
+    await this.pushChunks(assetConnection?.open ? assetConnection : connection, chunks);
   }
 
   /** Envia um sinal efêmero: o Mestre a todos, o jogador ao Mestre (que reenvia). */
@@ -436,8 +611,11 @@ export class ArmadaMultiplayer {
     return sent;
   }
 
-  /** Jogadores cuja conexão estava cheia na última mudança: recebem o estado mais recente assim que esvaziar. */
+  /** Jogadores cuja conexão de estado estava cheia recebem só a atualização mais recente ao esvaziar. */
   private stale = new Set<string>();
+  private assetsSent = new WeakMap<DataConnection, Set<string>>();
+  private assetHashes = new WeakMap<DataConnection, Map<string, string>>();
+  private assetCache = new Map<string, string>();
   private staleTimer: ReturnType<typeof setTimeout> | null = null;
 
   broadcast() {
@@ -445,11 +623,7 @@ export class ArmadaMultiplayer {
     for (const connection of this.connections.values()) this.sendOrDefer(connection);
   }
 
-  /**
-   * Cada mudança reenvia o estado inteiro (pode ter centenas de KB com as imagens dos tokens). Se a conexão ainda não
-   * escoou o envio anterior, empilhar mais cópias fazia a mudança chegar minutos depois: em vez disso marca o jogador
-   * como defasado e manda só a versão mais nova quando o canal esvaziar.
-   */
+  /** Evita acumular deltas antigos enquanto o canal de estado está saturado. */
   private sendOrDefer(connection: DataConnection) {
     if (!connection.open) { this.stale.delete(connection.peer); return; }
     const channel = (connection as unknown as { dataChannel?: { bufferedAmount?: number } }).dataChannel;
@@ -470,11 +644,52 @@ export class ArmadaMultiplayer {
     }
   }
 
-  private sendState(connection: DataConnection) {
+  private sendState(connection: DataConnection, forceFull = false) {
     if (!connection.open) return;
     // Não há snapshot "genérico" para jogadores: o Mestre entrega somente a
     // projeção autorizada para esta conexão (fog não é uma decisão de CSS).
-    connection.send({ type: "armada-runtime-state", payload: this.handlers.getSnapshot(connection.peer) } satisfies WireMessage);
+    // Snapshot completo só na entrada/recuperação; ações normais mandam deltas.
+    let sent = this.assetsSent.get(connection);
+    if (!sent) { sent = new Set<string>(); this.assetsSent.set(connection, sent); }
+    let hashes = this.assetHashes.get(connection);
+    if (!hashes) { hashes = new Map<string, string>(); this.assetHashes.set(connection, hashes); }
+    const snapshot = this.handlers.getSnapshot(connection.peer);
+    const previous = forceFull ? undefined : this.sentState.get(connection);
+    if (previous) {
+      const patch = diffWireState(previous, snapshot);
+      if (!patch.length) return;
+      const assets = extractAssets(patch, sent, hashes);
+      const revision = Number((snapshot as { revision?: number })?.revision) || 0;
+      const baseRevision = Number((previous as { revision?: number })?.revision) || 0;
+      const assetConnection = this.assetConnections.get(connection.peer);
+      if (Object.keys(assets).length && assetConnection?.open) {
+        void this.sendAssetBundle(assetConnection, assets);
+        connection.send({ type: "armada-runtime-patch", baseRevision, revision, patch } satisfies WireMessage);
+      } else {
+        connection.send({ type: "armada-runtime-patch", baseRevision, revision, patch, ...(Object.keys(assets).length ? { assets } : {}) } satisfies WireMessage);
+      }
+      this.sentState.set(connection, snapshot);
+      return;
+    }
+    const payload = cloneWireValue(snapshot);
+    const assets = extractAssets(payload, sent, hashes);
+    const assetConnection = this.assetConnections.get(connection.peer);
+    if (Object.keys(assets).length && assetConnection?.open) {
+      void this.sendAssetBundle(assetConnection, assets);
+      connection.send({ type: "armada-runtime-state", payload } satisfies WireMessage);
+    } else {
+      connection.send({ type: "armada-runtime-state", payload, ...(Object.keys(assets).length ? { assets } : {}) } satisfies WireMessage);
+    }
+    this.sentState.set(connection, snapshot);
+  }
+
+  private async sendAssetBundle(connection: DataConnection, assets: Record<string, string>) {
+    let index = 0;
+    for (const [hash, data] of Object.entries(assets)) {
+      if (!connection.open) return;
+      connection.send({ type: "armada-runtime-assets", assets: { [hash]: data } } satisfies WireMessage);
+      if (++index % 2 === 0) await new Promise((resolve) => setTimeout(resolve, 0));
+    }
   }
 
   /** Fecha tudo sem tocar na identidade persistida da sala. */
@@ -489,6 +704,18 @@ export class ArmadaMultiplayer {
       try { connection.close(); } catch { /* já fechada */ }
     }
     this.connections.clear();
+    for (const connection of this.assetConnections.values()) {
+      try { connection.close(); } catch { /* já fechada */ }
+    }
+    this.assetConnections.clear();
+    this.sentState = new WeakMap<DataConnection, unknown>();
+    this.assetsSent = new WeakMap<DataConnection, Set<string>>();
+    this.assetHashes = new WeakMap<DataConnection, Map<string, string>>();
+    this.receivedState = null;
+    this.receivedRevision = null;
+    this.assetCache.clear();
+    this.stale.clear();
+    if (this.staleTimer) { clearTimeout(this.staleTimer); this.staleTimer = null; }
     this.pending.clear();
     this.peer?.destroy();
     this.peer = null;

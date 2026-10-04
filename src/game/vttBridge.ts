@@ -194,15 +194,34 @@ function persisted(): PersistedRuntime {
   return { scenes: SCENES, activeSceneId, combat: combatState, revision: runtimeRevision };
 }
 
+function writePersisted() {
+  try { localStorage.setItem(RUNTIME_STORAGE_KEY, JSON.stringify(persisted())); }
+  catch (error) { console.warn("Não foi possível persistir a mesa.", error); }
+}
+
+// Gravar o estado inteiro (com as imagens dos tokens, ~1 MB) a cada movimento custava ~150 ms antes de os jogadores
+// receberem a mudança. Agora os jogadores recebem primeiro e a gravação é agrupada (e feita ao sair da página).
+// Nos testes continua síncrona.
+const DEFER_PERSIST = typeof window !== "undefined" && import.meta.env?.MODE !== "test";
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+function schedulePersist() {
+  if (!DEFER_PERSIST) { writePersisted(); return; }
+  if (persistTimer) return;
+  persistTimer = setTimeout(() => { persistTimer = null; writePersisted(); }, 400);
+}
+if (DEFER_PERSIST) {
+  const flush = () => { if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; writePersisted(); } };
+  window.addEventListener("pagehide", flush);
+  window.addEventListener("beforeunload", flush);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
+}
+
 function saveAndNotify(options: { broadcast?: boolean; persist?: boolean } = {}) {
   runtimeRevision += 1;
   cachedSnapshot = snapshotNow();
-  if (options.persist !== false && typeof window !== "undefined") {
-    try { localStorage.setItem(RUNTIME_STORAGE_KEY, JSON.stringify(persisted())); }
-    catch (error) { console.warn("Não foi possível persistir a mesa.", error); }
-  }
   listeners.forEach((listener) => listener());
   if (!applyingRemote && options.broadcast !== false) multiplayer.broadcast();
+  if (options.persist !== false && typeof window !== "undefined") schedulePersist();
 }
 
 function replaceActiveBoard(next: BoardState, options?: { persistVitals?: BoardToken[]; skipHistory?: boolean; historyLabel?: string }) {
@@ -1049,7 +1068,9 @@ function applyWireState(payload: unknown) {
     combatState = normalizeCombat(data.combat);
     runtimeRevision = Number(data.revision) || runtimeRevision;
     cachedSnapshot = snapshotNow();
-    try { localStorage.setItem(RUNTIME_STORAGE_KEY, JSON.stringify(persisted())); } catch { /* sem storage */ }
+    // Snapshot de rede não bloqueia a interface gravando o tabuleiro inteiro;
+    // agrupa mensagens rápidas usando a mesma persistência adiada das ações locais.
+    schedulePersist();
     listeners.forEach((listener) => listener());
   } finally {
     applyingRemote = false;
