@@ -1,7 +1,7 @@
 import { PageBanner } from "../layout/PageBanner";
 import imgOficina from "../../assets/menu/oficina.jpg";
 import { CampaignInvitesBox } from "../campaigns/CampaignInvitesBox";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { BuilderMeta, CharacterSheet, EquipmentItem } from "../../types/sheet";
 import {
   ATTR_KEYS,
@@ -65,6 +65,21 @@ const forSale = (i: T20Item) => !["Encanto", "Maldição", "Modificação"].incl
 const SHOP_CATEGORIES = ITEM_CATEGORIES.filter((c) => T20_EQUIPMENT.some((i) => i.categoria === c && forSale(i)));
 const STEPS = ["Conceito", "Atributos", "Raça", "Classe & Perícias", "Origem & Divindade", "Poderes", "Equipamento", "Magias", "Revisão"];
 
+/** Poderes que concedem treinamento em perícias escolhidas livremente. */
+const powerSkillPickCount = (id: string, level: number): number => {
+  if ([
+    "destiny-geral-treinamento-em-pericia",
+    "raca-galokk-infancia-entre-os-pequenos",
+    "raca-meio-orc-adaptavel",
+    "raca-yidishan-natureza-organica",
+    "raca-vampiro-resquicios-da-outra-vida",
+  ].includes(id)) return 1;
+  if (["conceded-tanna-toh-biblioteca-divina", "conceded-tanna-toh-biblioteca-divina-2"].includes(id)) {
+    return level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
+  }
+  return 0;
+};
+
 /**
  * Kits prontos de equipamento inicial. Tupla de cada item: [nome, quantidade?, equipado?, grátis?].
  * "Grátis" marca os itens que o Livro Básico já dá de graça a QUALQUER personagem de 1º nível, independente
@@ -122,6 +137,9 @@ function restoreFromSheet(s: CharacterSheet) {
   const fixedChoice: Record<number, string> = meta?.fixedChoice ?? {};
   if (!meta) cls.pericias.escolha.forEach((grp, i) => { const hit = grp.find((id) => trained.includes(id)); if (hit) fixedChoice[i] = hit; });
   const extraSkills = meta?.extraSkills ?? trained.filter((id) => !cls.pericias.fixas.includes(id) && !Object.values(fixedChoice).includes(id));
+  const classExtraSkills = meta?.classExtraSkills ?? extraSkills.slice(0, cls.pericias.extras);
+  const intExtraSkills = meta?.intExtraSkills ?? extraSkills.filter((id) => !classExtraSkills.includes(id));
+  const versatileSkills = meta?.versatileSkills ?? [];
   const powerSet = new Set(SELECTABLE_POWERS.map((p) => p.id));
   const spellSet = new Set(T20_SPELLS.map((x) => x.id));
   const originPicks = meta?.originPicks ?? (origin && origin.tipo !== "atlas" ? origin.beneficios.map((b, i) => (s.powers.some((p) => p.name === b.nome) || (b.skillId && s.skills[b.skillId]?.trained && !cls.pericias.fixas.includes(b.skillId)) ? i : -1)).filter((i) => i >= 0) : []);
@@ -144,7 +162,11 @@ function restoreFromSheet(s: CharacterSheet) {
     raceChoices,
     classId: cls.id,
     path: pathKey,
-    extraSkills,
+    extraSkills: [...classExtraSkills, ...intExtraSkills, ...versatileSkills],
+    classExtraSkills,
+    intExtraSkills,
+    versatileSkills,
+    powerSkillChoices: meta?.powerSkillChoices ?? {},
     fixedChoice,
     distinctionId: meta?.distinctionId ?? s.powers.find((p) => p.id.startsWith("dist-"))?.id.slice(5) ?? "",
     originId: origin?.id ?? "",
@@ -186,7 +208,10 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
   // 4 classe
   const [classId, setClassId] = useState(init?.classId ?? "guerreiro");
   const [path, setPath] = useState(init?.path ?? "");
-  const [extraSkills, setExtraSkills] = useState<string[]>(init?.extraSkills ?? []);
+  const [classExtraSkills, setClassExtraSkills] = useState<string[]>(init?.classExtraSkills ?? []);
+  const [intExtraSkills, setIntExtraSkills] = useState<string[]>(init?.intExtraSkills ?? []);
+  const [versatileSkills, setVersatileSkills] = useState<string[]>(init?.versatileSkills ?? []);
+  const [skillStage, setSkillStage] = useState(0);
   const [fixedChoice, setFixedChoice] = useState<Record<number, string>>(init?.fixedChoice ?? {});
   const [distinctionId, setDistinctionId] = useState(init?.distinctionId ?? "");
 
@@ -199,6 +224,7 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
 
   // 6 poderes
   const [powerIds, setPowerIds] = useState<string[]>(init?.powerIds ?? []);
+  const [powerSkillChoices, setPowerSkillChoices] = useState<Record<string, string[]>>(init?.powerSkillChoices ?? {});
   const [powerQ, setPowerQ] = useState("");
   const [powerCat, setPowerCat] = useState("");
 
@@ -242,7 +268,22 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
 
   const autoTrained = useMemo(() => new Set([...cls.pericias.fixas, ...Object.values(fixedChoice), ...originBenefits.filter((b) => b.tipo === "skill" && b.skillId).map((b) => b.skillId!)]), [cls, fixedChoice, originBenefits]);
   const classPool = cls.pericias.pool.length ? cls.pericias.pool : T20_SKILLS.map((s) => s.id);
-  const extraAllowed = cls.pericias.extras + Math.max(0, finalAttrs.int) + (race.id === "humano" ? 2 : 0);
+  const extraSkills = [...classExtraSkills, ...intExtraSkills, ...versatileSkills];
+  const intExtraAllowed = Math.max(0, finalAttrs.int);
+  const versatileAllowed = race.id === "humano" ? 2 : 0;
+  const classChoicesDone = cls.pericias.escolha.every((_, i) => !!fixedChoice[i]);
+  const classSkillsDone = classChoicesDone && classExtraSkills.length === cls.pericias.extras;
+  const intSkillsDone = intExtraSkills.length === intExtraAllowed;
+  const versatileSkillsDone = versatileSkills.length === versatileAllowed;
+  const skillChoicePowerIds = powerIds.filter((id) => powerSkillPickCount(id, level) > 0);
+  const powerSkills = skillChoicePowerIds.flatMap((id) => powerSkillChoices[id] ?? []);
+  const powerSkillsDone = skillChoicePowerIds.every((id) => (powerSkillChoices[id] ?? []).length === powerSkillPickCount(id, level));
+  useEffect(() => {
+    if (versatileAllowed === 0) {
+      if (versatileSkills.length) setVersatileSkills([]);
+      if (skillStage === 2) setSkillStage(1);
+    }
+  }, [versatileAllowed, versatileSkills.length, skillStage]);
 
   const kits = KITS.filter((k) => k.classIds.includes(classId)).concat(KITS.filter((k) => !k.classIds.includes(classId)));
   const startMoney = money ?? MONEY_BY_LEVEL[level] ?? 24;
@@ -268,6 +309,18 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
   }, [spellQ, spellSchool, spellType, level]);
 
   const addItem = (it: T20Item) => setItems((p) => [...p, itemToEquipment(it, 1, ["Arma", "Armadura", "Escudo"].includes(it.categoria))]);
+  const chooseFixedSkill = (index: number, id: string) => {
+    setFixedChoice((p) => ({ ...p, [index]: id }));
+    setClassExtraSkills((p) => p.filter((skill) => skill !== id));
+    setIntExtraSkills((p) => p.filter((skill) => skill !== id));
+    setVersatileSkills((p) => p.filter((skill) => skill !== id));
+    setPowerSkillChoices((p) => Object.fromEntries(Object.entries(p).map(([powerId, skills]) => [powerId, skills.filter((skill) => skill !== id)])));
+  };
+  const togglePower = (id: string) => {
+    const removing = powerIds.includes(id);
+    setPowerIds((selected) => removing ? selected.filter((x) => x !== id) : [...selected, id]);
+    if (removing) setPowerSkillChoices((choices) => { const next = { ...choices }; delete next[id]; return next; });
+  };
   const applyKit = (id: string) => {
     const kit = KITS.find((k) => k.id === id)!;
     // Itens marcados "grátis" (4º valor da tupla) são o que o Livro Básico já dá de graça a qualquer
@@ -281,13 +334,13 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
     name.trim().length > 0,
     freeMode || pointsLeft === 0,
     relaxed || (raceChoices.length === race.escolhas.quantidade && (!baseRace.varianteObrigatoria || !!raceVariantId) && raceChoicesDone(race, raceExtra)),
-    relaxed || (extraSkills.length <= extraAllowed && cls.pericias.escolha.every((_, i) => !!fixedChoice[i])),
+    relaxed || (classSkillsDone && intSkillsDone && versatileSkillsDone),
     (relaxed || !origin || origin.tipo === "atlas" || originPicks.length === Math.min(origin.escolhas, origin.beneficios.length)) && (relaxed || !originGivesAttr(origin) || !!originAttr) && (relaxed || originPlan.every((e, i) => e.kind !== "choice" || originItemPicks[i] !== undefined)),
-    true, true, true, true,
+    relaxed || powerSkillsDone, true, true, true,
   ];
 
   const finish = () => {
-    const meta: BuilderMeta = { bought, freeMode, raceChoices, raceExtra, originPicks, originItemPicks, originAttr: originAttr || undefined, fixedChoice, extraSkills, powerIds, spellIds, distinctionId: distinctionId || undefined };
+    const meta: BuilderMeta = { bought, freeMode, raceChoices, raceExtra, originPicks, originItemPicks, originAttr: originAttr || undefined, fixedChoice, extraSkills, classExtraSkills, intExtraSkills, versatileSkills, powerSkillChoices, powerIds, spellIds, distinctionId: distinctionId || undefined };
     const weapons = items.filter((i) => i.category === "Arma").map((i) => T20_EQUIPMENT.find((x) => x.nome === i.name)).filter((x): x is T20Item => !!x).map(itemToAttack).filter((x): x is NonNullable<typeof x> => !!x);
     const distPowers = distinction ? [{ id: `dist-${distinction.id}`, name: distinction.marca?.nome ?? `Marca da Distinção: ${distinction.nome}`, type: `Distinção · ${distinction.nome}`, description: distinction.marca?.descricao ?? distinction.admissao }] : [];
     const sheet = buildSheet({
@@ -295,7 +348,7 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
       originBenefits,
       deityId: deityId || undefined, deityName: deity?.nome, level, campaign,
       attributes: finalAttrs,
-      trainedSkills: [...autoTrained, ...extraSkills],
+      trainedSkills: [...autoTrained, ...extraSkills, ...powerSkills],
       powers: [...distPowers, ...powerIds.map((id) => SELECTABLE_POWERS.find((p) => p.id === id)!).filter(Boolean).map(powerToEntry)],
       spells: spellIds.map((id) => T20_SPELLS.find((s) => s.id === id)!).filter(Boolean).map(spellToItem),
       equipment: items,
@@ -466,7 +519,7 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
             <Box title="4. Classe & Perícias">
               <div className="grid max-h-72 grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-3">
                 {T20_CLASSES.map((c) => (
-                  <button type="button" key={c.id} onClick={() => { setClassId(c.id); setExtraSkills([]); setFixedChoice({}); setSpellIds([]); }} className={`rounded-lg border p-3 text-left transition-all ${classId === c.id ? "border-[#b92b3a] bg-[#fbebee] shadow-sm" : "border-[#ded7c6] bg-white hover:bg-[#fbf9f4]"}`}>
+                  <button type="button" key={c.id} onClick={() => { setClassId(c.id); setClassExtraSkills([]); setIntExtraSkills([]); setVersatileSkills([]); setSkillStage(0); setFixedChoice({}); setSpellIds([]); }} className={`rounded-lg border p-3 text-left transition-all ${classId === c.id ? "border-[#b92b3a] bg-[#fbebee] shadow-sm" : "border-[#ded7c6] bg-white hover:bg-[#fbf9f4]"}`}>
                     <div className="flex items-center justify-between text-sm font-bold"><span>{c.nome}</span>{c.fonte !== "Tormenta 20 — Jogo Básico" && <span className="rounded bg-[#e7f5ff] px-1 text-[9px] text-[#1c7ed6]">{c.fonte}</span>}</div>
                     <div className="text-[10px] font-semibold text-[#b92b3a]">PV {c.pvInicial}+CON (+{c.pvPorNivel}/nv) · PM {c.pmInicial} (+{c.pmPorNivel}/nv)</div>
                     <div className="mt-1 text-[10px] text-[#726859]">{c.proficiencias}</div>
@@ -508,22 +561,54 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
                 )}
               </div>
 
-              {cls.pericias.escolha.map((opts, i) => (
-                <div key={i}><Lbl>Perícia obrigatória — escolha uma</Lbl><div className="flex flex-wrap gap-1.5">{opts.map((id) => <Pill key={id} active={fixedChoice[i] === id} onClick={() => setFixedChoice({ ...fixedChoice, [i]: id })}>{skillName(id)}</Pill>)}</div></div>
-              ))}
-
-              <div>
-                <div className="mb-1 flex items-center justify-between"><Lbl>Perícias treinadas</Lbl><span className={`text-xs font-bold ${extraSkills.length > extraAllowed ? "text-[#b92b3a]" : "text-[#2b8a3e]"}`}>{extraSkills.length} / {extraAllowed} à escolha</span></div>
-                <p className="mb-2 text-[10px] text-[#726859]">Fixas: <strong className="text-[#b92b3a]">{[...autoTrained].map(skillName).join(", ") || "—"}</strong> · Extras = {cls.pericias.extras} da classe + INT ({Math.max(0, finalAttrs.int)}){race.id === "humano" ? " + 2 (Versátil)" : ""}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {T20_SKILLS.map((s) => {
-                    const fixed = autoTrained.has(s.id);
-                    const inPool = classPool.includes(s.id);
-                    const on = extraSkills.includes(s.id);
-                    return <Pill key={s.id} active={fixed || on} disabled={fixed || (!on && (!inPool || extraSkills.length >= extraAllowed))} onClick={() => setExtraSkills((p) => (on ? p.filter((x) => x !== s.id) : [...p, s.id]))}>{s.nome} <span className="opacity-60">{s.atributo.toUpperCase()}</span>{!inPool && !fixed ? " ✕" : ""}</Pill>;
-                  })}
-                </div>
+              <div className="flex flex-wrap gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] p-2">
+                <button type="button" onClick={() => setSkillStage(0)} className={`rounded px-3 py-1.5 text-xs font-bold ${skillStage === 0 ? "bg-[#b92b3a] text-white" : "bg-white text-[#5c5446]"}`}>1. Classe</button>
+                <button type="button" disabled={!classSkillsDone} onClick={() => setSkillStage(1)} className={`rounded px-3 py-1.5 text-xs font-bold disabled:opacity-40 ${skillStage === 1 ? "bg-[#b92b3a] text-white" : "bg-white text-[#5c5446]"}`}>2. Inteligência ({intExtraAllowed})</button>
+                {versatileAllowed > 0 && <button type="button" disabled={!classSkillsDone || !intSkillsDone} onClick={() => setSkillStage(2)} className={`rounded px-3 py-1.5 text-xs font-bold disabled:opacity-40 ${skillStage === 2 ? "bg-[#b92b3a] text-white" : "bg-white text-[#5c5446]"}`}>3. Versátil ({versatileAllowed})</button>}
               </div>
+
+              {skillStage === 0 && <>
+                {cls.pericias.escolha.map((opts, i) => (
+                  <div key={i}><Lbl>Perícia da classe — escolha uma</Lbl><div className="flex flex-wrap gap-1.5">{opts.map((id) => <Pill key={id} active={fixedChoice[i] === id} onClick={() => chooseFixedSkill(i, id)}>{skillName(id)}</Pill>)}</div></div>
+                ))}
+                <div>
+                  <div className="mb-1 flex items-center justify-between"><Lbl>Perícias extras da classe</Lbl><span className={`text-xs font-bold ${classExtraSkills.length === cls.pericias.extras ? "text-[#2b8a3e]" : "text-[#b92b3a]"}`}>{classExtraSkills.length} / {cls.pericias.extras}</span></div>
+                  <p className="mb-2 text-[10px] text-[#726859]">Escolha apenas entre as perícias disponíveis para {cls.nome}. Fixas: <strong className="text-[#b92b3a]">{[...autoTrained].map(skillName).join(", ") || "—"}</strong></p>
+                  <div className="flex flex-wrap gap-1.5">{T20_SKILLS.map((s) => {
+                    const fixed = autoTrained.has(s.id) || intExtraSkills.includes(s.id) || versatileSkills.includes(s.id) || powerSkills.includes(s.id);
+                    const inPool = classPool.includes(s.id);
+                    const on = classExtraSkills.includes(s.id);
+                    return <Pill key={s.id} active={fixed || on} disabled={fixed || (!on && (!inPool || classExtraSkills.length >= cls.pericias.extras))} onClick={() => setClassExtraSkills((p) => on ? p.filter((x) => x !== s.id) : [...p, s.id])}>{s.nome} <span className="opacity-60">{s.atributo.toUpperCase()}</span>{!inPool && !fixed ? " ✕" : ""}</Pill>;
+                  })}</div>
+                </div>
+                <button type="button" disabled={!classSkillsDone} onClick={() => setSkillStage(1)} className="rounded bg-[#b92b3a] px-4 py-2 text-xs font-bold text-white disabled:opacity-40">Agora escolha as perícias de Inteligência ({intExtraAllowed}) →</button>
+              </>}
+
+              {skillStage === 1 && <>
+                <div>
+                  <div className="mb-1 flex items-center justify-between"><Lbl>Perícias extras de Inteligência — escolha quaisquer</Lbl><span className={`text-xs font-bold ${intSkillsDone ? "text-[#2b8a3e]" : "text-[#b92b3a]"}`}>{intExtraSkills.length} / {intExtraAllowed}</span></div>
+                  <p className="mb-2 text-[10px] text-[#726859]">Você pode escolher qualquer perícia ainda não treinada, sem ficar limitado às opções da classe.</p>
+                  <div className="flex flex-wrap gap-1.5">{T20_SKILLS.map((s) => {
+                    const fixed = autoTrained.has(s.id) || classExtraSkills.includes(s.id) || versatileSkills.includes(s.id) || powerSkills.includes(s.id);
+                    const on = intExtraSkills.includes(s.id);
+                    return <Pill key={s.id} active={fixed || on} disabled={fixed || (!on && intExtraSkills.length >= intExtraAllowed)} onClick={() => setIntExtraSkills((p) => on ? p.filter((x) => x !== s.id) : [...p, s.id])}>{s.nome} <span className="opacity-60">{s.atributo.toUpperCase()}</span></Pill>;
+                  })}</div>
+                </div>
+                <button type="button" disabled={!intSkillsDone} onClick={() => versatileAllowed ? setSkillStage(2) : setSkillStage(1)} className="rounded bg-[#b92b3a] px-4 py-2 text-xs font-bold text-white disabled:opacity-40">{versatileAllowed ? `Agora escolha ${versatileAllowed} perícias de Versátil →` : "Bônus de perícia concluído ✓"}</button>
+              </>}
+
+              {skillStage === 2 && versatileAllowed > 0 && <>
+                <div>
+                  <div className="mb-1 flex items-center justify-between"><Lbl>Perícias de Versátil — escolha quaisquer</Lbl><span className={`text-xs font-bold ${versatileSkillsDone ? "text-[#2b8a3e]" : "text-[#b92b3a]"}`}>{versatileSkills.length} / {versatileAllowed}</span></div>
+                  <p className="mb-2 text-[10px] text-[#726859]">Essas escolhas também podem ser de qualquer perícia ainda não treinada.</p>
+                  <div className="flex flex-wrap gap-1.5">{T20_SKILLS.map((s) => {
+                    const fixed = autoTrained.has(s.id) || classExtraSkills.includes(s.id) || intExtraSkills.includes(s.id) || powerSkills.includes(s.id);
+                    const on = versatileSkills.includes(s.id);
+                    return <Pill key={s.id} active={fixed || on} disabled={fixed || (!on && versatileSkills.length >= versatileAllowed)} onClick={() => setVersatileSkills((p) => on ? p.filter((x) => x !== s.id) : [...p, s.id])}>{s.nome} <span className="opacity-60">{s.atributo.toUpperCase()}</span></Pill>;
+                  })}</div>
+                </div>
+                <p className="text-xs font-bold text-[#2b8a3e]">Perícias da classe, de Inteligência e Versátil completas quando os três contadores estiverem preenchidos.</p>
+              </>}
             </Box>
           )}
 
@@ -599,9 +684,28 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
               <div className="flex flex-wrap gap-1.5">{POWER_CATEGORIES.map((c) => <Pill key={c.id} active={powerCat === c.id} onClick={() => setPowerCat(c.id)}>{c.label}</Pill>)}</div>
               <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
                 {(powerQ || powerCat ? filteredPowers : [...suggestedPowers, ...filteredPowers.filter((p) => !suggestedPowers.includes(p))].slice(0, 200)).map((p) => (
-                  <PowerCard key={p.id} p={p} action={<button type="button" onClick={() => setPowerIds((s) => (s.includes(p.id) ? s.filter((x) => x !== p.id) : [...s, p.id]))} className={`shrink-0 rounded px-3 py-1.5 text-xs font-bold uppercase text-white ${powerIds.includes(p.id) ? "bg-[#b92b3a]" : "bg-[#2b8a3e]"}`}>{powerIds.includes(p.id) ? "Remover" : "+ Escolher"}</button>} />
+                  <PowerCard key={p.id} p={p} action={<button type="button" onClick={() => togglePower(p.id)} className={`shrink-0 rounded px-3 py-1.5 text-xs font-bold uppercase text-white ${powerIds.includes(p.id) ? "bg-[#b92b3a]" : "bg-[#2b8a3e]"}`}>{powerIds.includes(p.id) ? "Remover" : "+ Escolher"}</button>} />
                 ))}
               </div>
+              {skillChoicePowerIds.length > 0 && <div className="space-y-3 rounded border border-[#c2892c]/50 bg-[#fef9ed] p-3">
+                <h3 className="text-xs font-bold uppercase text-[#8a621c]">Perícias concedidas pelos poderes</h3>
+                <p className="text-[10px] text-[#726859]">Esses poderes permitem escolher perícias fora da lista da classe. As escolhas ficam salvas junto com a ficha.</p>
+                {skillChoicePowerIds.map((id) => {
+                  const power = SELECTABLE_POWERS.find((p) => p.id === id);
+                  const count = powerSkillPickCount(id, level);
+                  const chosen = powerSkillChoices[id] ?? [];
+                  const otherPowerSkills = skillChoicePowerIds.filter((otherId) => otherId !== id).flatMap((otherId) => powerSkillChoices[otherId] ?? []);
+                  const used = new Set([...autoTrained, ...extraSkills, ...otherPowerSkills]);
+                  return <div key={id} className="space-y-1.5 border-t border-[#c2892c]/25 pt-2">
+                    <div className="flex items-center justify-between text-xs"><strong>{power?.nome ?? id}</strong><span className={`font-bold ${chosen.length === count ? "text-[#2b8a3e]" : "text-[#b92b3a]"}`}>{chosen.length} / {count}</span></div>
+                    <div className="flex flex-wrap gap-1.5">{T20_SKILLS.map((s) => {
+                      const alreadyUsed = used.has(s.id) && !chosen.includes(s.id);
+                      const on = chosen.includes(s.id);
+                      return <Pill key={s.id} active={on} disabled={alreadyUsed || (!on && chosen.length >= count)} onClick={() => setPowerSkillChoices((choices) => ({ ...choices, [id]: on ? chosen.filter((x) => x !== s.id) : [...chosen, s.id] }))}>{s.nome} <span className="opacity-60">{s.atributo.toUpperCase()}</span></Pill>;
+                    })}</div>
+                  </div>;
+                })}
+              </div>}
             </Box>
           )}
 
@@ -660,7 +764,7 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
                 <div className="font-serif text-base font-bold text-[#b92b3a]">{name || "—"} — {race.nome} {cls.nome}{path ? ` (${pathLabel(path)})` : ""} {level}º nível</div>
                 <div className="mt-1 text-[#5c5446]">Mesa online: {campaign}{origin ? ` · Origem: ${origin.nome}` : ""}{deity ? ` · Devoto de ${deity.nome}` : ""}{distinction ? ` · Distinção: ${distinction.nome}` : ""}</div>
                 <div className="mt-2 grid grid-cols-6 gap-1 text-center">{ATTR_KEYS.map((k) => <div key={k} className="rounded border border-[#ded7c6] bg-white p-1"><div className="text-[9px] font-bold text-[#726859]">{k.toUpperCase()}</div><div className="font-serif text-sm font-black">{sign(finalAttrs[k])}</div></div>)}</div>
-                <div className="mt-2 text-[#5c5446]"><strong>Perícias:</strong> {[...autoTrained, ...extraSkills].map(skillName).join(", ") || "—"}</div>
+                <div className="mt-2 text-[#5c5446]"><strong>Perícias:</strong> {[...autoTrained, ...extraSkills, ...powerSkills].map(skillName).join(", ") || "—"}</div>
                 <div className="text-[#5c5446]"><strong>Poderes:</strong> {powerIds.length} · <strong>Magias:</strong> {spellIds.length} · <strong>Itens:</strong> {items.length} · <strong>T$</strong> {startMoney - spent}</div>
                 {!valid[0] && <p className="mt-2 font-bold text-[#b92b3a]">⚠ Informe o nome no passo 1.</p>}
                 {!valid[1] && <p className="font-bold text-[#b92b3a]">⚠ Distribua todos os pontos de atributo (ou ative o modo livre).</p>}

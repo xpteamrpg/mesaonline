@@ -114,6 +114,12 @@ export interface BuilderMeta {
   raceExtra?: Record<string, string[]>;
   fixedChoice: Record<number, string>;
   extraSkills: string[];
+  /** Perícias extras separadas por origem para reabrir a Oficina sem perder as escolhas. */
+  classExtraSkills?: string[];
+  intExtraSkills?: string[];
+  versatileSkills?: string[];
+  /** Perícias escolhidas em poderes que concedem treinamento à escolha. */
+  powerSkillChoices?: Record<string, string[]>;
   powerIds: string[];
   spellIds: string[];
   distinctionId?: string;
