@@ -98,8 +98,10 @@ export function fogSettings(partial?: Partial<FogSettings> | null): FogSettings 
 
 /** Iluminação implícita quando a cena não define uma. */
 export function lightingFromWeather(_weather: WeatherType): LightingType {
-  // As regras de clima ainda não existem: o clima é só visual e não altera a visão (decisão do usuário, 03/10).
-  return "sunny";
+  // Céu limpo mantém o alcance base; condições atmosféricas reduzem a visão
+  // normal pela metade e deixam visão na penumbra/no escuro no alcance curto.
+  if (_weather === "clear") return "sunny";
+  return "twilight";
 }
 
 export function boardLighting(board: BoardState): LightingType {
@@ -152,7 +154,7 @@ export function effectiveVisionRadius(
 ): number {
   if (token.conditions?.some((entry) => /cego|blind/i.test(entry))) return 1;
   const visionType: VisionType = token.visionType || "normal";
-  const base = token.visionCells ?? settings.ownVisionCells;
+  const base = token.visionCells ?? settings.ownVisionCells * 3;
   const shortRange = Math.round(9 / grid.scale); // 9 m → 6 casas a 1,5 m
 
   if (lighting === "sunny") return base;
