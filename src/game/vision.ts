@@ -152,7 +152,7 @@ export function effectiveVisionRadius(
 ): number {
   if (token.conditions?.some((entry) => /cego|blind/i.test(entry))) return 1;
   const visionType: VisionType = token.visionType || "normal";
-  const base = token.visionCells || settings.ownVisionCells * 3;
+  const base = token.visionCells ?? settings.ownVisionCells * 3;
   const shortRange = Math.round(9 / grid.scale); // 9 m → 6 casas a 1,5 m
 
   if (lighting === "sunny") return base;
