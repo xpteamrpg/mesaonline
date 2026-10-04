@@ -252,11 +252,11 @@ export default function App() {
     setMesaStage("exploration");
   }, [mesaStage, snapshot.combat.active]);
 
-  // O contrário: um combate que continua ativo (ficou salvo de antes, ou começou em outra aba) leva o Mestre para a tela de
-  // combate. Sem isso a exploração ficava presa ("aguarde o turno") e o botão Combate mostrava a ordem velha.
+  // O início é global: quando o Mestre ativa o combate, cada aba entra na tela tática
+  // ao receber combat.active pelo snapshot compartilhado.
   useEffect(() => {
-    if (mesaStage === "exploration" && snapshot.combat.active && snapshot.multiplayer.role !== "player") setMesaStage("combat");
-  }, [mesaStage, snapshot.combat.active, snapshot.multiplayer.role]);
+    if (mesaStage === "exploration" && snapshot.combat.active) setMesaStage("combat");
+  }, [mesaStage, snapshot.combat.active]);
 
   /** A ficha oficial é do Portal: abre a ficha do personagem lá, sem derrubar a sessão da Mesa. */
   function openCharacter(characterId: string) {
