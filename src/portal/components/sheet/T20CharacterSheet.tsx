@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
-import type { AttrKey, CharacterSheet, PowerEntry } from "../../types/sheet";
+import type { AttrKey, AttackItem, CharacterSheet, PowerEntry } from "../../types/sheet";
 import type { RollEvent } from "./T20DiceTray";
 import { ATTR_KEYS, RESISTANCE_IDS, T20_SKILLS } from "../../lib/t20/compendium";
-import { allSkills, attackTotal, defense, itemToAttack, itemToEquipment, load, powerToEntry, racialFlySpeed, sign, skillTotal, spellToItem } from "../../lib/t20/sheetRules";
+import { allSkills, attackTotal, defense, itemToAttack, itemToEquipment, load, powerToEntry, racialFlySpeed, sign, skillTotal, spellToItem, uid } from "../../lib/t20/sheetRules";
 import { formatXp, levelForXp, xpForLevel, xpForNextLevel, xpProgress } from "../../lib/t20/xp";
 import { AddEquipmentModal, AddPowerModal, AddSpellModal } from "./SheetCatalogModals";
 import { SheetJournal } from "./SheetJournal";
@@ -52,6 +52,7 @@ export const T20CharacterSheet: React.FC<Props> = ({ sheet, onUpdate, onRoll, on
   const [powerModal, setPowerModal] = useState(false);
   const [spellModal, setSpellModal] = useState(false);
   const [equipModal, setEquipModal] = useState(false);
+  const [attackEditor, setAttackEditor] = useState<AttackItem | null>(null);
   const [showSkills, setShowSkills] = useState(true);
 
   const def = useMemo(() => defense(sheet), [sheet]);
@@ -67,6 +68,15 @@ export const T20CharacterSheet: React.FC<Props> = ({ sheet, onUpdate, onRoll, on
   const suggestedLevel = levelForXp(sheet.xp);
 
   const patch = (p: Partial<CharacterSheet>) => onUpdate({ ...sheet, ...p, updatedAt: new Date().toISOString() });
+  const saveAttack = (attack: AttackItem) => {
+    const exists = sheet.attacks.some((entry) => entry.id === attack.id);
+    patch({ attacks: exists ? sheet.attacks.map((entry) => entry.id === attack.id ? attack : entry) : [...sheet.attacks, attack] });
+    setAttackEditor(null);
+  };
+  const addAttack = () => setAttackEditor({
+    id: uid("atk"), name: "", skill: "Luta", damage: "1d6", damageAttr: "for",
+    critical: "20/x2", range: "Corpo a corpo", damageType: "Impacto",
+  });
   const rollCheck = (label: string, bonus: number) => onRoll({ label, formula: `1d20${sign(bonus)}` });
 
   const setHp = (v: number) => patch({ hp: { ...sheet.hp, current: Math.max(0, Math.min(sheet.hp.max, v)) } });
@@ -309,7 +319,7 @@ export const T20CharacterSheet: React.FC<Props> = ({ sheet, onUpdate, onRoll, on
       {/* ------------------------------- ATAQUES ------------------------------- */}
       <div className="mb-4">
           {/* ATAQUES */}
-          <Card title="Ataques" right={<LinkBtn onClick={() => setEquipModal(true)}>+ Arma do arsenal</LinkBtn>}>
+          <Card title="Ataques" right={<><LinkBtn onClick={addAttack}>+ Adicionar ataque</LinkBtn><LinkBtn onClick={() => setEquipModal(true)}>+ Arma do arsenal</LinkBtn></>}>
             <div className="mb-2 flex gap-3 text-[10px] text-[#726859]">
               <span>Luta <strong className="text-[#b92b3a]">{sign(luta?.total ?? 0)}</strong></span>
               <span>Pontaria <strong className="text-[#b92b3a]">{sign(pontaria?.total ?? 0)}</strong></span>
@@ -318,7 +328,7 @@ export const T20CharacterSheet: React.FC<Props> = ({ sheet, onUpdate, onRoll, on
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-[#ded7c6] text-[10px] font-bold uppercase text-[#726859]">
-                    <th className="pb-2">Arma</th>
+                    <th className="pb-2">Ataque</th>
                     <th className="pb-2 text-center">Teste</th>
                     <th className="pb-2 text-center">Dano</th>
                     <th className="pb-2 text-center">Crít.</th>
@@ -345,6 +355,7 @@ export const T20CharacterSheet: React.FC<Props> = ({ sheet, onUpdate, onRoll, on
                         <td className="py-2 text-center text-[#726859]">{a.range ?? "—"}</td>
                         <td className="py-2 text-[#726859]">{a.damageType}</td>
                         <td className="no-print py-2 text-right whitespace-nowrap">
+                          <button onClick={() => setAttackEditor({ ...a })} className="mr-1 text-[#1c7ed6] hover:underline">Editar</button>
                           <button onClick={() => onRoll({ label: `${a.name} — ataque (${a.skill})`, formula: `1d20${sign(t.bonus)}` })} className="rounded bg-[#b92b3a] px-2 py-0.5 text-[10px] font-bold text-white hover:bg-[#9c1f2d]">Atacar</button>
                           <button onClick={() => onRoll({ label: `${a.name} — dano`, formula: t.damage })} className="ml-1 rounded border border-[#b92b3a] px-2 py-0.5 text-[10px] font-bold text-[#b92b3a] hover:bg-[#fbebee]">Dano</button>
                           <button onClick={() => patch({ attacks: sheet.attacks.filter((x) => x.id !== a.id) })} className="ml-1 text-[#9c9180] hover:text-[#b92b3a]">✕</button>
@@ -615,6 +626,29 @@ export const T20CharacterSheet: React.FC<Props> = ({ sheet, onUpdate, onRoll, on
         Tormenta 20 © Jambô Editora. Ficha digital não-oficial de fã — dados do compêndio da comunidade (vangruver/ficha-tormenta20).
       </footer>
 
+      {attackEditor && (
+        <div className="no-print fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-3" onMouseDown={(event) => { if (event.target === event.currentTarget) setAttackEditor(null); }}>
+          <form onSubmit={(event) => { event.preventDefault(); saveAttack(attackEditor); }} className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-[#ded7c6] bg-[#fbf9f4] p-4 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-black">{sheet.attacks.some((entry) => entry.id === attackEditor.id) ? "Editar ataque" : "Adicionar ataque"}</h2>
+              <button type="button" onClick={() => setAttackEditor(null)} className="text-lg text-[#726859]" aria-label="Fechar">✕</button>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="text-xs font-bold">Nome do ataque<input required autoFocus value={attackEditor.name} onChange={(event) => setAttackEditor({ ...attackEditor, name: event.target.value })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" placeholder="Ex.: Rajada arcana" /></label>
+              <label className="text-xs font-bold">Perícia do ataque<select value={attackEditor.skill} onChange={(event) => setAttackEditor({ ...attackEditor, skill: event.target.value as AttackItem["skill"] })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal"><option value="Luta">Luta</option><option value="Pontaria">Pontaria</option></select></label>
+              <label className="text-xs font-bold">Bônus extra no ataque<input type="number" value={attackEditor.bonus ?? 0} onChange={(event) => setAttackEditor({ ...attackEditor, bonus: Number(event.target.value) || 0 })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" /></label>
+              <label className="text-xs font-bold">Dano (dados/fórmula)<input required value={attackEditor.damage} onChange={(event) => setAttackEditor({ ...attackEditor, damage: event.target.value })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" placeholder="Ex.: 2d6" /></label>
+              <label className="text-xs font-bold">Atributo somado ao dano<select value={attackEditor.damageAttr ?? ""} onChange={(event) => setAttackEditor({ ...attackEditor, damageAttr: (event.target.value || null) as AttrKey | null })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal"><option value="">Nenhum</option>{ATTR_KEYS.map((key) => <option key={key} value={key}>{key.toUpperCase()}</option>)}</select></label>
+              <label className="text-xs font-bold">Bônus extra no dano<input type="number" value={attackEditor.damageBonus ?? 0} onChange={(event) => setAttackEditor({ ...attackEditor, damageBonus: Number(event.target.value) || 0 })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" /></label>
+              <label className="text-xs font-bold">Crítico<input value={attackEditor.critical} onChange={(event) => setAttackEditor({ ...attackEditor, critical: event.target.value })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" placeholder="20/x2" /></label>
+              <label className="text-xs font-bold">Alcance<input value={attackEditor.range ?? ""} onChange={(event) => setAttackEditor({ ...attackEditor, range: event.target.value || undefined })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" placeholder="Corpo a corpo ou Curto (9m)" /></label>
+              <label className="text-xs font-bold">Tipo de dano<input value={attackEditor.damageType} onChange={(event) => setAttackEditor({ ...attackEditor, damageType: event.target.value })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" placeholder="Impacto, corte, fogo…" /></label>
+              <label className="text-xs font-bold sm:col-span-2">Propriedades/observações<input value={attackEditor.properties ?? ""} onChange={(event) => setAttackEditor({ ...attackEditor, properties: event.target.value || undefined })} className="mt-1 w-full rounded border border-[#ded7c6] bg-white p-2 font-normal" placeholder="Descrição curta do poder ou efeito" /></label>
+            </div>
+            <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setAttackEditor(null)} className="rounded border border-[#ded7c6] bg-white px-3 py-2 text-xs font-bold">Cancelar</button><button type="submit" className="rounded bg-[#b92b3a] px-3 py-2 text-xs font-bold text-white">Salvar ataque</button></div>
+          </form>
+        </div>
+      )}
       <AddPowerModal isOpen={powerModal} onClose={() => setPowerModal(false)} ownedIds={sheet.powers.map((p) => p.id)} className={sheet.class} raceName={sheet.race} onAdd={(p) => patch({ powers: [...sheet.powers, powerToEntry(p)] })} />
       <AddSpellModal isOpen={spellModal} onClose={() => setSpellModal(false)} ownedIds={sheet.spells.map((s) => s.id)} onAdd={(s) => patch({ spells: [...sheet.spells, spellToItem(s)] })} />
       <AddEquipmentModal

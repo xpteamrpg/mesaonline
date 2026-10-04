@@ -14,11 +14,12 @@ import {
   spellDiceFormula,
 } from "./modernRpgRules";
 
-function attackAction(attack: AttackItem): GameAction {
+function attackAction(sheet: CharacterSheet, attack: AttackItem): GameAction {
   const critical = String(attack.critical || "20/x2");
   const margin = Number(critical.match(/\b(1[5-9]|20)\b/)?.[1]) || 20;
   const multiplier = Number(critical.match(/x\s*(\d+)/i)?.[1]) || 2;
   const ranged = attack.skill === "Pontaria";
+  const damageModifier = (attack.damageAttr ? sheet.attributes[attack.damageAttr]?.value ?? 0 : 0) + (attack.damageBonus ?? 0);
   return {
     id: `character:attack:${attack.id}`,
     source: "character",
@@ -34,7 +35,7 @@ function attackAction(attack: AttackItem): GameAction {
     attackSkill: ranged ? "pontaria" : "luta",
     attackBonus: attack.bonus || 0,
     damage: attack.damage || "1d4",
-    extraDamage: attack.damageBonus ? String(attack.damageBonus) : undefined,
+    extraDamage: damageModifier ? String(damageModifier) : undefined,
     damageType: attack.damageType,
     crit: margin,
     critMultiplier: multiplier,
@@ -165,7 +166,7 @@ export function actionsForCharacter(sheet: CharacterSheet, loadout: CombatLoadou
   // Sem marca num grupo, aparece tudo; com marcas, só o marcado (Inventário e Ficha do painel de combate).
   const pick = <T extends { id: string }>(list: readonly T[], marked: readonly string[]) => (marked.length ? list.filter((entry) => marked.includes(entry.id)) : list);
   return [
-    ...pick(sheet.attacks || [], loadout.attacks).map(attackAction),
+    ...pick(sheet.attacks || [], loadout.attacks).map((attack) => attackAction(sheet, attack)),
     ...(sheet.spells || []).map(spellAction),
     ...pick(sheet.powers || [], loadout.powers).map(powerAction),
     ...pick(sheet.racialAbilities || [], loadout.powers).map((ability) => abilityAction(ability, "racial")),
