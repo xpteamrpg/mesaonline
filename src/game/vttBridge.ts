@@ -5,7 +5,7 @@ import { jukeboxSignal } from "./jukeboxSync";
 import { jukeboxState } from "./jukebox";
 import { chunksFor, receiveAudioChunk, sharedIdForBlobUrl, sharedIdFromUrl } from "./sharedAudio";
 import type { StageMedia } from "./stageMedia";
-import { type FogSettings, fogForVision, fogSettings, visionForTokens } from "./vision";
+import { type FogSettings, fogForVision, fogSettings, lightingFromWeather, visionForTokens } from "./vision";
 import { DEFAULT_MAPS } from "./data";
 import { ArmadaMultiplayer, type RuntimeCommand, type RuntimeCommandContext } from "./multiplayer";
 import { readSession } from "./peerIdentity";
@@ -589,7 +589,7 @@ export function closeStageMedia(): void {
 
 export function setWeather(weather: BoardState["weather"]): void {
   if (forward("setWeather", [weather])) return;
-  mutateBoard((board) => ({ ...board, weather }));
+  mutateBoard((board) => ({ ...board, weather, lighting: lightingFromWeather(weather) }));
 }
 
 /** Pinta terreno/elevacao nas celulas. O motor de movimento ja consome isso. */

@@ -96,11 +96,10 @@ export function fogSettings(partial?: Partial<FogSettings> | null): FogSettings 
   return { ...DEFAULT_FOG_SETTINGS, ...(partial || {}) };
 }
 
-/** Iluminação implícita quando a cena não define uma. */
-export function lightingFromWeather(_weather: WeatherType): LightingType {
-  // Céu limpo mantém o alcance base; condições atmosféricas reduzem a visão
-  // normal pela metade e deixam visão na penumbra/no escuro no alcance curto.
-  if (_weather === "clear") return "sunny";
+/** Iluminação ambiental aplicada por cada opção de clima. */
+export function lightingFromWeather(weather: WeatherType): LightingType {
+  if (weather === "clear") return "sunny";
+  if (weather === "storm" || weather === "tormenta") return "starnight";
   return "twilight";
 }
 
@@ -160,12 +159,12 @@ export function effectiveVisionRadius(
   if (lighting === "sunny") return base;
 
   if (lighting === "twilight") {
-    if (visionType === "penumbra" || visionType === "dark") return shortRange;
+    if (visionType === "penumbra" || visionType === "dark" || visionType === "magic") return shortRange;
     return Math.ceil(base * 0.5);
   }
 
   if (lighting === "starnight") {
-    if (visionType === "penumbra" || visionType === "dark") return shortRange;
+    if (visionType === "penumbra" || visionType === "dark" || visionType === "magic") return shortRange;
     return Math.ceil(base * 0.35);
   }
 
