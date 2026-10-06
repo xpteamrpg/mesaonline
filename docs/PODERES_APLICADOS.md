@@ -21,3 +21,6 @@ Armas específicas (Armas da Cavalaria, Lanceiro, Pistoleiro, Arsenal do Deserto
 rodada, gastar PM, margem de ameaça e multiplicador de crítico (não há modificador de crítico em `TacticalEffect.mods`), RD por tipo
 (Aspecto do Inverno), aumentos de atributo (Frade: Aumento de Atributo), poderes de parceiro/mascote, magias e CDs de habilidades específicas
 (Afinidade Concentrada), custo reduzido de PM, e todos os poderes gerais, de raça e de nível acima de 5.
+
+## Situacionais (ligados à condição do alvo, flanco, PV do alvo ou arma usada)
+`src/game/situationalPowers.ts`, aplicado por ataque em `combat.ts`: Valentão (+2 ataque/dano contra Caído, Desprevenido, Indefeso ou flanqueado), Impiedoso (+2 contra Vulnerável), Executor (+1d6 contra alvo com menos da metade dos PV; o passo de dado a cada 4 níveis, d6→d8→d10→d12, é leitura nossa do texto), Armas da Cavalaria, Lanceiro, Arsenal do Deserto e Machado de Pedra (pelo nome da arma). Teste: `tests/poderesSituacionais.test.ts`. Fora: Primeiro Sangue (passos de dado em todos os dados) e os que pedem gastar PM ou escolher na hora.

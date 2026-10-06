@@ -73,6 +73,12 @@ function appliedPieces(sheet: CharacterSheet): { name: string; piece: Piece }[] 
   return out;
 }
 
+/** A ficha tem o poder (ou habilidade) com este nome? Aceita as marcações comuns de importação. */
+export function hasPower(sheet: CharacterSheet, name: string): boolean {
+  const wanted = norm(name);
+  return [...(sheet.powers || []), ...(sheet.racialAbilities || []), ...(sheet.classAbilities || [])].some((entry) => nameKeys(entry.name).includes(wanted));
+}
+
 /** Efeitos "poder:" derivados da ficha (recalculados a cada atualização do token). */
 export function passivePowerEffects(sheet: CharacterSheet): TacticalEffect[] {
   return appliedPieces(sheet)

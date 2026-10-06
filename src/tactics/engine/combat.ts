@@ -10,6 +10,7 @@ import { pmSurcharge } from "./pmCost";
 import { concealmentAgainst } from "./concealment";
 import { weatherRule } from "../../game/weatherRules";
 import { elevationAt } from "./targeting";
+import { situationalPowerBonus, type SituationalBonus } from "../../game/situationalPowers";
 import { conditionMods } from "../../game/conditionEffects";
 
 export interface ActionResolution {
@@ -53,6 +54,7 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
 
     let hit = true;
     let critical = false;
+    const situational: SituationalBonus = situationalPowerBonus(actor, target, action, board);
     if (action.attackSkill && !action.autoHit) {
       const mode = attackDiceMode(actor, target);
       const dice = mode === "normal" ? [die(20)] : [die(20), die(20)];
@@ -63,7 +65,7 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
       const flank = !ranged && isFlanking(board, actor, target) ? 2 : 0;
       const high = elevationAt(board, actor) > elevationAt(board, target) ? 2 : 0;
       const weather = ranged ? weatherRule(board.weather).ranged : 0;
-      const modifier = actor[action.attackSkill] + (action.attackBonus || 0) + effectBonus(actor, "attack", action.id) + flank + high + weather
+      const modifier = actor[action.attackSkill] + (action.attackBonus || 0) + effectBonus(actor, "attack", action.id) + flank + high + weather + situational.attack
         + attackMods.attack + (ranged ? 0 : attackMods.meleeAttack);
       const total = natural + modifier;
       const defense = targetDefense(board, actor, target, ranged);
@@ -91,7 +93,7 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
 
     const repeats = Math.max(1, action.repeats || 1);
     // Bônus de dano de efeitos (Bênção, Arma Mágica...): vale em ataques e não é multiplicado no crítico.
-    const effectDamage = action.attackSkill ? effectBonus(actor, "damage", action.id) : 0;
+    const effectDamage = action.attackSkill ? effectBonus(actor, "damage", action.id) + situational.damage : 0;
     let damage = 0;
     const damageRolls: number[] = [];
     for (let index = 0; index < repeats; index += 1) {
@@ -105,6 +107,12 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
           damage += extra.total;
           damageRolls.push(...extra.rolls);
         }
+      }
+      // Dados de poderes situacionais (Executor): extras, não multiplicados no crítico.
+      for (const formula of situational.extraDice) {
+        const extra = rollFormula(formula);
+        damage += extra.total;
+        damageRolls.push(...extra.rolls);
       }
       if (action.extraDamage) {
         const extra = rollFormula(action.extraDamage);
