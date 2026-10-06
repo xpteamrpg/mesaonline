@@ -17,7 +17,9 @@ import { claimTable, joinTable } from "../../lib/campaigns/client";
 const MESA_ONLINE_ART = imgCampanhas;
 
 const inp = "w-full rounded border border-[#ded7c6] bg-[#fbf9f4] p-2 text-xs";
-const AGE_RATINGS = ["livre", "10", "12", "14", "16", "18"];
+const AGE_RATINGS = ["livre", "16", "18"];
+/** Faixas da mesa: Livre, 16 e 18. Mesas antigas: 10 e 12 viram Livre; 14 vira 16. */
+const normalizeAge = (value?: string) => (value === "18" ? "18" : value === "16" || value === "14" ? "16" : "livre");
 
 function extractCode(raw: string): string {
   const match = raw.toUpperCase().match(/[A-Z0-9]{8}/);
@@ -56,7 +58,7 @@ function emptyTable(input: Partial<TableEntry> & { name: string }): TableEntry {
   return {
     id: "", code: "", name: input.name, system: input.system ?? "Tormenta20", modality: input.modality ?? "online", priceType: input.priceType ?? "gratuita",
     priceValue: Number(input.priceValue) || 0, schedule: input.schedule ?? "", gmName: input.gmName ?? "", seatsTotal: Number(input.seatsTotal) || 4, seatsFilled: 0,
-    ageRating: input.ageRating ?? "livre", vttPlatform: input.vttPlatform ?? "Mesa de Arton (deste site)", description: input.description ?? "", imageUrl: input.imageUrl ?? "",
+    ageRating: normalizeAge(input.ageRating), vttPlatform: input.vttPlatform ?? "Mesa de Arton (deste site)", description: input.description ?? "", imageUrl: input.imageUrl ?? "",
     contactInfo: input.contactInfo ?? "", liveRoomCode: "", kind: input.kind ?? "oneshot", isPublic: false, ratingAvg: null, ratingCount: 0, createdAt: new Date().toISOString(),
   };
 }
@@ -226,7 +228,7 @@ const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry
   const [kind, setKind] = useState<"campanha" | "oneshot">(link.kind ?? current.kind ?? "oneshot");
   const [form, setForm] = useState({
     name: link.name, system: current.system ?? "Tormenta20", modality: (current.modality ?? "online") as "online" | "presencial", schedule: current.schedule ?? "",
-    gmName: current.gmName ?? "", seatsTotal: String(current.seatsTotal ?? 4), ageRating: current.ageRating ?? "livre", vttPlatform: current.vttPlatform ?? "Mesa de Arton (deste site)",
+    gmName: current.gmName ?? "", seatsTotal: String(current.seatsTotal ?? 4), ageRating: normalizeAge(current.ageRating), vttPlatform: current.vttPlatform ?? "Mesa de Arton (deste site)",
     description: current.description ?? "", imageUrl: current.imageUrl ?? "", priceType: (current.priceType ?? "gratuita") as "gratuita" | "paga", priceValue: String(current.priceValue ?? ""),
     contactInfo: current.contactInfo ?? "", isPublic: Boolean(current.isPublic),
   });
@@ -415,7 +417,7 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
               <div key={t.id} className="flex flex-col overflow-hidden rounded-lg border border-[#ded7c6] bg-white shadow-sm">
                 {t.imageUrl && <img src={t.imageUrl} alt="" className="h-28 w-full object-cover" />}
                 <div className="flex flex-1 flex-col p-3">
-                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-[#9c9180]"><span className="rounded bg-[#2b261f] px-1.5 py-0.5 text-white">{t.ageRating === "livre" ? "Livre" : `${t.ageRating}+`}</span><span>{t.modality}</span><span>·</span><span>{t.vttPlatform}</span></div>
+                  <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-[#9c9180]"><span className="rounded bg-[#2b261f] px-1.5 py-0.5 text-white">{normalizeAge(t.ageRating) === "livre" ? "Livre" : `${normalizeAge(t.ageRating)}+`}</span><span>{t.modality}</span><span>·</span><span>{t.vttPlatform}</span></div>
                   <div className="mt-1 flex items-center gap-2"><MesaSeal kind={t.kind} /></div>
                   <div className="mt-1 font-serif text-lg font-black text-[#b92b3a]">{t.name}</div>
                   <div className="text-[11px] text-[#726859]">{t.system}{t.schedule ? ` · ${t.schedule}` : ""}</div>
