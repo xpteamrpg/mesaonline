@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_FOG_SETTINGS, boardLighting, computeVisibility, effectiveVisionRadius,
-  fogForVision, fogSettings, lightedCells, tokenVisible, visionForTokens, wallBlocksVision,
+  fogForVision, fogSettings, lightedCells, lightingFromWeather, tokenVisible, visionForTokens, wallBlocksVision,
 } from "../src/game/vision";
 import type { BoardWall } from "../src/game/types";
 import { makeBoard, makeToken } from "./helpers";
@@ -101,12 +101,28 @@ describe("fog derivado da visao", () => {
     expect(comMemoria.has("1,1")).toBe(false);
   });
 
-  it("o clima NÃO altera a iluminação nem o alcance de visão (regras de clima ainda não existem)", () => {
-    for (const weather of ["clear", "rain", "snow", "embers", "fog", "tormenta", "storm"] as const) {
-      expect(boardLighting(makeBoard([], { weather }))).toBe("sunny");
-    }
-    expect(boardLighting(makeBoard([], { weather: "fog", lighting: "darknight" }))).toBe("darknight"); // o que o Mestre escolheu vale
-    expect(boardLighting(makeBoard([], { weather: "clear", lighting: "cave" }))).toBe("cave");
+  it("o clima define a iluminação (única fonte): limpo sem redução, chuva/neve/névoa/cinzas pela metade, tempestade noite", () => {
+    expect(lightingFromWeather("clear")).toBe("sunny");
+    for (const weather of ["rain", "snow", "fog", "embers"] as const) expect(lightingFromWeather(weather)).toBe("twilight");
+    for (const weather of ["storm", "tormenta"] as const) expect(lightingFromWeather(weather)).toBe("starnight");
+    expect(boardLighting(makeBoard([], { weather: "rain" }))).toBe("twilight");
+    expect(boardLighting(makeBoard([], { weather: "fog", lighting: "darknight" }))).toBe("darknight"); // o que está gravado na cena vale
+  });
+
+  it("alcance: 12 casas na luz do dia, metade com chuva/neve/névoa, nunca menos de 1 casa fora da escuridão total", () => {
+    const comum = makeToken({ id: "c" });
+    expect(effectiveVisionRadius(comum, "sunny")).toBe(12);
+    expect(effectiveVisionRadius(comum, lightingFromWeather("rain"))).toBe(6);
+    expect(effectiveVisionRadius(makeToken({ id: "p", visionCells: 1 }), "starnight")).toBe(1);
+    expect(effectiveVisionRadius(makeToken({ id: "z", visionCells: 0 }), "sunny")).toBe(0); // o Mestre digitou 0
+    expect(effectiveVisionRadius(comum, "darknight")).toBe(0); // escuridão total: só luz
+  });
+
+  it("com 1 casa de visão o token enxerga o quadrado inteiro ao redor (8 vizinhas + a própria)", () => {
+    const token = makeToken({ id: "v", gx: 5, gy: 5 });
+    const seen = computeVisibility(makeBoard([token]), token, 1);
+    for (let dx = -1; dx <= 1; dx += 1) for (let dy = -1; dy <= 1; dy += 1) expect(seen.has(`${5 + dx},${5 + dy}`)).toBe(true);
+    expect(seen.has("7,5")).toBe(false);
   });
 
   it("Escuridão mágica: nem a Visão no Escuro comum enxerga; só quem tem a habilidade para isso", () => {

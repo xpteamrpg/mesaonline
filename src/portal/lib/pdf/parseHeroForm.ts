@@ -6,6 +6,7 @@
  * Função pura (sem pdf.js): recebe o mapa nome→valor que `readPdf` extrai e completa o rascunho.
  */
 import type { AttrKey } from "../t20/compendium";
+import { parseItemLine } from "./itemLine";
 import { ATTR_KEYS, T20_EQUIPMENT, T20_SKILLS, findClassByName, findPowerByName, findRaceByName, findSpellByName, norm, T20_POWERS, T20_SPELLS, editDistance } from "../t20/compendium";
 import type { AttackItem, EquipmentItem, PowerEntry, SpellItem } from "../../types/sheet";
 import { itemToEquipment, powerToEntry, spellToItem, uid } from "../t20/sheetRules";
@@ -281,13 +282,17 @@ export function parseHeroForm(fields: Record<string, string>, draft: PdfDraft) {
   for (let i = 1; i <= 40; i++) {
     const raw = f.get(`item${i}`);
     if (!raw || raw.startsWith("*")) continue; // "*…*" = instruções do modelo
-    const name = raw.replace(/\.$/, "").trim();
-    const found = exactItem(name);
+    const line = parseItemLine(raw);
+    const name = raw.replace(/\.$/, "").replace(/^\s*\d+\s*(?:x|×)\s*/i, "").trim();
+    const found = exactItem(name) ?? line.base;
     const slots = f.num(`slot${i}`);
+    const mods = line.modifications.map((m) => m.nome);
     const base: EquipmentItem = found
-      ? itemToEquipment(found, 1, false)
-      : { id: uid("eq"), equipped: false, name, quantity: 1, slots: slots ?? 1, price: null, description: "", category: "Item Geral" };
-    equipment.push({ ...base, name, slots: slots ?? base.slots, equipped: equippedNames.has(bare(name)) });
+      ? itemToEquipment(found, line.quantity, false)
+      : { id: uid("eq"), equipped: false, name, quantity: line.quantity, slots: slots ?? 1, price: null, description: "", category: "Item Geral" };
+    // Já comprado: o preço do item-base fica como está, a melhoria só é registrada (nada é cobrado na importação).
+    const notes = [mods.length ? `Melhorias: ${mods.join(", ")}` : "", line.leftover ? `Não identificado: ${line.leftover}` : ""].filter(Boolean).join(" · ");
+    equipment.push({ ...base, name, slots: slots ?? base.slots, equipped: equippedNames.has(bare(name)), ...(mods.length ? { modifications: mods } : {}), description: [base.description, notes].filter(Boolean).join(" · ").slice(0, 320) });
   }
   // Armaduras/escudos informados no quadro de defesa (armadura1/defesa1/penalidade1…): valores da ficha valem mais que o catálogo.
   for (let i = 1; i <= 3; i++) {

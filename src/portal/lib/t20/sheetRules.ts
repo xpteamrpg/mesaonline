@@ -175,19 +175,58 @@ export function racialVitals(raceId?: string, raceName?: string, variantId?: str
   return { pv1, pvLvl, pmLvl };
 }
 
+/**
+ * Poderes que somam PV/PM, lidos do texto do próprio catálogo (poderes.json). Só entram os de texto inequívoco: o padrão
+ * genérico confundia custos e aprimoramentos ("gaste 3 PM", "+1 PM para aprimoramentos", PV do melhor amigo).
+ * Fora da tabela, de propósito: Visconde (depende do caminho), Novo Rico, Treino Intensivo, Rainha da Selva (só recupera),
+ * Triunfo do Amor (temporário) e a parte "soma Carisma nos PV iniciais" de Vitalidade das Fadas.
+ */
+type VitalsRule = { pvPerLevel?: number; pvFlat?: number; pvFrom2nd?: number; pmPerLevel?: number; pmPerTwoLevels?: number; pmOddLevels?: number; pmFlat?: number; onlyClass?: RegExp };
+const POWER_VITALS: Record<string, VitalsRule> = {
+  vitalidade: { pvPerLevel: 1 }, // "Recebe +1 PV por nível de personagem e +2 em Fortitude."
+  "vontade de ferro": { pmPerTwoLevels: 1 }, // "+1 PM para cada dois níveis de personagem e +2 em Vontade."
+  "coracao de dragao": { pvFlat: 2, pmFlat: 2 }, // "Você recebe +2 PV e +2 PM."
+  "coracao de pedra": { pvPerLevel: 1 }, // "+1 PV por nível e imunidade a petrificação."
+  "quase anao": { pvPerLevel: 1 }, // "... e +1 PV por nível."
+  "vitalidade das fadas": { pvFrom2nd: 1 }, // "Recebe +1 PV por nível a partir do 2º."
+  "poder magico": { pmPerLevel: 1, onlyClass: /arcanista/i }, // "+1 ponto de mana por nível de arcanista."
+  "xama mistico": { pmPerLevel: 1 }, // "+1 PM por nível" (por nível de druida na versão do Compêndio)
+  "bencao do mana": { pmOddLevels: 1 }, // "+1 PM a cada nível ímpar."
+  espiritualista: { pmOddLevels: 1 }, // "+1 PM por nível ímpar."
+  "sangue elfico": { pmOddLevels: 1 }, // "+1 ponto de mana a cada nível ímpar (incluindo o 1º)."
+};
+const powerKey = (name: string) => name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+/g, " ").trim();
+
+/** PV e PM extras que os poderes da ficha dão (cada poder conta uma vez). */
+export function powerVitals(s: Pick<CharacterSheet, "powers" | "level" | "class">) {
+  let pv = 0, pm = 0;
+  const seen = new Set<string>();
+  for (const power of s.powers ?? []) {
+    const key = powerKey(power.name);
+    const rule = POWER_VITALS[key];
+    if (!rule || seen.has(key)) continue;
+    if (rule.onlyClass && !rule.onlyClass.test(s.class || "")) continue;
+    seen.add(key);
+    const lvl = Math.max(1, s.level || 1);
+    pv += (rule.pvPerLevel ?? 0) * lvl + (rule.pvFlat ?? 0) + (rule.pvFrom2nd ?? 0) * (lvl - 1);
+    pm += (rule.pmPerLevel ?? 0) * lvl + Math.floor(lvl / 2) * (rule.pmPerTwoLevels ?? 0) + Math.ceil(lvl / 2) * (rule.pmOddLevels ?? 0) + (rule.pmFlat ?? 0);
+  }
+  return { pv, pm };
+}
+
 export function maxHp(s: CharacterSheet) {
   const cls = s.classId ? CLASS_BY_ID.get(s.classId) : findClassByName(s.class);
   if (!cls) return s.hp.max;
   const con = s.attributes.con.value;
   const r = racialVitals(s.raceId, s.race, s.raceVariantId);
-  return Math.max(1, cls.pvInicial + con + r.pv1 + (s.level - 1) * (cls.pvPorNivel + con + r.pvLvl));
+  return Math.max(1, cls.pvInicial + con + r.pv1 + (s.level - 1) * (cls.pvPorNivel + con + r.pvLvl) + powerVitals(s).pv);
 }
 
 export function maxMp(s: CharacterSheet) {
   const cls = s.classId ? CLASS_BY_ID.get(s.classId) : findClassByName(s.class);
   if (!cls) return s.mp.max;
   const r = racialVitals(s.raceId, s.race, s.raceVariantId);
-  return cls.pmInicial + cls.pmPorNivel * (s.level - 1) + r.pmLvl * s.level;
+  return cls.pmInicial + cls.pmPorNivel * (s.level - 1) + r.pmLvl * s.level + powerVitals(s).pm;
 }
 
 /* ------------------------------- Conversões --------------------------------- */

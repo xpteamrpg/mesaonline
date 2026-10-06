@@ -153,19 +153,22 @@ export function effectiveVisionRadius(
 ): number {
   if (token.conditions?.some((entry) => /cego|blind/i.test(entry))) return 1;
   const visionType: VisionType = token.visionType || "normal";
+  // Zero casas só vale se o Mestre digitou 0 no token (decisão dele); sem isso, fora da escuridão total o token enxerga ao menos a casa ao redor.
+  if (token.visionCells === 0) return 0;
   const base = token.visionCells ?? settings.ownVisionCells * 3;
   const shortRange = Math.round(9 / grid.scale); // 9 m → 6 casas a 1,5 m
+  const atLeastOne = (cells: number) => Math.max(1, cells);
 
-  if (lighting === "sunny") return base;
+  if (lighting === "sunny") return atLeastOne(base);
 
   if (lighting === "twilight") {
-    if (visionType === "penumbra" || visionType === "dark" || visionType === "magic") return shortRange;
-    return Math.ceil(base * 0.5);
+    if (visionType === "penumbra" || visionType === "dark" || visionType === "magic") return atLeastOne(shortRange);
+    return atLeastOne(Math.ceil(base * 0.5));
   }
 
   if (lighting === "starnight") {
-    if (visionType === "penumbra" || visionType === "dark" || visionType === "magic") return shortRange;
-    return Math.ceil(base * 0.35);
+    if (visionType === "penumbra" || visionType === "dark" || visionType === "magic") return atLeastOne(shortRange);
+    return atLeastOne(Math.ceil(base * 0.35));
   }
 
   if (lighting === "darknight") {
@@ -195,7 +198,8 @@ export function computeVisibility(
 
   for (let dgx = -radius; dgx <= radius; dgx += 1) {
     for (let dgy = -radius; dgy <= radius; dgy += 1) {
-      if (dgx * dgx + dgy * dgy > radius * radius) continue;
+      // raio + meia casa: com 1 casa de visão as diagonais também entram (o quadrado inteiro ao redor).
+      if (dgx * dgx + dgy * dgy > (radius + 0.5) * (radius + 0.5)) continue;
       const gx = origin.gx + dgx;
       const gy = origin.gy + dgy;
       if (gx < 0 || gy < 0 || gx >= board.map.cols || gy >= board.map.rows) continue;

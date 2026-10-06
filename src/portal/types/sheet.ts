@@ -100,6 +100,8 @@ export interface EquipmentItem {
   armorPenalty?: number;
   /** de onde veio o item (ex.: "Origem: Guarda") */
   source?: string;
+  /** melhorias já aplicadas ao item (nomes do catálogo, categoria Modificação); item importado já vem pago, nada é cobrado */
+  modifications?: string[];
 }
 
 /** Escolhas feitas na Oficina de Heróis, guardadas para reabrir a ficha no passo a passo. */
