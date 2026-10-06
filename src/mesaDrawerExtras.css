@@ -324,3 +324,14 @@
 .mesa-weather-roll span b { color: #f0d9a5; }
 .mesa-weather-roll button { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 6px; background: transparent; color: #c9a25e; cursor: pointer; }
 .mesa-weather-roll button:hover { background: #3a2518; color: #f0d9a5; }
+
+/* Bestiário da Mesa: ataques e habilidades de cada ameaça (abre sob o cartão). Gaveta escura: texto claro e bronze. */
+.threat-details { margin-top: 6px; }
+.threat-details > summary { cursor: pointer; color: #d9a94c; font-size: 12px; font-weight: 700; }
+.threat-details-body { margin-top: 4px; padding: 6px 8px; border-left: 2px solid rgba(217, 169, 76, 0.5); background: rgba(0, 0, 0, 0.25); color: #e6dac4; font-size: 12px; line-height: 1.4; }
+.threat-details-body h4 { margin: 6px 0 2px; color: #d9a94c; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.threat-details-body h4:first-child { margin-top: 0; }
+.threat-details-body ul { margin: 0; padding-left: 14px; }
+.threat-details-body li { margin: 2px 0; }
+.threat-details-body strong { display: inline; color: #f2d9a0; font-size: 12px; }
+.threat-details-body p { margin: 0; color: #a99a80; }

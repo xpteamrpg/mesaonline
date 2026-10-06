@@ -9,6 +9,22 @@ import { openPortalRoute } from "../portalLink";
 
 interface BaseProps { open: boolean; onClose: () => void; }
 
+/** Ataques e habilidades da ameaça (do catálogo: ataques, qualidades, ações, reações), para ler sem adicionar ao mapa. Só monta ao abrir. */
+function ThreatDetails({ template }: { template: ThreatTemplate }) {
+  const [open, setOpen] = useState(false);
+  const attacks = open ? (template.customActions ?? []).filter((action) => action.category === "weapon" && !action.charge) : [];
+  const abilities = template.abilities ?? [];
+  return <details className="threat-details" onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <summary>Ataques e habilidades ({abilities.length} habilidade{abilities.length === 1 ? "" : "s"})</summary>
+    {open && <div className="threat-details-body">
+      <h4>Ataques</h4>
+      {attacks.length === 0 ? <p>Sem ataque listado.</p> : <ul>{attacks.map((action) => <li key={action.id}><strong>{action.name}</strong>{action.attackBonus !== undefined ? ` ${action.attackBonus >= 0 ? "+" : ""}${action.attackBonus}` : ""} · {action.damage || "sem dano"}{action.crit && action.crit < 20 ? ` · crítico ${action.crit}${action.critMultiplier ? `/x${action.critMultiplier}` : ""}` : action.critMultiplier && action.critMultiplier !== 2 ? ` · x${action.critMultiplier}` : ""}</li>)}</ul>}
+      <h4>Habilidades</h4>
+      {abilities.length === 0 ? <p>Sem habilidades listadas.</p> : <ul>{abilities.map((ability, index) => <li key={`${ability.name}-${index}`}><strong>{ability.name}</strong>{ability.type ? ` (${ability.type})` : ""}{ability.description ? `: ${ability.description}` : ""}</li>)}</ul>}
+    </div>}
+  </details>;
+}
+
 export function CharacterLibraryDialog({ open, onClose, onAdd }: BaseProps & { onAdd: (sheet: CharacterSheet) => void }) {
   const [revision, setRevision] = useState(0);
   const [error, setError] = useState("");
@@ -67,7 +83,7 @@ export function ThreatLibraryDialog({ open, templates, onClose, onSpawn, onCatal
         <div className="threat-list">{page.map((template) => <article key={template.id} className="threat-item">
           <span className="threat-avatar">{template.portrait ? <img src={template.portrait} alt="" loading="lazy" decoding="async"/> : template.symbol}</span>
           <span className="threat-item-copy"><strong>{template.name}</strong><small>{template.title}</small><i>PV {template.pv} | DEF {template.defense} | {template.damage}</i>
-            <em>{template.actionCount ?? template.customActions?.length ?? 0} ações interpretadas{template.treasure ? ` · tesouro: ${template.treasure.length > 60 ? `${template.treasure.slice(0, 60)}…` : template.treasure}` : ""}</em></span>
+            <ThreatDetails template={template}/><em>{template.actionCount ?? template.customActions?.length ?? 0} ações interpretadas{template.treasure ? ` · tesouro: ${template.treasure.length > 60 ? `${template.treasure.slice(0, 60)}…` : template.treasure}` : ""}</em></span>
           <button className="spawn-threat" onClick={() => onSpawn(template)}><Plus size={14}/>Adicionar</button>
           {template.custom && onDelete ? <button className="delete-template" aria-label={`Remover ${template.name}`} onClick={() => onDelete(template.id)}><Trash2 size={14}/></button> : <span/>}
         </article>)}

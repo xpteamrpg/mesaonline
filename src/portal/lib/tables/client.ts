@@ -4,6 +4,8 @@
  * acontece ao abrir uma sala do VTT. O app continua funcionando sem esse
  * servidor; essas chamadas só rodam quando o usuário usa "Mesa Online".
  */
+import type { TableDetails } from "./details";
+
 export interface TableEntry {
   id: string;
   code: string;
@@ -25,6 +27,8 @@ export interface TableEntry {
   /** campanha (selo azul) ou one-shot (selo vermelho) */
   kind?: "campanha" | "oneshot";
   isPublic: boolean;
+  /** página da mesa: horários, regras, cenário, avisos, segurança, requisitos, contato (coluna `details`) */
+  details?: TableDetails;
   ratingAvg: number | null;
   ratingCount: number;
   createdAt: string;

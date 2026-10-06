@@ -11,6 +11,9 @@ import { SITE_ROOT } from "../../../utils/assetUrl";
 import type { CharacterSheet } from "../../types/sheet";
 import { ImportCharacterDialog, ManageTableDialog, PartyStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
 import { CopyButton } from "../common/CopyButton";
+import { TableDetailsFields } from "./TableDetailsFields";
+import { TableDetailView } from "./TableDetailView";
+import type { TableDetails } from "../../lib/tables/details";
 import { claimTable, joinTable, leaveTable, myTables, type MyTable } from "../../lib/campaigns/client";
 
 /** Arte própria da página (pintura do projeto). */
@@ -51,7 +54,7 @@ const randomCode = () => {
   return Array.from(bytes, (n) => alphabet[n % alphabet.length]).join("");
 };
 
-const emptyForm = { name: "", system: "Tormenta20", modality: "online" as "online" | "presencial", schedule: "", gmName: "", seatsTotal: "4", ageRating: "livre", vttPlatform: "Mesa de Arton (deste site)", description: "", imageUrl: "", priceType: "gratuita" as "gratuita" | "paga", priceValue: "", contactInfo: "", isPublic: false };
+const emptyForm = { name: "", system: "Tormenta20", modality: "online" as "online" | "presencial", schedule: "", gmName: "", seatsTotal: "4", ageRating: "livre", vttPlatform: "Mesa de Arton (deste site)", description: "", imageUrl: "", priceType: "gratuita" as "gratuita" | "paga", priceValue: "", contactInfo: "", isPublic: false, details: {} as TableDetails };
 
 /** Mesa montada no próprio navegador (servidor de mesas desligado, ou código de sala direto). */
 function emptyTable(input: Partial<TableEntry> & { name: string }): TableEntry {
@@ -59,7 +62,7 @@ function emptyTable(input: Partial<TableEntry> & { name: string }): TableEntry {
     id: "", code: "", name: input.name, system: input.system ?? "Tormenta20", modality: input.modality ?? "online", priceType: input.priceType ?? "gratuita",
     priceValue: Number(input.priceValue) || 0, schedule: input.schedule ?? "", gmName: input.gmName ?? "", seatsTotal: Number(input.seatsTotal) || 4, seatsFilled: 0,
     ageRating: normalizeAge(input.ageRating), vttPlatform: input.vttPlatform ?? "Mesa de Arton (deste site)", description: input.description ?? "", imageUrl: input.imageUrl ?? "",
-    contactInfo: input.contactInfo ?? "", liveRoomCode: "", kind: input.kind ?? "oneshot", isPublic: false, ratingAvg: null, ratingCount: 0, createdAt: new Date().toISOString(),
+    contactInfo: input.contactInfo ?? "", liveRoomCode: "", kind: input.kind ?? "oneshot", isPublic: false, details: input.details, ratingAvg: null, ratingCount: 0, createdAt: new Date().toISOString(),
   };
 }
 
@@ -137,6 +140,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
         <div className="sm:col-span-2"><ImagePicker label="Imagem de capa (16:9, opcional)" aspect={16 / 9} bake maxSize={1280} value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} /></div>
         <input value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="Contato (e-mail/WhatsApp, opcional)" className={`${inp} sm:col-span-2`} />
         <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição da mesa" rows={2} className={`${inp} sm:col-span-2`} />
+        <TableDetailsFields value={form.details} onChange={(details) => setForm({ ...form, details })} />
         <label className="flex items-center gap-2 text-[11px] text-[#726859] sm:col-span-2"><input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} /> Anunciar esta mesa publicamente no catálogo abaixo</label>
         {error && <p className="text-[11px] font-bold text-[#b92b3a] sm:col-span-2">{error}</p>}
         <button onClick={submit} disabled={busy} className="rounded bg-[#b92b3a] py-2 text-xs font-bold uppercase text-white hover:bg-[#9c1f2d] disabled:opacity-50 sm:col-span-2">{busy ? "Criando…" : "Criar mesa privativa"}</button>
@@ -190,7 +194,7 @@ const JoinPrivateTable: React.FC = () => {
 };
 
 /** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
-const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mestre" | "jogador"; members?: number; onManage: (l: MyTableLink) => void; onEdit: (l: MyTableLink, current: Partial<TableEntry>) => void; onImport: (t: TableEntry) => void; onLeave: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, role, members, onManage, onEdit, onImport, onLeave, characters, onOpenCharacter }) => {
+const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mestre" | "jogador"; members?: number; onDetail: (t: TableEntry, code: string, isGm: boolean) => void; onManage: (l: MyTableLink) => void; onEdit: (l: MyTableLink, current: Partial<TableEntry>) => void; onImport: (t: TableEntry) => void; onLeave: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, role, members, onDetail, onManage, onEdit, onImport, onLeave, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
   const isGm = role === "mestre";
   const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
@@ -214,6 +218,7 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mest
         </div>
         {!link.local && <PartyStrip tableId={link.id} characters={characters} onOpenOwn={onOpenCharacter} />}
         <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(isGm ? { name: link.name, host: code } : { name: link.name, sala: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
+        <button onClick={() => onDetail({ ...(t as TableEntry), id: link.id, name: link.name, code: link.code }, code, isGm)} className="mt-2 w-full rounded border border-[#ded7c6] bg-white py-1.5 text-[11px] font-black uppercase text-[#2b261f] hover:bg-[#eae4d5]" data-table-page>Página da mesa</button>
         {isGm && <button onClick={() => onEdit(link, t)} className="mt-2 w-full rounded border border-[#b92b3a] bg-white py-1.5 text-[11px] font-black uppercase text-[#b92b3a] hover:bg-[#fdeef0]" data-edit-table>Editar mesa</button>}
         {!isGm && !link.local && <div className="mt-2 flex gap-2"><button onClick={() => onImport({ ...(t as TableEntry), id: link.id, name: link.name })} className="flex-1 rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Importar personagem</button><button onClick={() => onLeave(link)} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-[11px] font-black uppercase text-[#726859] hover:bg-[#eae4d5]">Sair</button></div>}
         {isGm && !link.local && <button onClick={() => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) onManage(link); }} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Gerenciar jogadores e convites</button>}
@@ -232,7 +237,7 @@ const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry
     name: link.name, system: current.system ?? "Tormenta20", modality: (current.modality ?? "online") as "online" | "presencial", schedule: current.schedule ?? "",
     gmName: current.gmName ?? "", seatsTotal: String(current.seatsTotal ?? 4), ageRating: normalizeAge(current.ageRating), vttPlatform: current.vttPlatform ?? "Mesa de Arton (deste site)",
     description: current.description ?? "", imageUrl: current.imageUrl ?? "", priceType: (current.priceType ?? "gratuita") as "gratuita" | "paga", priceValue: String(current.priceValue ?? ""),
-    contactInfo: current.contactInfo ?? "", isPublic: Boolean(current.isPublic),
+    contactInfo: current.contactInfo ?? "", isPublic: Boolean(current.isPublic), details: (current.details ?? {}) as TableDetails,
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -275,6 +280,7 @@ const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry
           <div className="sm:col-span-2"><ImagePicker label="Imagem de capa (16:9)" aspect={16 / 9} bake maxSize={1280} value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} /></div>
           <input value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="Contato (e-mail/WhatsApp, opcional)" className={`${inp} sm:col-span-2`} />
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição da mesa" rows={4} className={`${inp} sm:col-span-2`} />
+        <TableDetailsFields value={form.details} onChange={(details) => setForm({ ...form, details })} />
           <label className="flex items-center gap-2 text-[11px] text-[#726859] sm:col-span-2"><input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} /> Anunciar esta mesa publicamente no catálogo</label>
           {link.local && <p className="rounded border border-[#e0c98c] bg-[#fff8e6] p-2 text-[11px] leading-4 text-[#7a5a14] sm:col-span-2">Esta mesa existe só neste navegador (o servidor de mesas estava desligado ao criá-la): a edição também fica só aqui.</p>}
           {error && <p className="text-[11px] font-bold text-[#b92b3a] sm:col-span-2">{error}</p>}
@@ -289,7 +295,7 @@ const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry
 };
 
 /** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
-const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; joined?: MyTable[]; onChanged?: () => void; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], joined = [], onChanged, onManage, onManageTable, characters, onOpenCharacter }) => {
+const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; joined?: MyTable[]; onChanged?: () => void; onDetail: (t: TableEntry, code: string, isGm: boolean) => void; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], joined = [], onChanged, onDetail, onManage, onManageTable, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
   const [importing, setImporting] = useState<TableEntry | null>(null);
   const [links, setLinks] = useState<MyTableLink[]>(getMyTables());
@@ -320,7 +326,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
         <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">{kind === "campanha" ? "Nenhuma campanha ainda. Crie uma acima escolhendo “Campanha”." : "Nenhum one-shot ainda. Crie uma acima escolhendo “One-shot”."}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} role={roleOf(l.id) ?? (l.managementToken || l.local ? "mestre" : "jogador")} members={joined.find((m) => m.table.id === l.id)?.members} onManage={onManageTable} onEdit={(link, current) => setEditing({ link, current })} onImport={setImporting} onLeave={leave} characters={characters} onOpenCharacter={onOpenCharacter} />)}
+          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} role={roleOf(l.id) ?? (l.managementToken || l.local ? "mestre" : "jogador")} members={joined.find((m) => m.table.id === l.id)?.members} onDetail={onDetail} onManage={onManageTable} onEdit={(link, current) => setEditing({ link, current })} onImport={setImporting} onLeave={leave} characters={characters} onOpenCharacter={onOpenCharacter} />)}
           {campaigns.map((c) => {
             const code = campaignRoomCode(c.id);
             return (
@@ -373,6 +379,7 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
   const [managing, setManaging] = useState<MyTableLink | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [joined, setJoined] = useState<MyTable[]>([]);
+  const [detail, setDetail] = useState<{ table: TableEntry; code: string; member: boolean; gm: boolean } | null>(null);
   useEffect(() => { if (user) myTables().then(setJoined).catch(() => setJoined([])); else setJoined([]); }, [user?.id, refresh]);
   const [tables, setTables] = useState<TableEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -403,8 +410,9 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
       </div>
 
       <div className="mt-6"><ReceivedInvites onChanged={() => setRefresh((n) => n + 1)} /></div>
-      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} joined={joined} onChanged={() => setRefresh((n) => n + 1)} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
-      <MyTablesSection kind="oneshot" title="Meus one-shots" joined={joined} onChanged={() => setRefresh((n) => n + 1)} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} joined={joined} onChanged={() => setRefresh((n) => n + 1)} onDetail={(table, code, gm) => setDetail({ table, code, member: true, gm })} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      <MyTablesSection kind="oneshot" title="Meus one-shots" joined={joined} onChanged={() => setRefresh((n) => n + 1)} onDetail={(table, code, gm) => setDetail({ table, code, member: true, gm })} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      {detail && <TableDetailView table={detail.table} code={detail.code} isMember={detail.member} characters={characters} onOpenCharacter={onOpenCharacter} onClose={() => setDetail(null)} onEnter={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(detail.gm ? { name: detail.table.name, host: detail.code } : { name: detail.table.name, sala: detail.code }); }} />}
       {managing && <ManageTableDialog table={{ id: managing.id, name: managing.name, code: managing.liveRoomCode || managing.code }} token={managing.managementToken} characters={characters} onClose={() => setManaging(null)} />}
       <div className="mb-6 [&_h2]:!text-[#f2c572]"><OfficialCampaigns /></div>
 
@@ -438,7 +446,8 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
                   <div className="mt-2 flex items-center justify-between text-[11px]"><span className="font-bold text-[#2b8a3e]">{t.priceType === "paga" ? `R$ ${t.priceValue.toFixed(2)}` : "Gratuita"}</span><span className="text-[#726859]">{t.seatsFilled}/{t.seatsTotal} vagas</span></div>
                   <div className="mt-2"><StarRating table={t} onRated={() => load(page, false)} /></div>
                   {t.contactInfo && <div className="mt-1 text-[10px] text-[#1c7ed6]">Contato: {t.contactInfo}</div>}
-                  <button onClick={() => { if (requireLogin("Para entrar numa mesa você precisa estar logado.")) openMesa({ name: t.name, sala: t.liveRoomCode || t.code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa</button>
+                  <button onClick={() => setDetail({ table: t, code: t.liveRoomCode || t.code, member: false, gm: false })} className="mt-3 w-full rounded border border-[#ded7c6] bg-white py-1.5 text-[11px] font-black uppercase text-[#2b261f] hover:bg-[#eae4d5]" data-table-page>Ver a página da mesa</button>
+                  <button onClick={() => { if (requireLogin("Para entrar numa mesa você precisa estar logado.")) openMesa({ name: t.name, sala: t.liveRoomCode || t.code }); }} className="mt-2 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa</button>
                 </div>
               </div>
             ))}
