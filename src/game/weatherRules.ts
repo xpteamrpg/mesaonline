@@ -44,13 +44,15 @@ export const WEATHER_RULES: Record<WeatherType, WeatherRule> = {
     lightning: { chance: 0.1, damage: "8d10" },
     lines: ["−10 em testes de Percepção (livro p.267).", "−5 em ataques à distância (efeitos de vendaval); apaga chamas e dissipa névoas.", "Em combate, no início de cada rodada rola-se 1d10: com 1 (10%) um raio atinge uma criatura aleatória (8d10 de eletricidade). A janelinha mostra o d10 de cada rodada.", HOUSE_VISION("storm")],
   },
+  // Regra do usuário (06/10): Tormenta vale como Tempestade e Cinzas valem como Chuva (o livro não traz regras próprias para eles).
   tormenta: {
-    label: "Tormenta", perception: 0, ranged: 0, difficultTerrain: false, concealment: "none",
-    lines: ["Clima da Tormenta: o livro não traz regras mecânicas para ele (efeito visual).", HOUSE_VISION("tormenta")],
+    label: "Tormenta", perception: -10, ranged: -5, difficultTerrain: false, concealment: "none",
+    lightning: { chance: 0.1, damage: "8d10" },
+    lines: ["Vale como Tempestade (regra do usuário; o livro não tem regras próprias para a Tormenta).", "−10 em testes de Percepção; −5 em ataques à distância.", "Em combate, no início de cada rodada rola-se 1d10: com 1 (10%) um raio atinge uma criatura aleatória (8d10 de eletricidade).", HOUSE_VISION("tormenta")],
   },
   embers: {
-    label: "Cinzas", perception: 0, ranged: 0, difficultTerrain: false, concealment: "none",
-    lines: ["Cinzas: o livro não traz regras mecânicas para elas (efeito visual).", HOUSE_VISION("embers")],
+    label: "Cinzas", perception: -5, ranged: -2, difficultTerrain: false, concealment: "none",
+    lines: ["Vale como Chuva (regra do usuário; o livro não tem regras próprias para as cinzas).", "−5 em testes de Percepção; −2 em ataques à distância.", HOUSE_VISION("embers")],
   },
 };
 

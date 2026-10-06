@@ -4,7 +4,7 @@ import { makeBoard, makeToken } from "./helpers";
 beforeEach(() => { localStorage.clear(); vi.resetModules(); });
 
 describe("regras de clima (Tormenta20 p.267)", () => {
-  it("cada clima tem seu rótulo e as regras mostradas ao passar o mouse; cinzas e Tormenta não têm regra mecânica no livro", async () => {
+  it("cada clima tem seu rótulo e as regras mostradas ao passar o mouse; Tormenta vale como Tempestade e Cinzas como Chuva (regra do usuário)", async () => {
     const { weatherRule, WEATHER_RULES } = await import("../src/game/weatherRules");
     expect(weatherRule("rain")).toMatchObject({ label: "Chuva", perception: -5, ranged: -2, difficultTerrain: false });
     expect(weatherRule("snow")).toMatchObject({ label: "Neve", perception: -5, ranged: -2, difficultTerrain: true });
@@ -13,7 +13,10 @@ describe("regras de clima (Tormenta20 p.267)", () => {
     expect(weatherRule("fog").concealment).toBe("light");
     expect(weatherRule("clear")).toMatchObject({ perception: 0, ranged: 0, difficultTerrain: false, concealment: "none" });
     for (const key of Object.keys(WEATHER_RULES) as Array<keyof typeof WEATHER_RULES>) expect(WEATHER_RULES[key].lines.length).toBeGreaterThan(0);
-    expect(weatherRule("embers").lines.join(" ")).toMatch(/livro não traz regras/);
+    // Regra do usuário: Tormenta vale como Tempestade e Cinzas como Chuva.
+    expect(weatherRule("tormenta")).toMatchObject({ perception: -10, ranged: -5, lightning: { chance: 0.1, damage: "8d10" } });
+    expect(weatherRule("embers")).toMatchObject({ perception: -5, ranged: -2 });
+    expect(weatherRule("embers").lines.join(" ")).toMatch(/Vale como Chuva/);
   });
 
   it("neve faz todo o terreno custar o dobro para andar", async () => {

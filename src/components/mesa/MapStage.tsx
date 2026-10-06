@@ -606,6 +606,10 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
             <button type="button" role="menuitem" onClick={() => { selectToken(target.id); setTokenMenu(null); }}>Selecionar</button>
             <button type="button" role="menuitem" onClick={() => { selectToken(target.id); window.dispatchEvent(new CustomEvent("mesa:open-panel", { detail: "roster" })); setTokenMenu(null); }}>Abrir no Elenco (ajustes)</button>
             <button type="button" role="menuitem" onClick={() => { setViewAs(viewAsToken?.id === target.id ? null : target.id); setTokenMenu(null); }}>{viewAsToken?.id === target.id ? "Sair da visão deste token" : "Ver pela visão deste token"}</button>
+            {target.side === "threats" && <div className="mesa-token-menu-colors" aria-label="Tipo de inimigo" data-boss-picker>
+              <span>Inimigo</span>
+              {([[undefined, "comum"], ["miniboss", "mini boss"], ["boss", "boss"]] as const).map(([value, label]) => <button key={label} type="button" role="menuitem" className={`reset${(target.boss ?? undefined) === value ? " on" : ""}`} title={value ? "Não morre a 0 PV: cai inconsciente e sangrando, como um herói" : "Morre ao chegar a 0 PV ou menos"} onClick={() => { updateToken(target.id, { boss: value }); setTokenMenu(null); }}>{label}</button>)}
+            </div>}
             <div className="mesa-token-menu-colors" aria-label="Cor da borda">
               <span>Borda</span>
               {colors.map((color) => <button key={color} type="button" role="menuitem" aria-label={`Borda ${color}`} className={target.ringColor === color ? "on" : ""} style={{ background: color }} onClick={() => { updateToken(target.id, { ringColor: color }); setTokenMenu(null); }}/>)}

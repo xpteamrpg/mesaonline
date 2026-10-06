@@ -1,4 +1,5 @@
-import { deathLimit, isDead } from "./death";
+import { deathLimit } from "./death";
+import { diesAt, keepsConsciousAtZero } from "./deathRules";
 import { objectForPlayer, wallForPlayer } from "./chest";
 import { coveredCells, tokenCovers } from "./tokenSize";
 import { deliverSignal, sanitizeSignal, signalAllowedFrom, type Signal } from "./signals";
@@ -375,9 +376,10 @@ export function updateToken(tokenId: string, patch: Partial<BoardToken>): BoardT
     pmMax: Math.max(0, Number(patch.pmMax ?? current.pmMax)),
   };
   next.defeated = next.hp <= 0;
-  next.dead = isDead(next.hp, next.hpMax);
+  next.dead = diesAt(next);
   // 0 PV ou menos: cai inconsciente e sangrando; voltando a ter PV, recobra a consciência e estabiliza (p.236).
-  if (current.hp > 0 && next.hp <= 0 && !next.dead) {
+  // Espírito Inquebrável: em Fúria o bárbaro continua de pé (só morre no limite de morte).
+  if (current.hp > 0 && next.hp <= 0 && !next.dead && !keepsConsciousAtZero(next)) {
     const have = new Set((next.conditions || []).map((name) => name.toLowerCase()));
     next.conditions = [...(next.conditions || []), ...["Inconsciente", "Sangrando"].filter((name) => !have.has(name.toLowerCase()))];
     next.fallenByHp = true;

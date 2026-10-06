@@ -212,6 +212,8 @@ export interface BoardToken {
   hp: number;
   /** PV temporários: perdem-se primeiro e acabam com a cena (Campo de Força) */
   tempHp?: number;
+  /** chefe: não morre a 0 PV como os inimigos comuns (segue a regra dos heróis: inconsciente e sangrando; morre em −10/−metade) */
+  boss?: "boss" | "miniboss";
   /** morreu (PV ≤ −10 ou −metade dos PV totais, p.236); com 0 PV ou menos e ainda vivo, o personagem está inconsciente e sangrando */
   dead?: boolean;
   /** a condição Inconsciente/Sangrando veio de cair a 0 PV (sai quando voltar a ter PV) */

@@ -53,3 +53,40 @@ describe("ferimentos e morte (Tormenta20 p.236)", () => {
     expect(bridge.getCombatState().order).not.toContain("a");
   });
 });
+
+describe("quem morre a 0 PV e quem não (regra do usuário, 06/10)", () => {
+  it("inimigo comum morre a 0 PV; boss e mini boss seguem a regra dos heróis (inconsciente e sangrando)", async () => {
+    const bridge = await import("../src/game/vttBridge");
+    bridge.addToken(makeToken({ id: "c", name: "Capanga", side: "threats", gx: 1, gy: 1, hp: 10, hpMax: 10 }));
+    bridge.addToken(makeToken({ id: "m", name: "Mini boss", side: "threats", gx: 2, gy: 1, hp: 10, hpMax: 10, boss: "miniboss" } as never));
+    bridge.addToken(makeToken({ id: "b", name: "Boss", side: "threats", gx: 3, gy: 1, hp: 10, hpMax: 10, boss: "boss" } as never));
+    for (const id of ["c", "m", "b"]) bridge.updateToken(id, { hp: 0 });
+    const get = (id: string) => bridge.getBoard().tokens.find((t) => t.id === id)!;
+    expect(get("c").dead).toBe(true);
+    expect(get("m").dead).toBeFalsy();
+    expect(get("m").conditions).toEqual(expect.arrayContaining(["Inconsciente", "Sangrando"]));
+    expect(get("b").dead).toBeFalsy();
+    bridge.updateToken("b", { hp: -10 });
+    expect(get("b").dead).toBe(true); // o boss morre no limite de morte (−10)
+  });
+
+  it("Espírito Inquebrável: em Fúria o bárbaro não fica inconsciente a 0 PV, mas ainda morre no limite", async () => {
+    const bridge = await import("../src/game/vttBridge");
+    const { loadReadyHeroSheets, upsertCharacterSheet } = await import("../ficha-modernrpg/characterRoute");
+    const sheet = { ...structuredClone(loadReadyHeroSheets()[1]), id: "barbaro-teste", powers: [{ id: "ei", name: "Espírito Inquebrável", type: "Classe", description: "" }] };
+    upsertCharacterSheet(sheet as never);
+    upsertCharacterSheet({ ...sheet, id: "barbaro-teste-2" } as never); // cada token com a sua ficha (a ficha guarda as condições do token)
+    const base = { side: "heroes" as const, gy: 2, hp: 20, hpMax: 20 };
+    bridge.addToken(makeToken({ id: "furia", name: "Em fúria", ...base, gx: 2, modernRpgCharacterId: "barbaro-teste", conditions: ["Fúria"] }));
+    bridge.addToken(makeToken({ id: "calmo", name: "Sem fúria", ...base, gx: 3, modernRpgCharacterId: "barbaro-teste-2" }));
+    bridge.updateToken("furia", { hp: 0 });
+    bridge.updateToken("calmo", { hp: 0 });
+    const get = (id: string) => bridge.getBoard().tokens.find((t) => t.id === id)!;
+    expect(get("furia").conditions).not.toContain("Inconsciente");
+    expect(get("furia").conditions).not.toContain("Sangrando");
+    expect(get("calmo").conditions).toContain("Inconsciente");
+    bridge.updateToken("furia", { hp: -10 }); // metade de 20 PV
+    expect(get("furia").dead).toBe(true);
+  });
+});
+
