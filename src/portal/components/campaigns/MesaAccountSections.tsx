@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../lib/auth/AuthContext";
 import type { CharacterSheet } from "../../types/sheet";
 import { T20CharacterSheet } from "../sheet/T20CharacterSheet";
+import { READY_HEROES } from "../../data/readyHeroes";
 import type { TableEntry } from "../../lib/tables/client";
 import {
   answerInvite, characterRequests, characterSheetOf, claimTable, tableParty, type PartyMember, decideCharacter, inviteToTable, kickMember, leaveTable, myCharacterLinks, myInvites, myTables, requestCharacter, tableMembers, unlinkCharacter,
@@ -52,7 +53,7 @@ export const ReceivedInvites: React.FC<{ onChanged: () => void }> = ({ onChanged
 };
 
 /** "Importar personagem": o jogador escolhe uma ficha dele e pede entrada na campanha (o mestre aceita ou recusa). */
-const ImportCharacterDialog: React.FC<{ table: TableEntry; characters: CharacterSheet[]; onClose: () => void }> = ({ table, characters, onClose }) => {
+export const ImportCharacterDialog: React.FC<{ table: TableEntry; characters: CharacterSheet[]; onClose: () => void }> = ({ table, characters, onClose }) => {
   const [links, setLinks] = useState<MyCharacterLink[]>([]);
   const [msg, setMsg] = useState("");
   const load = useCallback(() => { myCharacterLinks().then((all) => setLinks(all.filter((l) => l.tableId === table.id))).catch(() => setLinks([])); }, [table.id]);
@@ -127,7 +128,7 @@ export const ParticipatingTables: React.FC<{ characters: CharacterSheet[]; skipI
 };
 
 /** Painel do mestre: jogadores (com expulsar), convites e personagens que pediram entrada. */
-export const ManageTableDialog: React.FC<{ table: { id: string; name: string; code: string }; token?: string; onClose: () => void }> = ({ table, token, onClose }) => {
+export const ManageTableDialog: React.FC<{ table: { id: string; name: string; code: string }; token?: string; characters?: CharacterSheet[]; onClose: () => void }> = ({ table, token, characters = [], onClose }) => {
   const { user } = useAuth();
   const [members, setMembers] = useState<TableMember[]>([]);
   const [requests, setRequests] = useState<LinkRequest[]>([]);
@@ -153,6 +154,9 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
 
   const pending = requests.filter((r) => r.status === "solicitado");
   const accepted = requests.filter((r) => r.status === "aceito");
+  // O mestre põe personagens direto na mesa (sem pedido): os dele e os heróis prontos do site. Já entram aceitos.
+  const addable = [...characters, ...READY_HEROES.map((hero) => hero.sheet)].filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i);
+  const alreadyIn = new Set(accepted.map((r) => r.characterId));
   return (
     <Modal title={`Gerenciar · ${table.name}`} onClose={onClose}>
       {msg && <p role="status" className="mb-3 rounded border border-[#c2892c]/60 bg-[#fff6dc] px-2 py-1 text-[11px] font-semibold text-[#6b4a12]">{msg}</p>}
@@ -175,6 +179,18 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
           <input value={who} onChange={(e) => setWho(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void invite(); }} placeholder={by === "email" ? "email@exemplo.com" : "apelido ou @identificador"} className="min-w-0 flex-1 rounded border border-[#ded7c6] bg-white p-2 text-xs" />
           <button onClick={() => void invite()} disabled={!who.trim()} className={`${btn} bg-[#1c5fb5] text-white disabled:opacity-50`}>Convidar</button>
         </div>
+      </section>
+      <section className="mt-4">
+        <h3 className="text-[11px] font-black uppercase tracking-wide text-[#726859]">Adicionar personagem direto</h3>
+        <p className="mt-1 text-[11px] text-[#9c9180]">Seus personagens e os heróis prontos entram na mesa na hora, já aceitos.</p>
+        <ul className="mt-1 max-h-44 space-y-1 overflow-y-auto">
+          {addable.map((c) => (
+            <li key={c.id} className="flex items-center gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-2 py-1.5 text-xs">
+              <span className="min-w-0 flex-1 truncate"><b className="font-serif text-sm">{c.name}</b> <span className="text-[#9c9180]">{[c.race, c.class, c.level ? `${c.level}º nível` : ""].filter(Boolean).join(" · ")}{READY_HEROES.some((h) => h.id === c.id) ? " · pronto" : ""}</span></span>
+              {alreadyIn.has(c.id) ? <span className="text-[11px] font-bold text-[#2f7d32]">Na mesa</span> : <button onClick={() => void run(() => requestCharacter(table.id, c), `${c.name} entrou na mesa.`)} className={`${btn} bg-[#1c5fb5] text-white`}>Adicionar</button>}
+            </li>
+          ))}
+        </ul>
       </section>
       <section className="mt-4">
         <h3 className="text-[11px] font-black uppercase tracking-wide text-[#726859]">Personagens pedindo entrada ({pending.length})</h3>

@@ -9,9 +9,9 @@ import type { CampaignRecord } from "./CampaignsView";
 import { ImagePicker } from "../common/ImagePicker";
 import { SITE_ROOT } from "../../../utils/assetUrl";
 import type { CharacterSheet } from "../../types/sheet";
-import { ManageTableDialog, ParticipatingTables, PartyStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
+import { ImportCharacterDialog, ManageTableDialog, PartyStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
 import { CopyButton } from "../common/CopyButton";
-import { claimTable, joinTable } from "../../lib/campaigns/client";
+import { claimTable, joinTable, leaveTable, myTables, type MyTable } from "../../lib/campaigns/client";
 
 /** Arte própria da página (pintura do projeto). */
 const MESA_ONLINE_ART = imgCampanhas;
@@ -134,7 +134,7 @@ const CreatePrivateTable: React.FC<{ onCreated: () => void }> = ({ onCreated }) 
         <input value={form.vttPlatform} onChange={(e) => setForm({ ...form, vttPlatform: e.target.value })} placeholder="Plataforma / VTT" className={inp} />
         <select value={form.priceType} onChange={(e) => setForm({ ...form, priceType: e.target.value as "gratuita" | "paga" })} className={inp}><option value="gratuita">Gratuita</option><option value="paga">Paga</option></select>
         {form.priceType === "paga" && <input value={form.priceValue} onChange={(e) => setForm({ ...form, priceValue: e.target.value })} type="number" min="0" step="0.01" placeholder="Valor (R$)" className={inp} />}
-        <div className="sm:col-span-2"><ImagePicker label="Imagem de capa (opcional)" aspect={2.5} bake maxSize={800} value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} /></div>
+        <div className="sm:col-span-2"><ImagePicker label="Imagem de capa (16:9, opcional)" aspect={16 / 9} bake maxSize={1280} value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} /></div>
         <input value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="Contato (e-mail/WhatsApp, opcional)" className={`${inp} sm:col-span-2`} />
         <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição da mesa" rows={2} className={`${inp} sm:col-span-2`} />
         <label className="flex items-center gap-2 text-[11px] text-[#726859] sm:col-span-2"><input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} /> Anunciar esta mesa publicamente no catálogo abaixo</label>
@@ -190,15 +190,16 @@ const JoinPrivateTable: React.FC = () => {
 };
 
 /** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
-const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (l: MyTableLink) => void; onEdit: (l: MyTableLink, current: Partial<TableEntry>) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, onManage, onEdit, characters, onOpenCharacter }) => {
+const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mestre" | "jogador"; members?: number; onManage: (l: MyTableLink) => void; onEdit: (l: MyTableLink, current: Partial<TableEntry>) => void; onImport: (t: TableEntry) => void; onLeave: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, role, members, onManage, onEdit, onImport, onLeave, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
+  const isGm = role === "mestre";
   const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
   const code = link.liveRoomCode || fresh?.liveRoomCode || link.code;
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#ded7c6] bg-white shadow-sm">
-      {t.imageUrl ? <img src={t.imageUrl} alt="" className="h-32 w-full object-cover" /> : <div className="h-32 w-full bg-gradient-to-br from-[#2b261f] to-[#4a3f2c]" aria-hidden="true" />}
+      {t.imageUrl ? <img src={t.imageUrl} alt="" className="aspect-video w-full bg-black object-contain" /> : <div className="aspect-video w-full bg-gradient-to-br from-[#2b261f] to-[#4a3f2c]" aria-hidden="true" />}
       <div className="flex flex-1 flex-col p-3">
-        <div className="flex items-center gap-2"><MesaSeal kind={link.kind ?? t.kind} />{link.local && <span className="text-[9px] font-bold uppercase text-[#9c9180]">só neste navegador</span>}</div>
+        <div className="flex flex-wrap items-center gap-2"><MesaSeal kind={link.kind ?? t.kind} /><span className={`rounded px-1.5 py-0.5 text-[9px] font-black uppercase ${isGm ? "bg-[#f2c572] text-[#5a3b00]" : "bg-[#dfe9f7] text-[#12315f]"}`} title={isGm ? "Você é o mestre desta mesa" : "Você é jogador desta mesa"}>{isGm ? "♛ Mestre" : "⚔ Jogador"}</span><span className="rounded bg-[#2b261f] px-1.5 py-0.5 text-[9px] font-black uppercase text-white">{normalizeAge(t.ageRating) === "livre" ? "Livre" : `${normalizeAge(t.ageRating)}+`}</span>{members ? <span className="text-[9px] font-bold uppercase text-[#9c9180]">{members} na mesa</span> : null}{link.local && <span className="text-[9px] font-bold uppercase text-[#9c9180]">só neste navegador</span>}</div>
         <div className="mt-1 font-serif text-lg font-black leading-tight text-[#b92b3a]">{link.name}</div>
         <div className="text-[11px] text-[#726859]">{[t.system, t.modality, t.schedule].filter(Boolean).join(" · ")}</div>
         {t.gmName && <div className="text-[11px] text-[#9c9180]">Mestre: {t.gmName}</div>}
@@ -212,9 +213,10 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; onManage: (
           <CopyButton text={code} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]" />
         </div>
         {!link.local && <PartyStrip tableId={link.id} characters={characters} onOpenOwn={onOpenCharacter} />}
-        <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: link.name, host: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
-        <button onClick={() => onEdit(link, t)} className="mt-2 w-full rounded border border-[#b92b3a] bg-white py-1.5 text-[11px] font-black uppercase text-[#b92b3a] hover:bg-[#fdeef0]" data-edit-table>Editar mesa</button>
-        {!link.local && <button onClick={() => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) onManage(link); }} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Gerenciar jogadores e convites</button>}
+        <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(isGm ? { name: link.name, host: code } : { name: link.name, sala: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
+        {isGm && <button onClick={() => onEdit(link, t)} className="mt-2 w-full rounded border border-[#b92b3a] bg-white py-1.5 text-[11px] font-black uppercase text-[#b92b3a] hover:bg-[#fdeef0]" data-edit-table>Editar mesa</button>}
+        {!isGm && !link.local && <div className="mt-2 flex gap-2"><button onClick={() => onImport({ ...(t as TableEntry), id: link.id, name: link.name })} className="flex-1 rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Importar personagem</button><button onClick={() => onLeave(link)} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-[11px] font-black uppercase text-[#726859] hover:bg-[#eae4d5]">Sair</button></div>}
+        {isGm && !link.local && <button onClick={() => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) onManage(link); }} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Gerenciar jogadores e convites</button>}
       </div>
     </div>
   );
@@ -270,7 +272,7 @@ const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry
           <input value={form.vttPlatform} onChange={(e) => setForm({ ...form, vttPlatform: e.target.value })} placeholder="Plataforma / VTT" className={inp} />
           <select value={form.priceType} onChange={(e) => setForm({ ...form, priceType: e.target.value as "gratuita" | "paga" })} className={inp}><option value="gratuita">Gratuita</option><option value="paga">Paga</option></select>
           {form.priceType === "paga" && <input value={form.priceValue} onChange={(e) => setForm({ ...form, priceValue: e.target.value })} type="number" min="0" step="0.01" placeholder="Valor (R$)" className={inp} />}
-          <div className="sm:col-span-2"><ImagePicker label="Imagem de capa" aspect={2.5} bake maxSize={800} value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} /></div>
+          <div className="sm:col-span-2"><ImagePicker label="Imagem de capa (16:9)" aspect={16 / 9} bake maxSize={1280} value={form.imageUrl} onChange={(v) => setForm({ ...form, imageUrl: v })} /></div>
           <input value={form.contactInfo} onChange={(e) => setForm({ ...form, contactInfo: e.target.value })} placeholder="Contato (e-mail/WhatsApp, opcional)" className={`${inp} sm:col-span-2`} />
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição da mesa" rows={4} className={`${inp} sm:col-span-2`} />
           <label className="flex items-center gap-2 text-[11px] text-[#726859] sm:col-span-2"><input type="checkbox" checked={form.isPublic} onChange={(e) => setForm({ ...form, isPublic: e.target.checked })} /> Anunciar esta mesa publicamente no catálogo</label>
@@ -287,8 +289,9 @@ const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry
 };
 
 /** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
-const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], onManage, onManageTable, characters, onOpenCharacter }) => {
+const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; joined?: MyTable[]; onChanged?: () => void; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], joined = [], onChanged, onManage, onManageTable, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
+  const [importing, setImporting] = useState<TableEntry | null>(null);
   const [links, setLinks] = useState<MyTableLink[]>(getMyTables());
   const [editing, setEditing] = useState<{ link: MyTableLink; current: Partial<TableEntry> } | null>(null);
   const [fresh, setFresh] = useState<Record<string, TableEntry>>({});
@@ -296,7 +299,14 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
     links.filter((l) => !l.local).forEach((l) => { getTableByCode(l.code).then((t) => setFresh((prev) => ({ ...prev, [l.id]: t }))).catch(() => {}); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const mine = links.filter((l) => (l.kind ?? l.data?.kind ?? "oneshot") === kind);
+  // Todas as mesas da pessoa: as criadas neste navegador (têm o token do mestre) e as da conta em que ela é mestre ou jogadora.
+  const roleOf = (id: string): "mestre" | "jogador" | undefined => joined.find((m) => m.table.id === id)?.role;
+  const fromAccount: MyTableLink[] = joined.filter((m) => !links.some((l) => l.id === m.table.id)).map((m) => ({ id: m.table.id, code: m.table.code, managementToken: "", name: m.table.name, kind: m.table.kind, liveRoomCode: m.table.liveRoomCode, data: m.table }));
+  const mine = [...links, ...fromAccount].filter((l) => (l.kind ?? l.data?.kind ?? "oneshot") === kind);
+  const leave = async (l: MyTableLink) => {
+    if (!confirm(`Sair de “${l.name}”? Os seus personagens saem só desta mesa e continuam em Meus Personagens.`)) return;
+    try { await leaveTable(l.id); onChanged?.(); } catch { /* a lista continua como estava */ }
+  };
   const color = kind === "campanha" ? "text-[#1c5fb5]" : "text-[#b92b3a]";
   return (
     <div className="mb-6 rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm">
@@ -305,11 +315,12 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
         <h2 className={`font-serif text-base font-black ${color}`}>{title}</h2>
         {kind === "campanha" && onManage && <button onClick={onManage} className="rounded border border-[#ded7c6] bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#726859] hover:bg-[#eae4d5]">Gerenciar campanhas</button>}
       </div>
+      {importing && <ImportCharacterDialog table={importing} characters={characters} onClose={() => { setImporting(null); onChanged?.(); }} />}
       {mine.length === 0 && campaigns.length === 0 ? (
         <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">{kind === "campanha" ? "Nenhuma campanha ainda. Crie uma acima escolhendo “Campanha”." : "Nenhum one-shot ainda. Crie uma acima escolhendo “One-shot”."}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} onManage={onManageTable} onEdit={(link, current) => setEditing({ link, current })} characters={characters} onOpenCharacter={onOpenCharacter} />)}
+          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} role={roleOf(l.id) ?? (l.managementToken || l.local ? "mestre" : "jogador")} members={joined.find((m) => m.table.id === l.id)?.members} onManage={onManageTable} onEdit={(link, current) => setEditing({ link, current })} onImport={setImporting} onLeave={leave} characters={characters} onOpenCharacter={onOpenCharacter} />)}
           {campaigns.map((c) => {
             const code = campaignRoomCode(c.id);
             return (
@@ -358,9 +369,11 @@ export function campaignRoomCode(id: string): string {
 }
 
 export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; characters?: CharacterSheet[]; onManageCampaigns?: () => void; onOpenCharacter?: (characterId: string) => void }> = ({ campaigns = [], characters = [], onManageCampaigns, onOpenCharacter = () => undefined }) => {
-  const { requireLogin } = useAuth();
+  const { requireLogin, user } = useAuth();
   const [managing, setManaging] = useState<MyTableLink | null>(null);
   const [refresh, setRefresh] = useState(0);
+  const [joined, setJoined] = useState<MyTable[]>([]);
+  useEffect(() => { if (user) myTables().then(setJoined).catch(() => setJoined([])); else setJoined([]); }, [user?.id, refresh]);
   const [tables, setTables] = useState<TableEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -390,10 +403,9 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
       </div>
 
       <div className="mt-6"><ReceivedInvites onChanged={() => setRefresh((n) => n + 1)} /></div>
-      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
-      <MyTablesSection kind="oneshot" title="Meus one-shots" onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
-      <ParticipatingTables characters={characters} onOpenCharacter={onOpenCharacter} refreshKey={refresh} skipIds={getMyTables().map((l) => l.id)} onEnter={(name, code, asGm) => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(asGm ? { name, host: code } : { name, sala: code }); }} onManage={(t) => setManaging({ id: t.id, code: t.code, managementToken: "", name: t.name, kind: t.kind, liveRoomCode: t.liveRoomCode } as MyTableLink)} />
-      {managing && <ManageTableDialog table={{ id: managing.id, name: managing.name, code: managing.liveRoomCode || managing.code }} token={managing.managementToken} onClose={() => setManaging(null)} />}
+      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} joined={joined} onChanged={() => setRefresh((n) => n + 1)} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      <MyTablesSection kind="oneshot" title="Meus one-shots" joined={joined} onChanged={() => setRefresh((n) => n + 1)} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      {managing && <ManageTableDialog table={{ id: managing.id, name: managing.name, code: managing.liveRoomCode || managing.code }} token={managing.managementToken} characters={characters} onClose={() => setManaging(null)} />}
       <div className="mb-6 [&_h2]:!text-[#f2c572]"><OfficialCampaigns /></div>
 
       <div className="mt-8 border-t-4 border-[#b92b3a] pt-6">
@@ -415,7 +427,7 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {tables.map((t) => (
               <div key={t.id} className="flex flex-col overflow-hidden rounded-lg border border-[#ded7c6] bg-white shadow-sm">
-                {t.imageUrl && <img src={t.imageUrl} alt="" className="h-28 w-full object-cover" />}
+                {t.imageUrl && <img src={t.imageUrl} alt="" className="aspect-video w-full bg-black object-contain" />}
                 <div className="flex flex-1 flex-col p-3">
                   <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-[#9c9180]"><span className="rounded bg-[#2b261f] px-1.5 py-0.5 text-white">{normalizeAge(t.ageRating) === "livre" ? "Livre" : `${normalizeAge(t.ageRating)}+`}</span><span>{t.modality}</span><span>·</span><span>{t.vttPlatform}</span></div>
                   <div className="mt-1 flex items-center gap-2"><MesaSeal kind={t.kind} /></div>
