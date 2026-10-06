@@ -473,6 +473,13 @@ export default function App() {
   }
 
   function openFocusedCharacter() {
+    // Ameaça selecionada (sem ficha): abre a criatura no bestiário do Portal (Monstros e ameaças), não "Meus personagens".
+    const focus = focusedToken();
+    if (focus && !focus.modernRpgCharacterId && (focus.bestiaryId || focus.customThreatId || focus.side === "threats")) {
+      const template = threats.find((entry) => entry.id === (focus.bestiaryId || focus.customThreatId));
+      openPortalRoute(`monstros?busca=${encodeURIComponent(template?.name || focus.name)}`);
+      return;
+    }
     const characterId = focusedCharacter();
     if (characterId) openCharacter(characterId);
     // Sem ficha vinculada, o ponto de entrada oficial é a lista de personagens do Portal.

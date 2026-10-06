@@ -390,7 +390,7 @@ function VitalButton({ label, tone, disabled, onClick }: { label: string; tone: 
 
 export function CombatActions({ links, onAction }: { links: Record<string, string>; onAction: (id: string) => void }) {
   const [tab, setTab] = useState("tabActions");
-  const { focus, saves, equipment, powers, attacks, canOperateFocus } = useSkinRuntime();
+  const { focus, saves, equipment, powers, attacks, canOperateFocus, actionStates } = useSkinRuntime();
   const [hpAmount, setHpAmount] = useState("1");
   const [pmAmount, setPmAmount] = useState("1");
   const [openPower, setOpenPower] = useState<string | null>(null);
@@ -495,13 +495,17 @@ export function CombatActions({ links, onAction }: { links: Record<string, strin
                 <div className="space-y-1">
                   {COMBAT_ACTIONS.map((a) => {
                     const Icon = a.icon === "pentagram" ? null : ACTION_ICONS[a.icon];
+                    const spentReason = actionStates?.[a.id];
                     return (
                       <Action
                         key={a.id}
                         href={links[a.link]}
                         onClick={() => onAction(a.id)}
+                        disabled={Boolean(spentReason)}
+                        title={spentReason}
                         className={cx(
                           "group flex w-full items-center gap-2.5 rounded-[10px] border px-2.5 py-1.5 text-left transition-all duration-200",
+                          spentReason && "pointer-events-auto cursor-not-allowed opacity-40 saturate-50 hover:translate-y-0",
                           a.featured
                             ? "border-[#4d9be6]/80 bg-[#0f2135] shadow-[0_0_20px_-6px_rgba(77,155,230,0.55)] hover:bg-[#152c46]"
                             : "border-[#7a5227]/50 bg-[color:var(--mx-150e0a)] hover:-translate-y-[1px] hover:border-[#d9a94c]/80 hover:bg-[color:var(--mx-221609)]",

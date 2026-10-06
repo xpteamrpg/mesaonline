@@ -265,6 +265,11 @@ function resolveAction(actorId: string, actionId: string, targetIds: string[], t
       });
     } else {
       resolveTacticalAction(caster.id, resolved, fresh.map((token) => token.id));
+      // Ataques extras da mesma ação (Bote: espada curta + mordida): de graça, contra o mesmo alvo, com o +2 da investida.
+      for (const extraId of resolved.combo || []) {
+        const extra = canonicalAction(requiredToken(caster.id), extraId);
+        resolveTacticalAction(caster.id, { ...extra, kind: "free", pmCost: 0, attackBonus: (extra.attackBonus || 0) + (resolved.charge ? 2 : 0) }, fresh.map((token) => token.id));
+      }
       if (resolved.charge) addTacticalEffect(caster.id, chargeEffect(requiredToken(caster.id)));
     }
   };

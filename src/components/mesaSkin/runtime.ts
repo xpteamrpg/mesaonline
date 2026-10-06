@@ -78,6 +78,8 @@ export type SkinRuntime = {
   powers: SkinPower[];
   /** Quem joga pode agir sobre o personagem em foco (mestre ou dono do token). */
   canOperateFocus?: boolean;
+  /** botões do combate sem uso agora (id do botão → motivo): ação já gasta, fora do turno, sem o que usar */
+  actionStates?: Record<string, string>;
   /** Magias da ficha do personagem em foco (nome, círculo e custo em PM). */
   spells: { name: string; circle: number; cost: number }[];
   hotkeys: { slot: number; label: string; qty: string; icon: LucideIcon; tone: string; link: string }[];

@@ -286,7 +286,8 @@ export const ThreatCard: React.FC<{ t: T20Threat; onRoll?: (label: string, formu
 };
 
 export const BestiaryView: React.FC<{ onRoll?: (label: string, formula: string) => void }> = ({ onRoll }) => {
-  const [q, setQ] = useState("");
+  // A Mesa abre uma criatura pelo endereço: #/monstros?busca=Nome
+  const [q, setQ] = useState(() => new URLSearchParams(window.location.hash.split("?")[1] || "").get("busca") || "");
   const [type, setType] = useState("");
   const [nd, setNd] = useState("");
   const [src, setSrc] = useState("");

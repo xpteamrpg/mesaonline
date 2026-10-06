@@ -68,6 +68,70 @@ function attackRepeats(name: string) {
   return explicit > 1 ? explicit : 1;
 }
 
+type ThreatAttack = NonNullable<CanonicalThreat["ataques"]>[number];
+
+const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/**
+ * Na ficha do livro um ataque pode trazer outro colado no texto ("Espada curta +9 (1d6+3, 19)" e, no campo de descrição, "E mordida +9 (1d6+3)").
+ * São ataques DIFERENTES: cada um vira a sua ação em Agir (só habilidades como o Bote do gnoll fazem os dois juntos).
+ */
+export function splitCombinedAttacks(attacks: ThreatAttack[]): ThreatAttack[] {
+  const out: ThreatAttack[] = [];
+  for (const attack of attacks) {
+    let current: ThreatAttack = { ...attack };
+    let rest = String(attack.desc || "");
+    out.push(current);
+    for (let guard = 0; guard < 6; guard += 1) {
+      const match = rest.match(/^\s*(?:e|ou)\s+([^+\-\d(]+?)\s*([+-]\d+)\s*\(([^)]*)\)\s*(.*)$/i);
+      if (!match) break;
+      current.desc = "";
+      current = { nome: cap(match[1].trim()), tipo: attack.tipo, bonus: match[2], dano: match[3], desc: "" };
+      out.push(current);
+      rest = match[4];
+    }
+    if (current !== out[out.length - 1]) break;
+    if (current === out[out.length - 1] && rest && current !== attack) current.desc = rest;
+  }
+  return out;
+}
+
+const plain = (text: string) => normalizeRuleText(text).replace(/[^a-z\s]/g, " ").replace(/\b(?:x\d+|duas?|dois|tres|tr[eê]s)\b/g, " ").replace(/\s+/g, " ").trim();
+const stemWord = (word: string) => word.replace(/(?:es|s)$/, "");
+
+/**
+ * Habilidade do tipo "faz uma investida e ataca com A e B" (Bote, Rasante, Marrada): vira UMA ação completa de investida que faz esses ataques
+ * juntos (+2 em todos, contra o mesmo alvo). O primeiro ataque citado é a ação principal; os demais saem em `combo`.
+ */
+function chargeComboAction(threat: CanonicalThreat, ability: NonNullable<CanonicalThreat["habilidades"]>[number], index: number, attackActions: GameAction[]): GameAction | null {
+  const text = String(ability.desc || "");
+  if (!/investida/i.test(text) || !/ataca/i.test(text)) return null;
+  const after = normalizeRuleText(text.split(/ataca(?:ndo)?\s+com/i)[1] || "");
+  const mentioned: GameAction[] = [];
+  const positions: Array<{ at: number; action: GameAction; times: number }> = [];
+  for (const action of attackActions) {
+    const words = plain(action.name).split(" ").filter(Boolean).map(stemWord);
+    const at = words.length ? after.search(new RegExp(words.join("\\w*\\s+") + "\\w*", "i")) : -1;
+    if (at < 0) continue;
+    const before = after.slice(Math.max(0, at - 12), at);
+    positions.push({ at, action, times: /\b(?:duas|dois)\s+(?:suas\s+|seus\s+)?$/.test(before) ? 2 : 1 });
+  }
+  positions.sort((a, b) => a.at - b.at).forEach((entry) => { for (let n = 0; n < entry.times; n += 1) mentioned.push(entry.action); });
+  if (!mentioned.length) return null;
+  const [first, ...others] = mentioned;
+  return {
+    ...first,
+    id: `threat:${threat.id}:ability:${index}`,
+    name: ability.nome,
+    kind: "full",
+    charge: true,
+    attackBonus: (first.attackBonus || 0) + 2,
+    repeats: 1,
+    combo: others.map((action) => action.id),
+    description: ability.desc || "Investida: avança até o dobro do deslocamento em linha reta e ataca; +2 nos ataques, contra o mesmo alvo.",
+  };
+}
+
 function actionForAttack(threat: CanonicalThreat, attack: NonNullable<CanonicalThreat["ataques"]>[number], index: number): GameAction {
   const ranged = /distância|distancia|arremesso|disparo/i.test(attack.tipo || "");
   const formulas = formulasIn(`${attack.dano || ""} ${attack.desc || ""}`);
@@ -169,8 +233,8 @@ function skillBonusesOf(list?: Array<{ nome: string; valor?: string }>): Record<
 }
 
 export function threatToTemplate(threat: CanonicalThreat): ThreatTemplate {
-  const attacks = (threat.ataques || []).map((attack, index) => actionForAttack(threat, attack, index));
-  const abilities = (threat.habilidades || []).map((ability, index) => actionForAbility(threat, ability, index)).filter((action): action is GameAction => Boolean(action));
+  const attacks = splitCombinedAttacks(threat.ataques || []).map((attack, index) => actionForAttack(threat, attack, index));
+  const abilities = (threat.habilidades || []).map((ability, index) => chargeComboAction(threat, ability, index, attacks) ?? actionForAbility(threat, ability, index)).filter((action): action is GameAction => Boolean(action));
   // Ataques e habilidades são baratos; a busca de magias citadas no texto (varre o catálogo inteiro) só roda quando alguém pede as ações.
   const actions: GameAction[] = [...attacks, ...abilities];
   if (!actions.some((action) => action.category === "weapon")) {
@@ -179,6 +243,8 @@ export function threatToTemplate(threat: CanonicalThreat): ThreatTemplate {
   const primary = actions.find((action) => action.category === "weapon")!;
   const ranged = primary.attackSkill === "pontaria";
   const movement = Number(threat.deslocamento?.match(/\d+/)?.[0]) || 9;
+  // Investidas da própria criatura (Bote, Rasante...) alcançam o dobro do deslocamento dela, mais o alcance do golpe.
+  for (let i = 0; i < actions.length; i += 1) if (actions[i].charge) actions[i] = { ...actions[i], rangeM: movement * 2 + 1.5 };
   const fly = Number(threat.deslocamento?.match(/voo\s*(\d+)/i)?.[1]) || undefined;
   const burrow = Number(threat.deslocamento?.match(/escava[^\d]*(\d+)/i)?.[1]) || undefined;
   let everything: GameAction[] | undefined;

@@ -1,4 +1,7 @@
 import { weatherRule } from "../../game/weatherRules";
+import { freshTurnResources, turnPlan } from "../../tactics/engine/actionEconomy";
+import { conditionMods } from "../../game/conditionEffects";
+import { actionsForToken } from "../../game/actions";
 import { effectBonus } from "../../tactics/engine/effectBonuses";
 import { MAX_HANDS, MAX_WORN, cargaOf, equippedCounts } from "../../game/carga";
 import { Backpack, FlaskConical, Shield, Swords, type LucideIcon } from "lucide-react";
@@ -106,6 +109,34 @@ function attributesOf(sheet: CharacterSheet | null, token?: BoardToken): SkinFoc
   if (!sheet && token?.attrs) return ATTRIBUTE_ORDER.map(([key, short]) => ({ key, short, value: token.attrs?.[key] ?? 0 }));
   if (!sheet) return undefined;
   return ATTRIBUTE_ORDER.map(([key, short]) => ({ key, short, value: sheet.attributes[key]?.value ?? 0 }));
+}
+
+const COMBAT_BUTTONS = ["actionMove", "actionAct", "actionMagic", "actionItems", "actionCondition", "actionWait"] as const;
+
+/**
+ * Botões do painel de combate que ficam escuros: ação já usada neste turno (padrão/movimento/completa), fora do turno do personagem,
+ * condição que impede agir e quando não há o que usar (sem magia, sem item). Mesma economia de ações do motor (`turnPlan`).
+ */
+function actionStatesOf(snapshot: RuntimeSnapshot, token: BoardToken | undefined): Record<string, string> | undefined {
+  if (!token || !snapshot.combat.active) return undefined;
+  const states: Record<string, string> = {};
+  const blockAll = (reason: string) => { for (const id of COMBAT_BUTTONS) if (id !== "actionCondition") states[id] = reason; return states; };
+  if (snapshot.combat.activeTokenId !== token.id) return blockAll("Não é o turno deste personagem.");
+  const mods = conditionMods(token.conditions);
+  if (!mods.canAct) return blockAll(`Não pode fazer ações (${mods.blockedBy}).`);
+  const resources = snapshot.combat.resources[token.id] ?? freshTurnResources();
+  const actions = actionsForToken(token);
+  const movement = turnPlan(resources, "movement");
+  const standard = turnPlan(resources, "standard");
+  if (!movement.allowed) states.actionMove = movement.reason || "Sem ação de movimento.";
+  if (!standard.allowed) { states.actionAct = standard.reason || "Ação padrão já usada."; states.actionMagic = states.actionAct; }
+  else {
+    if (!actions.some((action) => action.category !== "spell" && action.category !== "item")) states.actionAct = "Nada para fazer aqui.";
+    if (!actions.some((action) => action.category === "spell")) states.actionMagic = "Este personagem não tem magias.";
+  }
+  if (!movement.allowed) states.actionItems = "Pegar um item exige uma ação de movimento (já usada).";
+  else if (!actions.some((action) => action.category === "item")) states.actionItems = "Nenhum item para usar.";
+  return states;
 }
 
 function focusOf(token: BoardToken | undefined, sheet: CharacterSheet | null): SkinFocus | null {
@@ -265,6 +296,12 @@ export function buildSkinRuntime(snapshot: RuntimeSnapshot, campaigns: string[],
       if (base !== undefined) return { ...skill, value: signed(base + conditionSkillPenalty(focusToken.conditions, def.atributo, def.id)) };
     }
     return { ...skill, value: sheet && def ? signed(sheetSkillTotal(sheet, def.id, def.atributo) + conditionSkillPenalty(focusToken?.conditions, def.atributo, def.id)) : "—" };
+  }).filter((skill) => {
+    // Perícia "somente treinada" (livro) que o personagem não tem treinada não aparece: não pode ser usada.
+    const def = T20_SKILLS.find((entry) => entry.nome.toLocaleLowerCase("pt-BR") === skill.name.toLocaleLowerCase("pt-BR"));
+    if (!def?.somenteTreinado || !focusToken) return true;
+    if (sheet) return Boolean(sheet.skills?.[def.id]?.trained);
+    return focusToken.skillBonuses?.[skill.name.toLocaleLowerCase("pt-BR")] !== undefined;
   });
 
   const rolls: Roll[] = combat.rolls.slice(0, 30).map((roll) => {
@@ -303,6 +340,7 @@ export function buildSkinRuntime(snapshot: RuntimeSnapshot, campaigns: string[],
     attacks: attacksOf(sheet),
     powers: sheet || !focusToken?.abilities?.length ? powersOf(sheet) : threatPowersOf(focusToken),
     canOperateFocus: focusToken ? canControlToken(snapshot.multiplayer, focusToken) : false,
+    actionStates: actionStatesOf(snapshot, focusToken),
     spells: (sheet?.spells || []).map((spell) => ({ name: spell.name, circle: spell.circle, cost: spell.cost })),
     hotkeys: hotkeysOf(sheet),
     rolls,

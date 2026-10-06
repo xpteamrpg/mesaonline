@@ -46,6 +46,8 @@ export interface GameAction {
   attackSkill?: "luta" | "pontaria";
   /** Investida (p.235): ação completa que avança em linha reta (até o dobro do deslocamento) e ataca no fim, com +2 no ataque e −2 na Defesa até o próximo turno */
   charge?: boolean;
+  /** ataques extras (ids de ações da mesma criatura) feitos junto, de graça e contra o mesmo alvo (ex.: Bote do gnoll = investida + espada curta + mordida) */
+  combo?: string[];
   attackBonus?: number;
   damage?: string;
   extraDamage?: string;
