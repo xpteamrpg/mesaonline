@@ -29,6 +29,7 @@ import type {
   SceneState,
   TerrainType,
   TurnResources,
+  WeatherRoll,
 } from "./types";
 import { type GridSettings, setActiveGrid } from "./distance";
 import { floorOf, moveTokenToFloor as moveTokenAcrossFloors } from "./floors";
@@ -105,7 +106,7 @@ function loadRuntime(): PersistedRuntime {
         const data = JSON.parse(raw) as Partial<PersistedRuntime>;
         if (Array.isArray(data.scenes) && data.scenes.length) {
           // A mídia mostrada no palco é de uma sessão só: o arquivo dela não sobrevive a recarregar a página.
-          const scenes = data.scenes.map((scene) => normalizeScene({ ...scene, board: { ...scene.board, stageMedia: undefined, travelEvent: undefined } }));
+          const scenes = data.scenes.map((scene) => normalizeScene({ ...scene, board: { ...scene.board, stageMedia: undefined, travelEvent: undefined, weatherRoll: undefined } }));
           const activeSceneId = scenes.some((scene) => scene.id === data.activeSceneId) ? data.activeSceneId! : scenes[0].id;
           return {
             scenes,
@@ -656,6 +657,17 @@ export function setTravelScene(sceneId?: string): void {
 export function showTravelEvent(event: Omit<TravelEvent, "id">): void {
   if (multiplayerState.role === "player") throw new Error("Só o Mestre mostra o encontro da viagem.");
   mutateBoard((board) => ({ ...board, travelEvent: { ...event, id: uid("viagem") } }));
+}
+
+/** Motor: mostra o resultado do raio da tempestade desta rodada (janelinha para todos). */
+export function showWeatherRoll(roll: Omit<WeatherRoll, "id">): void {
+  if (multiplayerState.role === "player") return;
+  mutateBoard((board) => ({ ...board, weatherRoll: { ...roll, id: uid("raio") } }));
+}
+
+export function closeWeatherRoll(): void {
+  if (multiplayerState.role === "player" || !BOARD.weatherRoll) return;
+  mutateBoard((board) => ({ ...board, weatherRoll: undefined }));
 }
 
 export function closeTravelEvent(): void {

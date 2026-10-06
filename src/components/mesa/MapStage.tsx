@@ -13,8 +13,9 @@ import { applyMapTool, barrierAt, previewAreaCells, useMapTools } from "../../ga
 import type { ShapeKind } from "../../game/shapes";
 import { footprintOccupied } from "../../tactics/engine/movement";
 import { blockCenter, footprintOf, sideOf, sizeOf } from "../../game/tokenSize";
-import { appendChat, closeStageMedia, closeTravelEvent, markExplored, selectToken, sendSignal, switchScene, updateMap, updateToken, upsertLight } from "../../game/vttBridge";
+import { appendChat, closeWeatherRoll, closeStageMedia, closeTravelEvent, markExplored, selectToken, sendSignal, switchScene, updateMap, updateToken, upsertLight } from "../../game/vttBridge";
 import StageMediaOverlay from "./StageMediaOverlay";
+import WeatherRollOverlay from "./WeatherRollOverlay";
 import TravelEventOverlay from "./TravelEventOverlay";
 import { onSignals } from "../../game/signals";
 import { auraCells } from "../../game/shapes";
@@ -482,6 +483,7 @@ export default function MapStage({ snapshot, view, intentActive, targetIntent, a
       }}
     >
       {board.travelEvent && <TravelEventOverlay event={board.travelEvent} isMaster={!isPlayer} scenes={snapshot.scenes} preparedSceneId={board.travel?.sceneId} onGoToScene={(id) => { try { switchScene(id); } catch { /* só o Mestre */ } }} onClose={() => { try { closeTravelEvent(); } catch { /* só o Mestre */ } }}/>}
+      {board.weatherRoll && <WeatherRollOverlay roll={board.weatherRoll} isMaster={!isPlayer} onClose={closeWeatherRoll}/>}
       {board.stageMedia && <StageMediaOverlay media={board.stageMedia} isMaster={!isPlayer} onClose={() => { try { closeStageMedia(); } catch { /* só o Mestre */ } }}/>}
       <div className="next-camera" style={{ width: boardSize.width, height: boardSize.height, transform: `translate(calc(-50% + ${camera.x}px),calc(-50% + ${camera.y}px)) scale(${camera.scale})` }}>
         {/* Sem moldura nem fundo próprio: o quadro do mapa é o da máscara V5; aqui só entra o mapa carregado. */}

@@ -23,18 +23,37 @@ describe("regras de clima (Tormenta20 p.267)", () => {
     expect(reach("snow")).toBeLessThan(reach("clear"));
   });
 
-  it("raio da tempestade: com sorte baixa atinge uma criatura e tira PV; com sorte alta não acontece; fora da tempestade nunca", async () => {
+  it("raio da tempestade: só em combate, 1d10 por rodada; com 1 atinge uma criatura e tira PV; com outro valor mostra \"não houve raios\"; fora da tempestade nunca", async () => {
     const bridge = await import("../src/game/vttBridge");
     const { applyWeatherRoundStart } = await import("../src/tactics/engine/weatherEffects");
-    bridge.addToken(makeToken({ id: "v", name: "Vítima", side: "heroes", gx: 3, gy: 3, hp: 500, hpMax: 500 }));
-    expect(applyWeatherRoundStart(() => 0)).toEqual({}); // sem tempestade
+    bridge.addToken(makeToken({ id: "v", name: "Vítima", side: "heroes", gx: 3, gy: 3, hp: 500, hpMax: 500, initiative: 5 }));
+    bridge.setWeather("clear");
+    bridge.startCombat();
+    expect(applyWeatherRoundStart({ rollD10: () => 1 })).toEqual({}); // sem tempestade
     bridge.setWeather("storm");
-    expect(applyWeatherRoundStart(() => 0.9)).toEqual({}); // 90% > 10%: sem raio
-    const hit = applyWeatherRoundStart(() => 0);
+    const calm = applyWeatherRoundStart({ rollD10: () => 7, round: 2 });
+    expect(calm.d10).toBe(7);
+    expect(calm.struck).toBeUndefined();
+    expect(bridge.getBoard().weatherRoll).toMatchObject({ round: 2, d10: 7 });
+    expect(bridge.getBoard().weatherRoll?.struck).toBeUndefined();
+    const hit = applyWeatherRoundStart({ rollD10: () => 1, round: 3 });
     expect(hit.struck?.id).toBe("v");
     expect(hit.damage).toBeGreaterThanOrEqual(8);
     expect(hit.damage).toBeLessThanOrEqual(80);
     expect(bridge.getBoard().tokens.find((t) => t.id === "v")!.hp).toBe(500 - hit.damage!);
+    expect(bridge.getBoard().weatherRoll).toMatchObject({ round: 3, d10: 1, struck: "Vítima", damage: hit.damage });
+    bridge.closeWeatherRoll();
+    expect(bridge.getBoard().weatherRoll).toBeUndefined();
+  });
+
+  it("fora do combate não há raio nem janelinha, mesmo com tempestade", async () => {
+    const bridge = await import("../src/game/vttBridge");
+    const { applyWeatherRoundStart } = await import("../src/tactics/engine/weatherEffects");
+    bridge.addToken(makeToken({ id: "v", name: "Vítima", side: "heroes", gx: 3, gy: 3, hp: 500, hpMax: 500 }));
+    bridge.setWeather("storm");
+    expect(applyWeatherRoundStart({ rollD10: () => 1 })).toEqual({});
+    expect(bridge.getBoard().weatherRoll).toBeUndefined();
+    expect(bridge.getBoard().tokens.find((t) => t.id === "v")!.hp).toBe(500);
   });
 });
 

@@ -449,6 +449,8 @@ export interface BoardState {
   playerNames?: Record<string, string>;
   /** encontro da viagem mostrado no palco para todos (game/travel.ts); o Mestre fecha */
   travelEvent?: TravelEvent;
+  /** resultado do raio da tempestade no início da rodada atual (mostrado numa janelinha para todos) */
+  weatherRoll?: WeatherRoll;
   /** imagem ou vídeo que o Mestre mostrou para todos, por cima do mapa (game/stageMedia.ts); some ao recarregar a página */
   stageMedia?: StageMedia;
   chat: ChatMessage[];
@@ -581,3 +583,6 @@ export interface PendingPower {
   attackBonus: number;
   extraDamage?: string;
 }
+
+/** Rolagem do raio da tempestade: 1d10, raio só no 1 (10%). */
+export interface WeatherRoll { id: string; round: number; d10: number; struck?: string; damage?: number }
