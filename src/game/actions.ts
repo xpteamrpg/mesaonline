@@ -1,3 +1,4 @@
+import { withCharges } from "./chargeActions";
 import type { CharacterSheet } from "../../ficha-modernrpg/sheet";
 import type { BoardToken, GameAction, TacticalUnitView, ThreatTemplate } from "./types";
 import { getModernRpgCharacter } from "../integration/modernRpgCharacterBridge";
@@ -9,6 +10,10 @@ export { actionsForCharacter, actionsForThreat };
 
 /** Resolve ações a partir das fontes autoritativas, nunca de um elenco fictício. */
 export function actionsForToken(token: BoardToken): GameAction[] {
+  return withCharges(token, baseActionsForToken(token));
+}
+
+function baseActionsForToken(token: BoardToken): GameAction[] {
   if (token.modernRpgCharacterId) {
     const character = getModernRpgCharacter(token.modernRpgCharacterId);
     if (character) return actionsForCharacter(character);
@@ -20,6 +25,7 @@ export function actionsForToken(token: BoardToken): GameAction[] {
   }
   return token.tacticalActions || [];
 }
+
 
 /** Compatibilidade de apresentação; TacticalUnitView nunca é persistido. */
 export function unitActions(unit: TacticalUnitView, category?: GameAction["category"]): GameAction[] {

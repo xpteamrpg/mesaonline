@@ -24,6 +24,8 @@ import {
 } from "../../game/vttBridge";
 import { tacticalViewForToken } from "../../integration/modernRpgCharacterBridge";
 import { resolveTacticalAction } from "./combat";
+import { chargeEffect, chargePath } from "./charge";
+import { addTacticalEffect } from "./reactiveTriggers";
 import { reachableCells, moverOf, EXPLORATION_BUDGET_M } from "./movement";
 import "./conditionTicks";
 import "./weatherEffects";
@@ -236,12 +238,19 @@ function resolveAction(actorId: string, actionId: string, targetIds: string[], t
   // Área pessoal (explosão a partir de quem lança): o centro é o próprio personagem.
   if (action.target === "area" && !targetCell && action.rangeM <= 0) targetCell = { x: actor.gx, y: actor.gy };
   const targets = validatedTargets(actor, action, targetIds, targetCell);
+  // Investida: confere o caminho em linha reta ANTES de gastar qualquer coisa (o erro volta para o jogador).
+  let chargeTo: { x: number; y: number; steps: number } | null = null;
+  if (action.charge) {
+    if (targets.length !== 1) throw new Error("A investida ataca um único alvo.");
+    chargeTo = chargePath(actor, targets[0]);
+  }
   if (targets.length > maxTargets) throw new Error(`Esta magia afeta no máximo ${maxTargets} alvo(s) com os aprimoramentos escolhidos.`);
   const resolved = action;
   const proceed = () => {
     // Relê quem age e quem é alvo: uma reação escolhida antes pode ter mudado Defesa, PM e efeitos.
     const caster = requiredToken(actor.id);
     const fresh = targets.map((token) => requiredToken(token.id));
+    if (chargeTo && (chargeTo.x !== caster.gx || chargeTo.y !== caster.gy)) moveToken(caster.id, chargeTo.x, chargeTo.y);
     if (resolved.category === "spell") {
       resolveSpellEffect({
         spell: { id: resolved.sourceId, name: resolved.name, description: resolved.description, effect: resolved.damage || resolved.healing, cost: resolved.pmCost },
@@ -256,6 +265,7 @@ function resolveAction(actorId: string, actionId: string, targetIds: string[], t
       });
     } else {
       resolveTacticalAction(caster.id, resolved, fresh.map((token) => token.id));
+      if (resolved.charge) addTacticalEffect(caster.id, chargeEffect(requiredToken(caster.id)));
     }
   };
   // Prompt de reação: se um alvo herói/de jogador tem reação para escolher, pausa aqui.

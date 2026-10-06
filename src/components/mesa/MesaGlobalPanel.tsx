@@ -28,6 +28,7 @@ import {
   Headphones, History, Lightbulb, ListOrdered, Map, MessageSquare, Music2,
   PackageOpen, Pause, Play, Plus, Radio, Redo2, Eye, ScrollText, Send, Settings2, Shapes,
   ClipboardPaste, Film, Image as ImageIcon, Repeat, Shield, ShieldAlert, Sparkles, Square, Swords, Trash2, Undo2, Upload, Users, Volume2, WandSparkles, Wind, X, type LucideIcon, Zap,
+  Moon,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent, useSyncExternalStore } from "react";
 import type { BattleMap, BoardObject, RuntimeSnapshot, SceneState, TacticalUnitView, ThreatTemplate, WeatherType } from "../../game/types";
@@ -50,6 +51,8 @@ import { type AmeacaDoEncontro, type EncontroSorteado, GRUPOS_DE_AMBIENTE, PATAM
 import { listThreats } from "../../tactics/engine/customThreats";
 import { setPreferences, usePreferences } from "../../game/mesaPreferences";
 import { GAME_SYSTEMS } from "../../game/systems";
+import { REST_LABEL, type RestCondition, type RestPlace } from "../../game/rest";
+import { restTokens } from "../../game/restTokens";
 import { fileToDataUrl } from "../../game/imageEditor";
 import { toggleBarrier } from "../../tactics/engine/boardTools";
 import { executeDismount, executeMount } from "../../tactics/engine/mountCommands";
@@ -1280,6 +1283,44 @@ function ClearTableSection({ snapshot }: { snapshot: RuntimeSnapshot }) {
   </div>;
 }
 
+/** Descanso de uma noite (livro p.106): condição, local e quem descansa; poderes e itens da ficha alteram a recuperação. */
+function RestSection({ snapshot }: { snapshot: RuntimeSnapshot }) {
+  const [condition, setCondition] = useState<RestCondition>("normal");
+  const [place, setPlace] = useState<RestPlace>("urbano");
+  const [scope, setScope] = useState<"group" | "selected">("group");
+  const [report, setReport] = useState("");
+  const selected = snapshot.board.selectedTokenIds[0];
+  const group = snapshot.board.tokens.filter((token) => token.side === "heroes" && !token.dead);
+  function rest() {
+    try {
+      const ids = scope === "selected" ? (selected ? [selected] : []) : group.map((token) => token.id);
+      setReport(restTokens(ids, condition, place).join(String.fromCharCode(10)) || "Ninguém para descansar.");
+    } catch (error) { setReport((error as Error).message); }
+  }
+  return <div className="mesa-panel-section" data-rest-section><h4>DESCANSO</h4>
+    <label className="mesa-grid-select">Condição de descanso
+      <select value={condition} onChange={(event) => setCondition(event.target.value as RestCondition)}>
+        {(Object.keys(REST_LABEL) as RestCondition[]).map((key) => <option key={key} value={key}>{REST_LABEL[key]}</option>)}
+      </select>
+    </label>
+    <label className="mesa-grid-select">Local
+      <select value={place} onChange={(event) => setPlace(event.target.value as RestPlace)}>
+        <option value="urbano">Urbano (estalagem, casa)</option>
+        <option value="ermos">Ermos (ao relento)</option>
+      </select>
+    </label>
+    <label className="mesa-grid-select">Quem descansa
+      <select value={scope} onChange={(event) => setScope(event.target.value as "group" | "selected")}>
+        <option value="group">Todos os heróis e aliados ({group.length})</option>
+        <option value="selected" disabled={!selected}>Só o token selecionado</option>
+      </select>
+    </label>
+    <div className="mesa-panel-actions"><button onClick={rest}><Moon/>Descansar</button></div>
+    <p className="mesa-module-note">Recupera PV e PM pelo nível (ruim ½, normal 1×, confortável 2×, luxuosa 3×). Poderes e itens da ficha que mudam o descanso (Pajem, Descanso Natural, Sono Reparador, Rainha da Selva, Camisolão...) são aplicados sozinhos; os PV temporários acabam.</p>
+    {report && <pre className="mesa-module-note" style={{ whiteSpace: "pre-wrap" }}>{report}</pre>}
+  </div>;
+}
+
 function MasterPanel({ snapshot, onSpawnThreats, onSpawnNpc }: { snapshot: RuntimeSnapshot; onSpawnThreats?: (template: ThreatTemplate, count: number) => void; onSpawnNpc?: (name: string) => void }) {
   const [online, setOnline] = useState(false);
   const [ambiente, setAmbiente] = useState("Floresta");
@@ -1321,6 +1362,7 @@ function MasterPanel({ snapshot, onSpawnThreats, onSpawnNpc }: { snapshot: Runti
       <button onClick={() => setOnline(true)}><Radio/><span><strong>Sala online</strong><small>{snapshot.multiplayer.status === "connected" ? "Conectada" : "Criar ou entrar numa sala por código"}</small></span><ChevronRight/></button>
     </div>
     <TravelSection travel={snapshot.board.travel} scenes={snapshot.scenes} onPassDay={testarSorte}/>
+    <RestSection snapshot={snapshot}/>
     <ClearTableSection snapshot={snapshot}/>
     <div className="mesa-panel-section"><h4>ENCONTRO ALEATÓRIO</h4>
       <label className="mesa-grid-select">Ambiente ou região

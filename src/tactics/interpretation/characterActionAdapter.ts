@@ -1,3 +1,4 @@
+import { withCharges } from "../../game/chargeActions";
 import { findSpellEntry } from "./spellCasting";
 import { classifySpellEffect, spellDamageType } from "./spellClassification";
 import { type CombatLoadout, readLoadout } from "../../game/combatLoadout";
@@ -180,7 +181,7 @@ export function actionsForCharacter(sheet: CharacterSheet, loadout: CombatLoadou
  * IDs e vitais continuam vindo do token real.
  */
 export function tokenToTacticalView(token: BoardToken, sheet?: CharacterSheet | null): TacticalUnitView {
-  const actions = sheet ? actionsForCharacter(sheet) : token.tacticalActions ?? [];
+  const actions = withCharges(token, sheet ? actionsForCharacter(sheet) : token.tacticalActions ?? []);
   return {
     id: token.id,
     modernRpgCharacterId: token.modernRpgCharacterId,

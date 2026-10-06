@@ -44,6 +44,8 @@ export interface GameAction {
   rangeM: number;
   areaM?: number;
   attackSkill?: "luta" | "pontaria";
+  /** Investida (p.235): ação completa que avança em linha reta (até o dobro do deslocamento) e ataca no fim, com +2 no ataque e −2 na Defesa até o próximo turno */
+  charge?: boolean;
   attackBonus?: number;
   damage?: string;
   extraDamage?: string;
