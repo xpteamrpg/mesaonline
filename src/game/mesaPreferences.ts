@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { DEFAULT_GAME_SYSTEM, isAvailableSystem, type GameSystemId } from "./systems";
 
 /**
  * Preferências pessoais da Mesa (só deste navegador): escala do mapa e modo da mesa.
@@ -12,10 +13,12 @@ export interface MesaPreferences {
   /** mostra a régua de escala no canto do mapa (desligada por padrão) */
   showScale: boolean;
   tableMode: TableMode;
+  /** sistema de RPG da mesa; só os disponíveis valem (hoje Tormenta 20) */
+  gameSystem: GameSystemId;
 }
 
 const KEY = "mesa-preferences-v1";
-const DEFAULTS: MesaPreferences = { showScale: false, tableMode: "minimal" };
+const DEFAULTS: MesaPreferences = { showScale: false, tableMode: "minimal", gameSystem: DEFAULT_GAME_SYSTEM };
 
 function read(): MesaPreferences {
   try {
@@ -23,6 +26,7 @@ function read(): MesaPreferences {
     return {
       showScale: value.showScale === true,
       tableMode: value.tableMode === "expanded" ? "expanded" : "minimal",
+      gameSystem: isAvailableSystem(value.gameSystem) ? value.gameSystem : DEFAULT_GAME_SYSTEM,
     };
   } catch {
     return { ...DEFAULTS };

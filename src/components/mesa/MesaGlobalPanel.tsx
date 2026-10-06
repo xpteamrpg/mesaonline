@@ -49,6 +49,7 @@ import { CONDITION_NAMES } from "../../game/conditionInfo";
 import { type AmeacaDoEncontro, type EncontroSorteado, GRUPOS_DE_AMBIENTE, PATAMARES, type PatamarId, ameacasNaDescricao, sortearEncontro, testarSorteDaViagem } from "../../game/encontros";
 import { listThreats } from "../../tactics/engine/customThreats";
 import { setPreferences, usePreferences } from "../../game/mesaPreferences";
+import { GAME_SYSTEMS } from "../../game/systems";
 import { fileToDataUrl } from "../../game/imageEditor";
 import { toggleBarrier } from "../../tactics/engine/boardTools";
 import { executeDismount, executeMount } from "../../tactics/engine/mountCommands";
@@ -1004,6 +1005,12 @@ function OnlinePanel({ snapshot }: { snapshot: RuntimeSnapshot }) {
 function SettingsPanel({ snapshot }: Props) {
   const prefs = usePreferences();
   return <div className="mesa-panel-stack">
+    <div className="mesa-panel-section"><h4>SISTEMA DE JOGO</h4>
+      <div className="mesa-panel-actions" data-game-systems>
+        {GAME_SYSTEMS.map((system) => <button key={system.id} className={prefs.gameSystem === system.id ? "active" : ""} aria-pressed={prefs.gameSystem === system.id} disabled={!system.available} title={system.available ? undefined : "Em breve"} onClick={() => setPreferences({ gameSystem: system.id })}>{system.name}{system.available ? "" : " · em breve"}</button>)}
+      </div>
+      <p className="mesa-module-note">O site vai abordar Tormenta 20, D&amp;D e Old Dragon. Por enquanto só Tormenta 20 tem regras na Mesa; os outros ficam bloqueados até serem trazidos.</p>
+    </div>
     <div className="mesa-panel-section"><h4>MODO DA MESA</h4>
       <div className="mesa-panel-actions">
         <button className={prefs.tableMode === "minimal" ? "active" : ""} aria-pressed={prefs.tableMode === "minimal"} onClick={() => setPreferences({ tableMode: "minimal" })}>Minimalista</button>
