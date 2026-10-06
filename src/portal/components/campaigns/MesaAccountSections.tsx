@@ -148,8 +148,8 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
   const invite = () => run(async () => {
     const r = await inviteToTable(table.id, by === "email" ? { email: who } : { nickname: who });
     setWho("");
-    if (!r.hasAccount) setMsg("Convite criado. A pessoa ainda não tem conta: ela vê o convite ao entrar com esse e-mail.");
-  }, "Convite enviado.");
+    if (!r.hasAccount) setMsg("Convite registrado. O site não envia e-mail: avise a pessoa (WhatsApp, link ou código da mesa). Ela vê o convite ao criar conta e entrar com esse e-mail.");
+  }, "Convite registrado. O site não envia e-mail: avise a pessoa; ela vê o convite em Convites recebidos ao entrar na conta.");
 
   const pending = requests.filter((r) => r.status === "solicitado");
   const accepted = requests.filter((r) => r.status === "aceito");
