@@ -10,6 +10,7 @@ import {
 import type { CharacterSheet } from "../../ficha-modernrpg/sheet";
 import type { BoardToken, TacticalUnitView } from "../game/types";
 import { cargaOf } from "../game/carga";
+import { powerSpellDC, withPassivePowers } from "../game/powerEffects";
 import { actionsForCharacter, tokenToTacticalView } from "../tactics/interpretation/characterActionAdapter";
 
 function attribute(sheet: CharacterSheet, key: keyof CharacterSheet["attributes"]): number {
@@ -103,7 +104,7 @@ export function boardTokenFromCharacter(sheet: CharacterSheet, at: { x: number; 
     flyM: sheet.flySpeed,
     burrowM: sheet.burrowSpeed,
     level: sheet.level || 1,
-    spellDC: 10 + Math.floor((sheet.level || 1) / 2) + attribute(sheet, spellAttribute),
+    spellDC: 10 + Math.floor((sheet.level || 1) / 2) + attribute(sheet, spellAttribute) + powerSpellDC(sheet),
     actionIds: [],
     tacticalActions: actionsForCharacter(sheet),
     fortitude: sheetSkillTotal(sheet, "for", "con"),
@@ -126,7 +127,7 @@ export function boardTokenFromCharacter(sheet: CharacterSheet, at: { x: number; 
     defeated: (sheet.hp?.current || 0) <= 0,
     hidden: existing?.hidden,
     controlledBy: existing?.controlledBy,
-    effects: existing?.effects,
+    effects: withPassivePowers(existing?.effects, sheet),
   };
 }
 

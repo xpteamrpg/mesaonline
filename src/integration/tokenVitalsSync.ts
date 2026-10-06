@@ -37,7 +37,7 @@ export function refreshTokenFromSheet(token: BoardToken): BoardToken {
     gy: token.gy,
     z: token.z,
     defense: sheetDefense(sheet),
-    effects: token.effects,
+    effects: refreshed.effects,
   };
 }
 

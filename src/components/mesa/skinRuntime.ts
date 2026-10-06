@@ -295,7 +295,7 @@ export function buildSkinRuntime(snapshot: RuntimeSnapshot, campaigns: string[],
       const base = listed ?? focusToken.attrs?.[def.atributo as "for"];
       if (base !== undefined) return { ...skill, value: signed(base + conditionSkillPenalty(focusToken.conditions, def.atributo, def.id)) };
     }
-    return { ...skill, value: sheet && def ? signed(sheetSkillTotal(sheet, def.id, def.atributo) + conditionSkillPenalty(focusToken?.conditions, def.atributo, def.id)) : "—" };
+    return { ...skill, value: sheet && def ? signed(sheetSkillTotal(sheet, def.id, def.atributo) + conditionSkillPenalty(focusToken?.conditions, def.atributo, def.id) + (focusToken ? effectBonus(focusToken, "skills", def.id) : 0)) : "—" };
   }).filter((skill) => {
     // Perícia "somente treinada" (livro) que o personagem não tem treinada não aparece: não pode ser usada.
     const def = T20_SKILLS.find((entry) => entry.nome.toLocaleLowerCase("pt-BR") === skill.name.toLocaleLowerCase("pt-BR"));

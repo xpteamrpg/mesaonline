@@ -398,6 +398,8 @@ export interface TacticalEffect {
   weaponId?: string;
   /** o bônus de perícia vale só para esta perícia (id da perícia) */
   skillId?: string;
+  /** o bônus de resistência vale só para este teste (Fortitude, Reflexos ou Vontade) */
+  saveKind?: "fortitude" | "reflexes" | "will";
   /** vale uma vez só: some depois de reduzir um dano (Instante Estoico, RD "contra o próximo dano") */
   once?: boolean;
   /** RD "/mágico": não reduz dano mágico (de magia ou de arma mágica), como no Instante Estoico */

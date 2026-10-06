@@ -15,7 +15,7 @@ export function effectBonus(token: Pick<BoardToken, "effects">, stat: Stat, scop
     const value = effect.mods?.[stat];
     if (!value) return false;
     // bônus preso a uma arma ou a uma perícia só vale para ela
-    return (!effect.weaponId || effect.weaponId === scopeId) && (!effect.skillId || effect.skillId === scopeId);
+    return (!effect.weaponId || effect.weaponId === scopeId) && (!effect.skillId || effect.skillId === scopeId) && (!effect.saveKind || effect.saveKind === scopeId);
   });
   const spells = active.filter(fromSpell).map((effect) => effect.mods![stat] as number);
   const best = Math.max(0, ...spells);

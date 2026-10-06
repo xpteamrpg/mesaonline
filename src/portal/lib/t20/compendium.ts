@@ -328,9 +328,24 @@ export interface T20Power {
 }
 export const T20_POWERS: T20Power[] = poderesRaw as T20Power[];
 export const POWER_BY_ID = new Map(T20_POWERS.map((p) => [p.id, p]));
+/**
+ * Variações de um nome de poder escrito do jeito da pessoa: sem parênteses, sem "Poder:"/"Poderes de Arcanista:" na frente,
+ * sem bônus no fim ("+1 sab"), e as partes de "Caminho do Arcanista: Mago" (a última, depois a primeira).
+ */
+export const powerNameVariants = (name: string): string[] => {
+  const noParens = name.replace(/\(.*?\)/g, " ");
+  const noBonus = noParens.replace(/\s*[+-]\s*\d+.*$/, "");
+  const parts = noBonus.split(":").map((part) => part.trim()).filter(Boolean);
+  return [name, noParens, noBonus, ...(parts.length > 1 ? [parts[parts.length - 1], parts[0]] : [])]
+    .map((variant) => norm(variant))
+    .filter((variant, index, all) => variant && all.indexOf(variant) === index);
+};
 export const findPowerByName = (name: string, classId?: string) => {
-  const n = norm(name);
-  return (classId ? T20_POWERS.find((p) => norm(p.nome) === n && p.classe === classId) : undefined) ?? T20_POWERS.find((p) => norm(p.nome) === n && !p.habilidade) ?? T20_POWERS.find((p) => norm(p.nome) === n);
+  for (const n of powerNameVariants(name)) {
+    const found = (classId ? T20_POWERS.find((p) => norm(p.nome) === n && p.classe === classId) : undefined) ?? T20_POWERS.find((p) => norm(p.nome) === n && !p.habilidade) ?? T20_POWERS.find((p) => norm(p.nome) === n);
+    if (found) return found;
+  }
+  return undefined;
 };
 /** Só os poderes escolhíveis (exclui habilidades automáticas de classe). */
 export const SELECTABLE_POWERS = T20_POWERS.filter((p) => !p.habilidade);

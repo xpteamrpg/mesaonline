@@ -23,7 +23,7 @@ export interface SaveResolution {
 }
 
 export function saveModifier(token: BoardToken, type: SaveType): number {
-  const bonus = effectBonus(token, "saves"); // Proteção Divina e semelhantes
+  const bonus = effectBonus(token, "saves", type); // Proteção Divina, poderes e semelhantes
   if (type === "fortitude") return token.fortitude + bonus;
   if (type === "reflexes") return token.reflexes + conditionMods(token.conditions).reflexes + bonus;
   return token.will + bonus;
