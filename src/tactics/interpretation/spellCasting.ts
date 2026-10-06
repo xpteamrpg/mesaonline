@@ -241,6 +241,10 @@ export interface CastContext {
   maxCircle?: number;
   /** Magia racial: concedida pela raça, não pela classe. */
   racial?: boolean;
+  /** PM a mais no limite por magia, vindos de poderes (Magia Ilimitada) e melhorias (Canalizador, Potencializador). */
+  pmLimitBonus?: number;
+  /** PM a mais no custo por condição (Alquebrado +1). */
+  pmSurcharge?: number;
 }
 
 export function buildCastInfo(context: CastContext): CastInfo {
@@ -254,6 +258,8 @@ export function buildCastInfo(context: CastContext): CastInfo {
     circle: entry.circulo,
     racial: context.racial === true,
     level: Math.max(1, context.level),
+    pmLimitBonus: context.pmLimitBonus || 0,
+    pmSurcharge: context.pmSurcharge || 0,
     kind: action.kind,
     description: entry.descricao || action.description,
     currentPm: context.currentPm,
@@ -392,9 +398,11 @@ export function computeCastPlan(info: CastInfo, choice: AugmentChoice): CastPlan
   }
 
   if ((mods.elemental || 0) > 0 && !choice.element) fail("Escolha a energia do dano extra: ácido, eletricidade, fogo ou frio.");
-  const pmLimit = Math.max(1, info.level);
-  if (cost > pmLimit) fail(`Limite de PM em uma magia: ${pmLimit} (seu nível). Este lançamento custaria ${cost}.`);
-  else if (cost > info.currentPm) fail(`PM insuficientes: precisa de ${cost}, você tem ${info.currentPm}.`);
+  const bonus = info.pmLimitBonus || 0;
+  const pmLimit = Math.max(1, info.level + bonus);
+  const surcharge = cost > 0 ? info.pmSurcharge || 0 : 0;
+  if (cost > pmLimit) fail(`Limite de PM em uma magia: ${pmLimit} (seu nível${bonus ? ` + ${bonus} de poderes/melhorias` : ""}). Este lançamento custaria ${cost}.`);
+  else if (cost + surcharge > info.currentPm) fail(`PM insuficientes: precisa de ${cost + surcharge}${surcharge ? " (Alquebrado +1)" : ""}, você tem ${info.currentPm}.`);
 
   return {
     cost,

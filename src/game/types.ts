@@ -210,6 +210,12 @@ export interface BoardToken {
   hp: number;
   /** PV temporários: perdem-se primeiro e acabam com a cena (Campo de Força) */
   tempHp?: number;
+  /** morreu (PV ≤ −10 ou −metade dos PV totais, p.236); com 0 PV ou menos e ainda vivo, o personagem está inconsciente e sangrando */
+  dead?: boolean;
+  /** a condição Inconsciente/Sangrando veio de cair a 0 PV (sai quando voltar a ter PV) */
+  fallenByHp?: boolean;
+  /** quando os PV temporários acabam: "scene" (termina com a cena/combate; ex.: Campo de Força) ou, sem valor, no fim do dia (regra do livro, p.106) */
+  tempHpScope?: "scene" | "day";
   hpMax: number;
   pm: number;
   pmMax: number;
@@ -427,6 +433,8 @@ export interface BoardState {
   weather: WeatherType;
   /** iluminacao ambiente; sem valor e derivada do clima (game/vision.ts) */
   lighting?: LightingType;
+  /** a iluminação foi escolhida à mão na gaveta Luz (vale como escuridão do livro, com camuflagem); sem isso ela vem do clima (regra da casa) */
+  lightingManual?: boolean;
   /** escala, unidade, metrica e tipo de grade (game/distance.ts) */
   grid?: Partial<GridSettings>;
   /** andar visivel da cena; ausente = terreo (game/floors.ts) */

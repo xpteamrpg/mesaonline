@@ -102,6 +102,10 @@ export interface EquipmentItem {
   source?: string;
   /** melhorias já aplicadas ao item (nomes do catálogo, categoria Modificação); item importado já vem pago, nada é cobrado */
   modifications?: string[];
+  /** preço do item sem melhorias (T$); o `price` inclui o custo das melhorias (Tabela 3-7, p.164) */
+  basePrice?: number | null;
+  /** quantas melhorias já vieram pagas (importação do PDF): só as novas são cobradas */
+  freeModifications?: number;
 }
 
 /** Escolhas feitas na Oficina de Heróis, guardadas para reabrir a ficha no passo a passo. */

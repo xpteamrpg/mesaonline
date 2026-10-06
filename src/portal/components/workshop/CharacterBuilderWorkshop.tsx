@@ -1,5 +1,6 @@
 import { PageBanner } from "../layout/PageBanner";
 import imgOficina from "../../assets/menu/oficina.jpg";
+import { ItemImprovements } from "./ItemImprovements";
 import { CampaignInvitesBox } from "../campaigns/CampaignInvitesBox";
 import React, { useEffect, useMemo, useState } from "react";
 import type { BuilderMeta, CharacterSheet, EquipmentItem } from "../../types/sheet";
@@ -734,9 +735,10 @@ export const CharacterBuilderWorkshop: React.FC<Props> = ({ onFinish, onCancel, 
                   {items.length === 0 ? <div className="p-6 text-center text-xs text-[#9c9180]">Escolha um kit ou adicione itens da loja.</div> : (
                     <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
                       {items.map((it) => (
-                        <div key={it.id} className="flex items-center justify-between rounded border border-[#ded7c6] bg-[#fbf9f4] p-1.5 text-xs">
+                        <div key={it.id} className="flex flex-wrap items-center justify-between rounded border border-[#ded7c6] bg-[#fbf9f4] p-1.5 text-xs">
                           <label className="flex items-center gap-2"><input type="checkbox" checked={it.equipped} onChange={() => setItems((p) => p.map((x) => (x.id === it.id ? { ...x, equipped: !x.equipped } : x)))} title="Equipado" className="accent-[#b92b3a]" /><div><div className="font-bold">{it.name} <span className="font-normal text-[#9c9180]">×{it.quantity}</span></div><div className="text-[10px] text-[#726859]">{it.price !== null ? `T$ ${it.price}` : "T$ —"} · {it.slots} slot · {it.category}</div></div></label>
                           <button type="button" onClick={() => setItems((p) => p.filter((x) => x.id !== it.id))} className="px-1 text-[#b92b3a]">✕</button>
+                          <ItemImprovements item={it} onChange={(next) => setItems((p) => p.map((x) => (x.id === it.id ? next : x)))} />
                         </div>
                       ))}
                     </div>

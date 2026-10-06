@@ -8,6 +8,9 @@ export interface CastInfo {
   circle: number;
   racial: boolean;
   level: number;
+  /** PM extras no limite por magia (poderes/melhorias) e no custo (Alquebrado) */
+  pmLimitBonus?: number;
+  pmSurcharge?: number;
   kind?: string;
   description: string;
   currentPm: number;

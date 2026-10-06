@@ -48,7 +48,7 @@ export const T20_SKILLS: T20Skill[] = [
   { id: "acr", nome: "Acrobacia", atributo: "des", somenteTreinado: false, penalidadeArmadura: true },
   { id: "ade", nome: "Adestramento", atributo: "car", somenteTreinado: true, penalidadeArmadura: false },
   { id: "atl", nome: "Atletismo", atributo: "for", somenteTreinado: false, penalidadeArmadura: false },
-  { id: "atu", nome: "Atuação", atributo: "car", somenteTreinado: false, penalidadeArmadura: false },
+  { id: "atu", nome: "Atuação", atributo: "car", somenteTreinado: true, penalidadeArmadura: false }, // livro p.116: "Car • Treinada"
   { id: "cav", nome: "Cavalgar", atributo: "des", somenteTreinado: false, penalidadeArmadura: false },
   { id: "con", nome: "Conhecimento", atributo: "int", somenteTreinado: true, penalidadeArmadura: false },
   { id: "cur", nome: "Cura", atributo: "sab", somenteTreinado: false, penalidadeArmadura: false },

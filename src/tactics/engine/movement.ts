@@ -1,3 +1,4 @@
+import { weatherRule } from "../../game/weatherRules";
 import { effectBonus } from "./effectBonuses";
 import { activeGrid, metersToCells, stepCost } from "../../game/distance";
 import { adjustedSpeedM } from "../../game/conditionEffects";
@@ -141,7 +142,7 @@ export function reachableCells(board: BoardState, token: BoardToken, options: Re
         const fromCell = board.map.terrain[cellKey(current.x, current.y)];
         const cell = board.map.terrain[key];
         let step = stepCost(dx, dy, activeGrid()); // regra unica: game/distance.ts
-        if (!flying && mode !== "burrow" && coveredCells(token, { x, y }).some((c) => board.map.terrain[cellKey(c.x, c.y)]?.type === "difficult")) step *= 2;
+        if (!flying && mode !== "burrow" && (weatherRule(board.weather).difficultTerrain || coveredCells(token, { x, y }).some((c) => board.map.terrain[cellKey(c.x, c.y)]?.type === "difficult"))) step *= 2;
         if (!flying && mode !== "burrow") step += Math.max(0, (cell?.elevation || 0) - (fromCell?.elevation || 0));
         const cost = current.cost + step;
         if (cost > budget || cost >= (result.get(key) ?? Infinity)) continue;
@@ -193,7 +194,7 @@ export function reachableWithPaths(
         const de = board.map.terrain[cellKey(atual.x, atual.y)];
         const cell = board.map.terrain[key];
         let step = stepCost(dx, dy, activeGrid());
-        if (!flying && mode !== "burrow" && coveredCells(token, { x, y }).some((c) => board.map.terrain[cellKey(c.x, c.y)]?.type === "difficult")) step *= 2;
+        if (!flying && mode !== "burrow" && (weatherRule(board.weather).difficultTerrain || coveredCells(token, { x, y }).some((c) => board.map.terrain[cellKey(c.x, c.y)]?.type === "difficult"))) step *= 2;
         if (!flying && mode !== "burrow") step += Math.max(0, (cell?.elevation || 0) - (de?.elevation || 0));
         const cost = atual.cost + step;
         if (cost > budget || cost >= (resultado.get(key)?.cost ?? Infinity)) continue;

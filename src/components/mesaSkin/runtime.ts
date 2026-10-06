@@ -57,6 +57,8 @@ export type SkinFocus = {
 export type SkinRuntime = {
   campaign: string;
   scene: string;
+  /** clima da cena e as regras aplicadas (mostradas no cabeçalho, com as regras ao passar o mouse) */
+  weather?: { label: string; rules: string[] };
   brand: string;
   mapImage: string | null;
   mapName: string;

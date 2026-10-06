@@ -292,7 +292,7 @@ export function parseHeroForm(fields: Record<string, string>, draft: PdfDraft) {
       : { id: uid("eq"), equipped: false, name, quantity: line.quantity, slots: slots ?? 1, price: null, description: "", category: "Item Geral" };
     // Já comprado: o preço do item-base fica como está, a melhoria só é registrada (nada é cobrado na importação).
     const notes = [mods.length ? `Melhorias: ${mods.join(", ")}` : "", line.leftover ? `Não identificado: ${line.leftover}` : ""].filter(Boolean).join(" · ");
-    equipment.push({ ...base, name, slots: slots ?? base.slots, equipped: equippedNames.has(bare(name)), ...(mods.length ? { modifications: mods } : {}), description: [base.description, notes].filter(Boolean).join(" · ").slice(0, 320) });
+    equipment.push({ ...base, name, slots: slots ?? base.slots, equipped: equippedNames.has(bare(name)), ...(mods.length ? { modifications: mods, basePrice: base.price, freeModifications: mods.length } : {}), description: [base.description, notes].filter(Boolean).join(" · ").slice(0, 320) });
   }
   // Armaduras/escudos informados no quadro de defesa (armadura1/defesa1/penalidade1…): valores da ficha valem mais que o catálogo.
   for (let i = 1; i <= 3; i++) {

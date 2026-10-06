@@ -1,3 +1,4 @@
+import { weatherRule } from "./game/weatherRules";
 import { accountNickname } from "./game/playerName";
 import { visionTypeFromText } from "./game/vision";
 import { requestEnvironmentSection } from "./components/mesa/MesaGlobalPanel";
@@ -574,7 +575,7 @@ export default function App() {
       appendChat({ author: "Sistema", text: "Esta perícia exige uma ficha oficial vinculada ao token selecionado.", kind: "system" });
       return false;
     }
-    return recordCheck(label, sheetSkillTotal(sheet, skill.id, skill.atributo) + conditionSkillPenalty(token.conditions, skill.atributo, skill.id) + effectBonus(token, "skills", skill.id), "system");
+    return recordCheck(label, sheetSkillTotal(sheet, skill.id, skill.atributo) + conditionSkillPenalty(token.conditions, skill.atributo, skill.id) + effectBonus(token, "skills", skill.id) + (skill.id === "per" ? weatherRule(getRuntimeSnapshot().board.weather).perception : 0), "system");
   }
 
   function useEquipment(slot?: number, itemName?: string) {

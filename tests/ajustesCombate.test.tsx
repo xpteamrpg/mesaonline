@@ -10,7 +10,7 @@ beforeEach(() => { localStorage.clear(); vi.resetModules(); });
 describe("preferências da mesa", () => {
   it("a escala do mapa começa desligada, liga e lembra; o modo atual é Minimalista", async () => {
     const prefs = await import("../src/game/mesaPreferences");
-    expect(prefs.getPreferences()).toEqual({ showScale: false, tableMode: "minimal" });
+    expect(prefs.getPreferences()).toEqual({ showScale: false, tableMode: "minimal", gameSystem: "t20" });
     prefs.setPreferences({ showScale: true });
     expect(prefs.getPreferences().showScale).toBe(true);
     expect(JSON.parse(localStorage.getItem("mesa-preferences-v1")!).showScale).toBe(true);

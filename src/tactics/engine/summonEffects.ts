@@ -1,3 +1,4 @@
+import { pmSurcharge } from "./pmCost";
 import type { BoardState, BoardToken, GameAction, ThreatTemplate } from "../../game/types";
 import { addToken, appendCombatLog, getBoard, updateToken } from "../../game/vttBridge";
 import { ensureSyntheticThreat } from "./customThreats";
@@ -125,7 +126,7 @@ export function resolveSummonEffect(request: ResolveSummonRequest): BoardToken[]
     summonKey: definition.key,
   }));
   tokens.forEach(addToken);
-  updateToken(request.caster.id, { pm: request.caster.pm - definition.cost });
+  updateToken(request.caster.id, { pm: request.caster.pm - definition.cost - pmSurcharge(request.caster, definition.cost) });
   appendCombatLog({ type: "summon", title: request.spellName, detail: `${definition.quantity} ${definition.name}(s) foram criados em BOARD.tokens.`, tone: "success" });
   return tokens;
 }

@@ -6,6 +6,10 @@ import { spendCombatAction } from "./actionEconomy";
 import { emitTacticalEvent, mitigateDamage, resolveIncomingAttackReaction, loseMirrorImage } from "./reactiveTriggers";
 import { resolveSave } from "./saves";
 import { isFlanking, targetDefense } from "./targeting";
+import { pmSurcharge } from "./pmCost";
+import { concealmentAgainst } from "./concealment";
+import { weatherRule } from "../../game/weatherRules";
+import { elevationAt } from "./targeting";
 import { conditionMods } from "../../game/conditionEffects";
 
 export interface ActionResolution {
@@ -17,9 +21,10 @@ export interface ActionResolution {
 
 export function resolveTacticalAction(actorId: string, action: GameAction, targetIds: string[]): ActionResolution {
   let actor = required(actorId);
-  if (actor.pm < action.pmCost) throw new Error("PM insuficientes.");
+  const pmTotal = action.pmCost + pmSurcharge(actor, action.pmCost);
+  if (actor.pm < pmTotal) throw new Error(pmTotal > action.pmCost ? `PM insuficientes (Alquebrado: +1 PM, custo ${pmTotal}).` : "PM insuficientes.");
   spendCombatAction(actor.id, action.kind || "standard");
-  actor = updateToken(actor.id, { pm: actor.pm - action.pmCost });
+  actor = updateToken(actor.id, { pm: actor.pm - pmTotal });
   const board = getBoard();
   const results: ActionResolution["targets"] = [];
   const rolls: DiceResolution[] = [];
@@ -54,16 +59,29 @@ export function resolveTacticalAction(actorId: string, action: GameAction, targe
       const natural = mode === "best" ? Math.max(...dice) : mode === "worst" ? Math.min(...dice) : dice[0];
       const ranged = action.attackSkill === "pontaria";
       const attackMods = conditionMods(actor.conditions);
-      const modifier = actor[action.attackSkill] + (action.attackBonus || 0) + effectBonus(actor, "attack", action.id) + (isFlanking(board, actor, target) ? 2 : 0)
+      // Livro p.239 (Tabela 5-3): flanquear +2 (só corpo a corpo), posição elevada +2; clima: vento/chuva/tempestade penalizam ataque à distância (p.267).
+      const flank = !ranged && isFlanking(board, actor, target) ? 2 : 0;
+      const high = elevationAt(board, actor) > elevationAt(board, target) ? 2 : 0;
+      const weather = ranged ? weatherRule(board.weather).ranged : 0;
+      const modifier = actor[action.attackSkill] + (action.attackBonus || 0) + effectBonus(actor, "attack", action.id) + flank + high + weather
         + attackMods.attack + (ranged ? 0 : attackMods.meleeAttack);
       const total = natural + modifier;
       const defense = targetDefense(board, actor, target, ranged);
       hit = natural === 20 || (natural !== 1 && total >= defense);
+      // Camuflagem (p.238): d10 junto do d20; leve falha em 1–2, total em 1–5, mesmo que o ataque acertasse.
+      const concealment = concealmentAgainst(board, actor, target);
+      let concealedMiss = false;
+      let concealRoll = 0;
+      if (hit && concealment.level !== "none") {
+        concealRoll = die(10);
+        concealedMiss = concealRoll <= (concealment.level === "total" ? 5 : 2);
+        if (concealedMiss) hit = false;
+      }
       critical = hit && natural >= (action.crit || 20);
       const roll: DiceResolution = {
         id: `attack-${crypto.randomUUID()}`, actor: actor.name, target: target.name, action: action.name, kind: "attack",
-        natural, modifier, total, dc: defense, formula: `1d20 [${dice.length > 1 ? `${dice.join(", ")} → ${natural}` : natural}] + ${modifier}`, rolls: dice,
-        outcome: hit ? critical ? "ACERTO CRÍTICO" : "ACERTO" : "ERRO", success: hit, timestamp: Date.now(),
+        natural, modifier, total, dc: defense, formula: `1d20 [${dice.length > 1 ? `${dice.join(", ")} → ${natural}` : natural}] + ${modifier}${concealRoll ? ` · camuflagem d10: ${concealRoll}` : ""}`, rolls: dice,
+        outcome: hit ? critical ? "ACERTO CRÍTICO" : "ACERTO" : concealedMiss ? `ERRO (camuflagem: ${concealment.reasons.join(", ")})` : "ERRO", success: hit, timestamp: Date.now(),
       };
       appendRoll(roll); rolls.push(roll);
       emitTacticalEvent("onAttackResolved", { attacker: actor, target, action, hit });

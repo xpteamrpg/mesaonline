@@ -45,6 +45,11 @@ export function hasLineOfEffect(board: BoardState, source: BoardToken, target: B
   return !board.walls.some((wall) => segmentIntersectsWall(from.x, from.y, to.x, to.y, wall));
 }
 
+/** Altura do terreno sob o token (livro p.239: posição elevada dá +2 no ataque). */
+export function elevationAt(board: BoardState, token: Pick<BoardToken, "gx" | "gy">): number {
+  return board.map.terrain[`${token.gx},${token.gy}`]?.elevation ?? 0;
+}
+
 export type CoverLevel = "none" | "partial" | "total";
 
 export function coverBetween(board: BoardState, source: BoardToken, target: BoardToken): CoverLevel {

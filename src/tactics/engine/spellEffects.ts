@@ -1,3 +1,4 @@
+import { pmSurcharge } from "./pmCost";
 import type { SpellItem } from "../../../ficha-modernrpg/sheet";
 import type { BoardState, BoardToken, CombatState, GameAction, TacticalEffect } from "../../game/types";
 import {
@@ -210,7 +211,8 @@ function resolveKnown(request: ResolveSpellEffectRequest, key: string, known: Kn
       }
       // PV temporários: valem o maior (não acumulam), perdem-se primeiro e acabam com a cena.
       if (mods?.tempHp) {
-        token = updateToken(token.id, { tempHp: Math.max(token.tempHp || 0, mods.tempHp) });
+        // Campo de Força dura a cena; os demais temporários, até o fim do dia (livro p.106).
+        token = updateToken(token.id, { tempHp: Math.max(token.tempHp || 0, mods.tempHp), tempHpScope: known.duration === "scene" ? "scene" : "day" });
         const { tempHp: _applied, ...rest } = mods;
         mods = rest;
       }
@@ -290,9 +292,10 @@ function resolveGeneric(request: ResolveSpellEffectRequest): SpellEffectResoluti
 }
 
 function spendAndPay(caster: BoardToken, action: GameAction) {
-  if (caster.pm < action.pmCost) throw new Error("PM insuficientes.");
+  const pmTotal = action.pmCost + pmSurcharge(caster, action.pmCost);
+  if (caster.pm < pmTotal) throw new Error(pmTotal > action.pmCost ? `PM insuficientes (Alquebrado: +1 PM, custo ${pmTotal}).` : "PM insuficientes.");
   spendCombatAction(caster.id, action.kind || "standard");
-  updateToken(caster.id, { pm: caster.pm - action.pmCost });
+  updateToken(caster.id, { pm: caster.pm - pmTotal });
 }
 
 function currentToken(tokenId: string) {

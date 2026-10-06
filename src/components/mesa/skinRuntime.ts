@@ -1,3 +1,4 @@
+import { weatherRule } from "../../game/weatherRules";
 import { effectBonus } from "../../tactics/engine/effectBonuses";
 import { MAX_HANDS, MAX_WORN, cargaOf, equippedCounts } from "../../game/carga";
 import { Backpack, FlaskConical, Shield, Swords, type LucideIcon } from "lucide-react";
@@ -287,6 +288,7 @@ export function buildSkinRuntime(snapshot: RuntimeSnapshot, campaigns: string[],
   return {
     campaign: campaigns[0] || "Mesa Online",
     scene: scene?.name || board.map.name,
+    weather: { label: weatherRule(board.weather).label, rules: weatherRule(board.weather).lines },
     brand: "Armada Nexus RPG",
     mapImage: board.map.image || null,
     mapName: board.map.name,

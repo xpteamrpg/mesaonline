@@ -76,7 +76,7 @@ export function Token({ token, mode, index, onSelect, onMenu }: { token: SkinMap
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${(token.hp / token.hpMax) * 100}%`,
+                  width: `${Math.max(0, (token.hp / token.hpMax) * 100)}%`,
                   background:
                     token.ring === "#c2202b"
                       ? "linear-gradient(180deg,#e3564c,#9d1c1c)"

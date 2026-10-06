@@ -1,6 +1,6 @@
 import { confusedBehavior, turnStartEffects } from "../../game/conditionEffects";
 import type { BoardToken, DiceResolution } from "../../game/types";
-import { appendCombatLog, appendRoll, getBoard, onTurnStarted, updateToken } from "../../game/vttBridge";
+import { appendCombatLog, appendRoll, endTurn, getBoard, getCombatState, getRuntimeSnapshot, onTurnStarted, updateToken } from "../../game/vttBridge";
 import { mitigateDamage } from "./reactiveTriggers";
 import { resolveSave } from "./saves";
 import { rollFormula } from "./spellEffects";
@@ -24,10 +24,11 @@ function record(token: BoardToken, action: string, kind: DiceResolution["kind"],
  */
 export function applyTurnStartConditions(tokenId: string): void {
   const start = current(tokenId);
-  if (!start || start.defeated || start.hp <= 0) return;
+  if (!start || start.dead) return;
   for (const effect of turnStartEffects(start.conditions)) {
+    // Quem está a 0 PV ou menos ainda sangra no início do turno (p.236); só a morte interrompe.
     const token = current(tokenId);
-    if (!token || token.hp <= 0) return;
+    if (!token || token.dead) return;
 
     if (effect === "fire") {
       const rolled = rollFormula("1d6");
@@ -62,4 +63,12 @@ export function applyTurnStartConditions(tokenId: string): void {
   }
 }
 
-onTurnStarted((tokenId) => applyTurnStartConditions(tokenId));
+onTurnStarted((tokenId) => {
+  applyTurnStartConditions(tokenId);
+  // Inconsciente (0 PV ou menos): depois do sangramento o turno passa sozinho, desde que reste alguém para agir.
+  const token = current(tokenId);
+  if (!tokenId || !token || token.dead || token.hp > 0) return;
+  if (getRuntimeSnapshot().multiplayer.role === "player") return;
+  const someoneCanAct = getBoard().tokens.some((entry) => !entry.dead && !entry.hidden && entry.hp > 0 && getCombatState().order.includes(entry.id));
+  if (someoneCanAct) queueMicrotask(() => { if (getCombatState().activeTokenId === tokenId) endTurn(); });
+});

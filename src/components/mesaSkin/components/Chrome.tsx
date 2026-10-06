@@ -1,4 +1,4 @@
-import { ChevronDown, Swords } from "lucide-react";
+import { ChevronDown, CloudRain, Swords } from "lucide-react";
 import { motion } from "framer-motion";
 import { CHROME_ICONS, NAV, type View } from "../data";
 import { useSkinRuntime } from "../runtime";
@@ -67,6 +67,17 @@ export function TopBar({ links, onAction, view, onCombat }: { links: Record<stri
       {/* tools */}
       <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
         {/* Combate: entra no modo combate; durante o combate vira "Encerrar combate" */}
+        {runtime.weather && (
+          <span
+            data-weather-chip
+            tabIndex={0}
+            title={["Clima: " + runtime.weather.label, ...runtime.weather.rules].join("\n")}
+            className="mr-1 hidden cursor-help items-center gap-1.5 rounded-[9px] border border-[#7a5227]/70 px-2.5 py-1.5 text-[12px] font-semibold text-[color:var(--mx-c9b295)] sm:flex"
+          >
+            <CloudRain size={15} strokeWidth={1.7} />
+            <span>{runtime.weather.label}</span>
+          </span>
+        )}
         <Action
           href={links.combat}
           onClick={onCombat}

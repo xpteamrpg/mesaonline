@@ -1,3 +1,4 @@
+import { deathLimit, isDead } from "./death";
 import { objectForPlayer, wallForPlayer } from "./chest";
 import { coveredCells, tokenCovers } from "./tokenSize";
 import { deliverSignal, sanitizeSignal, signalAllowedFrom, type Signal } from "./signals";
@@ -366,12 +367,23 @@ export function updateToken(tokenId: string, patch: Partial<BoardToken>): BoardT
     ...patch,
     id: current.id,
     modernRpgCharacterId: patch.modernRpgCharacterId ?? current.modernRpgCharacterId,
-    hp: Math.max(0, Number(patch.hp ?? current.hp)),
     hpMax: Math.max(0, Number(patch.hpMax ?? current.hpMax)),
+    // PV pode ficar negativo até o limite da morte (p.236); abaixo disso não faz diferença.
+    hp: Math.max(-deathLimit(Number(patch.hpMax ?? current.hpMax)) - 1, Math.trunc(Number(patch.hp ?? current.hp))),
     pm: Math.max(0, Number(patch.pm ?? current.pm)),
     pmMax: Math.max(0, Number(patch.pmMax ?? current.pmMax)),
   };
   next.defeated = next.hp <= 0;
+  next.dead = isDead(next.hp, next.hpMax);
+  // 0 PV ou menos: cai inconsciente e sangrando; voltando a ter PV, recobra a consciência e estabiliza (p.236).
+  if (current.hp > 0 && next.hp <= 0 && !next.dead) {
+    const have = new Set((next.conditions || []).map((name) => name.toLowerCase()));
+    next.conditions = [...(next.conditions || []), ...["Inconsciente", "Sangrando"].filter((name) => !have.has(name.toLowerCase()))];
+    next.fallenByHp = true;
+  } else if (current.hp <= 0 && next.hp > 0 && current.fallenByHp) {
+    next.conditions = (next.conditions || []).filter((name) => !/^(inconsciente|sangrando)$/i.test(name));
+    next.fallenByHp = false;
+  }
   const shouldSyncVitals = Boolean(next.modernRpgCharacterId && (
     next.hp !== current.hp || next.hpMax !== current.hpMax || next.pm !== current.pm || next.pmMax !== current.pmMax
     || JSON.stringify(next.conditions || []) !== JSON.stringify(current.conditions || [])
@@ -385,7 +397,8 @@ export function updateToken(tokenId: string, patch: Partial<BoardToken>): BoardT
   const after = new Set(next.conditions || []);
   for (const condition of after) if (!before.has(condition)) logToJournal(`${next.name} ganhou a condição ${condition}.`);
   for (const condition of before) if (!after.has(condition)) logToJournal(`${next.name} perdeu a condição ${condition}.`);
-  if (!current.defeated && next.defeated) logToJournal(`${next.name} caiu (0 PV).`);
+  if (!current.defeated && next.defeated) logToJournal(`${next.name} caiu (0 PV ou menos): inconsciente e sangrando.`);
+  if (!current.dead && next.dead) logToJournal(`${next.name} morreu (${next.hp} PV).`);
   if (current.defeated && !next.defeated) logToJournal(`${next.name} se recuperou.`);
   if (!current.defeated && next.defeated) defeatListeners.forEach((listener) => listener(next));
   return next;
@@ -589,7 +602,7 @@ export function closeStageMedia(): void {
 
 export function setWeather(weather: BoardState["weather"]): void {
   if (forward("setWeather", [weather])) return;
-  mutateBoard((board) => ({ ...board, weather, lighting: lightingFromWeather(weather) }));
+  mutateBoard((board) => ({ ...board, weather, lighting: lightingFromWeather(weather), lightingManual: false }));
 }
 
 /** Pinta terreno/elevacao nas celulas. O motor de movimento ja consome isso. */
@@ -620,7 +633,8 @@ export function setGridSettings(partial: Partial<GridSettings>): void {
 export function advanceTravelDay(): void {
   if (forward("advanceTravelDay", [])) return;
   const { next, message } = advanceDay(travelState(BOARD.travel));
-  mutateBoard((board) => ({ ...board, travel: next }));
+  // Passou um dia: os PV temporários (que duram até o fim do dia) acabam.
+  mutateBoard((board) => ({ ...board, travel: next, tokens: board.tokens.map((token) => (token.tempHp ? { ...token, tempHp: undefined, tempHpScope: undefined } : token)) }));
   appendChat({ author: "Viagem", text: message, kind: "system" });
 }
 
@@ -666,7 +680,7 @@ export function setActiveFloor(floor: number): void {
 
 export function setLighting(lighting: BoardState["lighting"]): void {
   if (forward("setLighting", [lighting])) return;
-  mutateBoard((board) => ({ ...board, lighting }));
+  mutateBoard((board) => ({ ...board, lighting, lightingManual: true }));
 }
 
 /** Mestre: guarda o apelido de um jogador (vem dele mesmo, ao entrar na sala); aparece ao lado dos tokens que ele controla. */
@@ -725,7 +739,7 @@ export function clearRollHistory(): void {
 
 export function startCombat(): CombatState {
   if (forward("startCombat", [])) return combatState;
-  const eligible = BOARD.tokens.filter((token) => !token.hidden && !token.defeated);
+  const eligible = BOARD.tokens.filter((token) => !token.hidden && !token.dead);
   if (!eligible.length) throw new Error("Adicione tokens antes de iniciar o combate.");
   const rolled = eligible.map((token) => ({ token, initiative: rollDie(20) + token.initiative }));
   rolled.sort((a, b) => b.initiative - a.initiative || a.token.name.localeCompare(b.token.name));
@@ -737,7 +751,7 @@ export function startCombat(): CombatState {
   BOARD = {
     ...BOARD,
     tokens: BOARD.tokens.map((token) => initiativeById.has(token.id)
-      ? { ...token, initiativeRoll: initiativeById.get(token.id)!, effects: token.effects?.filter((effect) => effect.kind === "long"), tempHp: undefined }
+      ? { ...token, initiativeRoll: initiativeById.get(token.id)!, effects: token.effects?.filter((effect) => effect.kind === "long") }
       : token),
     selectedTokenIds: order[0] ? [order[0]] : [],
   };
@@ -812,7 +826,8 @@ export function endTurn(): CombatState {
   if (combatState.pendingReaction) throw new Error("Aguarde a resposta da reação antes de encerrar o turno.");
   const living = combatState.order.filter((id) => {
     const token = BOARD.tokens.find((entry) => entry.id === id);
-    return token && !token.defeated && token.hp > 0;
+    // Quem está a 0 PV ou menos mas ainda não morreu continua na ordem: é no turno dele que o sangramento acontece (p.236).
+    return token && !token.dead;
   });
   const index = Math.max(0, living.indexOf(combatState.activeTokenId || ""));
   const nextIndex = (index + 1) % living.length;
@@ -839,7 +854,8 @@ export function endCombat(): CombatState {
     pendingReaction: undefined,
     revision: combatState.revision + 1,
   };
-  BOARD = { ...BOARD, tokens: BOARD.tokens.map((token) => ({ ...token, effects: token.effects?.filter((effect) => effect.kind === "long"), tempHp: undefined })) };
+  // Livro (p.106): PV temporários somem no fim do dia, salvo texto em contrário; os de duração "cena" (Campo de Força) acabam com o combate.
+  BOARD = { ...BOARD, tokens: BOARD.tokens.map((token) => ({ ...token, effects: token.effects?.filter((effect) => effect.kind === "long"), ...(token.tempHpScope === "scene" ? { tempHp: undefined, tempHpScope: undefined } : {}) })) };
   SCENES = SCENES.map((scene) => scene.id === activeSceneId ? { ...scene, board: BOARD } : scene);
   saveAndNotify();
   return combatState;

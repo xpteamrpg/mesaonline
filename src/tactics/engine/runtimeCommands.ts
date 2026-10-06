@@ -26,6 +26,7 @@ import { tacticalViewForToken } from "../../integration/modernRpgCharacterBridge
 import { resolveTacticalAction } from "./combat";
 import { reachableCells, moverOf, EXPLORATION_BUDGET_M } from "./movement";
 import "./conditionTicks";
+import "./weatherEffects";
 import { spendCombatAction } from "./actionEconomy";
 import { resolveSpellEffect } from "./spellEffects";
 import { parseRangeM } from "../interpretation/modernRpgRules";
