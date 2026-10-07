@@ -13,7 +13,10 @@ vi.mock("../src/portal/lib/tables/client", async (original) => ({
 }));
 vi.mock("../src/portal/lib/campaigns/client", async (original) => ({
   ...(await original<typeof import("../src/portal/lib/campaigns/client")>()),
-  myTables: async () => [], tableParty: async () => [], tableMembers: async () => [], characterRequests: async () => [], claimTable: async () => undefined,
+  myTables: async () => [],
+  tableParty: async () => [{ id: "l1", characterId: "c1", summary: { name: "Kalop", avatar: "data:image/png;base64,AAAA" }, ownerId: "u2", ownerName: "Ana", hasSheet: true }],
+  tableMembers: async () => [{ userId: "u0", name: "Mestre", role: "mestre" }, { userId: "u2", name: "Ana", role: "jogador" }, { userId: "u3", name: "Beto", role: "jogador" }],
+  characterRequests: async () => [], claimTable: async () => undefined,
 }));
 
 let host: HTMLDivElement;
@@ -92,5 +95,34 @@ describe("campanhas oficiais e área do mestre", () => {
     await act(async () => { root.render(<TableDetailView table={table} code="X" isMember onEnter={() => undefined} onClose={() => undefined} />); });
     expect(host.querySelector("[data-master-area]")).toBeNull();
     expect(host.querySelector("[data-manage-section]")).toBeNull();
+  });
+
+  it("o cartão mostra os jogadores (sem o mestre) com a miniatura: retrato do personagem ou a inicial", async () => {
+    const { PlayersStrip } = await import("../src/portal/components/campaigns/MesaAccountSections");
+    await act(async () => { root.render(<PlayersStrip tableId="t1" />); });
+    await flush();
+    const strip = host.querySelector("[data-players-strip]")!;
+    expect(strip.textContent).toContain("Jogadores (2)");
+    expect(strip.textContent).toContain("Ana");
+    expect(strip.textContent).toContain("Beto");
+    expect(strip.textContent).not.toContain("Mestre");
+    expect(strip.querySelectorAll("img")).toHaveLength(1); // Ana tem retrato; Beto mostra a inicial
+    expect(strip.textContent).toContain("B");
+  });
+
+  it("NPC aliado tem a afinidade (tipo, sem corações) e dá para trocar ao editar", async () => {
+    const { CampaignBoardSections } = await import("../src/portal/components/campaigns/CampaignBoardSections");
+    const { OFFICIAL_CAMPAIGN_DATA } = await import("../src/portal/lib/campaigns/board");
+    let board = JSON.parse(JSON.stringify(OFFICIAL_CAMPAIGN_DATA[0].board));
+    const render = () => root.render(<CampaignBoardSections board={board} onChange={(next) => { board = next; void act(async () => render()); }} />);
+    await act(async () => render());
+    const badges = Array.from(host.querySelectorAll("[data-affinity]")).map((b) => b.textContent);
+    expect(badges).toEqual(["Aliado", "Amigável", "Neutro"]);
+    expect(host.textContent).not.toContain("♥");
+    await act(async () => { buttonByText("Editar").click(); });
+    const select = host.querySelector("select:not([aria-label])") as HTMLSelectElement;
+    await act(async () => { select.value = "Inimigo"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    await act(async () => { buttonByText("Salvar").click(); });
+    expect(board.allies[0].afinidade).toBe("Inimigo");
   });
 });

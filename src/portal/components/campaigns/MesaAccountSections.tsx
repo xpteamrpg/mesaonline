@@ -226,6 +226,37 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
 );
 
 /**
+ * Jogadores da mesa: a miniatura (retrato do personagem dele, ou a inicial) e o nome de cada um, para ver quem já está.
+ * Mostra quem está na mesa agora (sem o mestre); some se a pessoa não está logada ou a mesa é só deste navegador.
+ */
+export const PlayersStrip: React.FC<{ tableId: string; refreshKey?: number }> = ({ tableId, refreshKey = 0 }) => {
+  const { user } = useAuth();
+  const [players, setPlayers] = useState<{ id: string; name: string; avatar?: string }[] | null>(null);
+  useEffect(() => {
+    if (!user) { setPlayers(null); return; }
+    Promise.all([tableMembers(tableId), tableParty(tableId).catch(() => [] as PartyMember[])])
+      .then(([members, party]) => setPlayers(members.filter((m) => m.role !== "mestre").map((m) => ({ id: m.userId, name: m.name, avatar: party.find((p) => p.ownerId === m.userId && p.summary.avatar)?.summary.avatar }))))
+      .catch(() => setPlayers(null));
+  }, [tableId, user?.id, refreshKey]);
+  if (!user || players === null) return null;
+  return (
+    <div className="mt-2" data-players-strip>
+      <div className="text-[9px] font-black uppercase tracking-wide text-[#9c9180]">Jogadores ({players.length})</div>
+      {players.length === 0 ? <p className="text-[11px] text-[#9c9180]">Ninguém entrou ainda.</p> : (
+        <div className="mt-1 flex flex-wrap gap-2">
+          {players.map((p) => (
+            <span key={p.id} title={p.name} className="flex w-[52px] flex-col items-center gap-0.5 text-center">
+              {p.avatar ? <img src={p.avatar} alt="" className="h-9 w-9 rounded-full border-2 border-[#1c5fb5]/60 object-cover" /> : <span className="grid h-9 w-9 place-items-center rounded-full border-2 border-[#1c5fb5]/60 bg-[#dfe9f7] text-sm font-black text-[#12315f]">{(p.name || "?")[0]?.toUpperCase()}</span>}
+              <span className="w-full truncate text-[10px] font-bold leading-tight text-[#2b261f]">{p.name}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
  * Personagens que estão na mesa: só a cabeça (miniatura do retrato) e o nome. Clicar abre a ficha:
  * o personagem é seu → vai para a ficha no site; é de outra pessoa da mesa → abre a cópia da ficha (só leitura: não rola nem edita).
  */

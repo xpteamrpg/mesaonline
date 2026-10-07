@@ -11,6 +11,7 @@ import imgOficina from "../../assets/menu/oficina.jpg";
 import imgParceiros from "../../assets/menu/parceiros.jpg";
 import imgLivrosNovo from "../../assets/menu/livros-novo.jpg";
 import imgRacasNovo from "../../assets/menu/racas-novo.jpg";
+import imgHomebrew from "../../assets/menu/homebrew.jpg";
 import imgCompendio from "../../assets/menu/compendio.jpg";
 
 export interface MenuCard {
@@ -30,6 +31,7 @@ export const MENU_CARDS: MenuCard[] = [
   { view: "equipment", label: "Equipamentos", img: imgEquip },
   { view: "spells", label: "Magias (Grimório)", img: imgMagias },
   { view: "bestiary", label: "Monstros & Inimigos", img: imgMonstros },
+  { view: "homebrew", label: "Homebrew", img: imgHomebrew },
 ];
 
 /** Todos os destinos do site, em cards, para a página inicial. */
@@ -45,4 +47,5 @@ export const HOME_CARDS: MenuCard[] = [
   { view: "equipment", label: "Equipamentos", img: imgEquip },
   { view: "spells", label: "Magias (Grimório)", img: imgMagias },
   { view: "bestiary", label: "Monstros & Inimigos", img: imgMonstros },
+  { view: "homebrew", label: "Homebrew", img: imgHomebrew },
 ];

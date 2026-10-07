@@ -9,7 +9,7 @@ import type { CampaignRecord } from "./CampaignsView";
 import { ImagePicker } from "../common/ImagePicker";
 import { SITE_ROOT } from "../../../utils/assetUrl";
 import type { CharacterSheet } from "../../types/sheet";
-import { ImportCharacterDialog, ManageTableDialog, PartyStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
+import { ImportCharacterDialog, ManageTableDialog, PartyStrip, PlayersStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
 import { CopyButton, copyText } from "../common/CopyButton";
 import { TableDetailsFields } from "./TableDetailsFields";
 import { TableDetailView } from "./TableDetailView";
@@ -232,6 +232,7 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mest
           <span className="font-bold text-[#2b8a3e]">{t.priceType === "paga" ? `R$ ${Number(t.priceValue || 0).toFixed(2)}` : "Gratuita"}</span>
           <span className="text-[#726859]">Vagas {t.seatsFilled ?? 0}/{t.seatsTotal ?? "—"}{t.isPublic ? " · pública" : " · privada"}</span>
         </div>
+        {!link.local && <PlayersStrip tableId={link.id} />}
         <div className="mt-2 flex items-center gap-2 rounded border border-[#ded7c6] bg-[#fbf9f4] px-2 py-1 text-[11px]">
           <span className="text-[#9c9180]">Código</span><b className="font-mono tracking-widest text-[#2b261f]">{code}</b>
           <CopyButton text={code} className="ml-auto rounded border border-[#ded7c6] bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-[#726859]" />

@@ -3,7 +3,11 @@
  * Estrutura tirada do painel "Relacionamentos" da campanha oficial A Libertação de Valkaria (public/libertacao/script.js),
  * refeita no visual do site. Fica guardado neste navegador, por mesa (chave com o id da mesa); é privado do mestre.
  */
-export interface BoardAlly { id: string; name: string; desc: string; bonus: string; image?: string }
+/** Tipo de afinidade de um NPC com o grupo (os mesmos nomes do painel antigo, sem a contagem de corações). */
+export const AFFINITIES = ["Inimigo", "Hostil", "Neutro", "Amigável", "Aliado", "Íntimo"] as const;
+export type Affinity = (typeof AFFINITIES)[number];
+
+export interface BoardAlly { id: string; name: string; desc: string; bonus: string; image?: string; afinidade?: Affinity }
 export interface BoardMission { id: string; nome: string; descricao: string; recompensa: string; completa: boolean }
 export interface BoardPlace { id: string; nome: string; descricao: string; servicos: string; honrarias: string; imagem?: string }
 export interface CampaignBoard { allies: BoardAlly[]; missions: BoardMission[]; places: BoardPlace[] }
@@ -50,9 +54,9 @@ export const OFFICIAL_CAMPAIGN_DATA: OfficialCampaignData[] = [
     image: "./libertacao/images/templo_valkaria.png",
     board: {
       allies: [
-        { id: "o-a1", name: "Mestre Aurélio", desc: "Sábio ancião que conhece os segredos de Candeh'ssa.", bonus: "+2 em testes de Conhecimento" },
-        { id: "o-a2", name: "Irmãs do Destino", desc: "Duas irmãs gêmeas que operam a casa de banho.", bonus: "Cura +1d6 por descanso" },
-        { id: "o-a3", name: "Corvo Noturno", desc: "Informante misterioso que frequenta a taverna.", bonus: "+1 dado em testes de Investigação" },
+        { id: "o-a1", name: "Mestre Aurélio", desc: "Sábio ancião que conhece os segredos de Candeh'ssa.", bonus: "+2 em testes de Conhecimento", afinidade: "Aliado" },
+        { id: "o-a2", name: "Irmãs do Destino", desc: "Duas irmãs gêmeas que operam a casa de banho.", bonus: "Cura +1d6 por descanso", afinidade: "Amigável" },
+        { id: "o-a3", name: "Corvo Noturno", desc: "Informante misterioso que frequenta a taverna.", bonus: "+1 dado em testes de Investigação", afinidade: "Neutro" },
       ],
       missions: [
         { id: "o-m1", nome: "O Ritual Perdido", descricao: "Encontrar os 3 fragmentos do antigo ritual nas masmorras ao norte.", recompensa: "Poção da Vitalidade + 200 PE", completa: false },

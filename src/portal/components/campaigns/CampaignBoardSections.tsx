@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { newId, type BoardAlly, type BoardMission, type BoardPlace, type CampaignBoard } from "../../lib/campaigns/board";
+import { AFFINITIES, newId, type Affinity, type BoardAlly, type BoardMission, type BoardPlace, type CampaignBoard } from "../../lib/campaigns/board";
 
 const inp = "w-full rounded border border-[#ded7c6] bg-[#fbf9f4] p-2 text-xs";
 const card = "rounded-lg border border-[#ded7c6] bg-white p-3 shadow-sm";
 const small = "rounded border px-2.5 py-1 text-[11px] font-black uppercase";
 
 export type BoardKind = "allies" | "missions" | "places";
+
+const AFFINITY_COLOR: Record<Affinity, string> = { Inimigo: "bg-[#C3073F] text-white", Hostil: "bg-[#e67e22] text-white", Neutro: "bg-[#95a5a6] text-white", Amigável: "bg-[#2ecc71] text-[#103a1f]", Aliado: "bg-[#3498db] text-white", Íntimo: "bg-[#9b59b6] text-white" };
 
 /** Campo de texto que vira edição quando o cartão está em modo de edição. */
 const Field: React.FC<{ label: string; value: string; editing: boolean; onChange: (v: string) => void; multiline?: boolean }> = ({ label, value, editing, onChange, multiline }) => (
@@ -46,12 +48,14 @@ const Section: React.FC<{ title: string; hint?: string; children: React.ReactNod
 );
 
 /** Formulário de uma linha para acrescentar um item. */
-const AddRow: React.FC<{ fields: { key: string; placeholder: string; wide?: boolean }[]; button: string; onAdd: (values: Record<string, string>) => void }> = ({ fields, button, onAdd }) => {
+const AddRow: React.FC<{ fields: { key: string; placeholder: string; wide?: boolean; options?: readonly string[] }[]; button: string; onAdd: (values: Record<string, string>) => void }> = ({ fields, button, onAdd }) => {
   const [values, setValues] = useState<Record<string, string>>({});
   const first = fields[0].key;
   return (
     <div className="mb-3 flex flex-wrap gap-2">
-      {fields.map((f) => <input key={f.key} value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} placeholder={f.placeholder} className={`${inp} ${f.wide ? "flex-[2_1_220px]" : "flex-[1_1_150px]"}`} />)}
+      {fields.map((f) => f.options
+        ? <select key={f.key} value={values[f.key] ?? "Neutro"} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} aria-label={f.placeholder} className={`${inp} flex-[0_1_130px]`}>{f.options.map((o) => <option key={o}>{o}</option>)}</select>
+        : <input key={f.key} value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} placeholder={f.placeholder} className={`${inp} ${f.wide ? "flex-[2_1_220px]" : "flex-[1_1_150px]"}`} />)}
       <button onClick={() => { if (!(values[first] ?? "").trim()) return; onAdd(values); setValues({}); }} className="rounded bg-[#b92b3a] px-3 py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">{button}</button>
     </div>
   );
@@ -68,13 +72,14 @@ export const CampaignBoardSections: React.FC<{ board: CampaignBoard; onChange?: 
   return (
     <div className="space-y-4">
       <Section title="NPCs aliados" hint="Quem ajuda o grupo, o que cada um oferece e o bônus que dá.">
-        {!readOnly && <AddRow fields={[{ key: "name", placeholder: "Nome do NPC aliado" }, { key: "desc", placeholder: "Quem é", wide: true }, { key: "bonus", placeholder: "Bônus que oferece" }]} button="Adicionar aliado" onAdd={(v) => update({ allies: [...board.allies, { id: newId(), name: v.name.trim(), desc: v.desc ?? "", bonus: v.bonus ?? "" }] })} />}
+        {!readOnly && <AddRow fields={[{ key: "name", placeholder: "Nome do NPC aliado" }, { key: "desc", placeholder: "Quem é", wide: true }, { key: "bonus", placeholder: "Bônus que oferece" }, { key: "afinidade", placeholder: "Afinidade", options: AFFINITIES as readonly string[] }]} button="Adicionar aliado" onAdd={(v) => update({ allies: [...board.allies, { id: newId(), name: v.name.trim(), desc: v.desc ?? "", bonus: v.bonus ?? "", afinidade: (AFFINITIES as readonly string[]).includes(v.afinidade) ? (v.afinidade as Affinity) : "Neutro" }] })} />}
         {board.allies.length === 0 ? empty("Nenhum aliado ainda.") : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {board.allies.map((a) => (
               <ItemCard<BoardAlly> key={a.id} item={a} readOnly={readOnly} onClone={clone("allies", a.id)} onRemove={() => update({ allies: board.allies.filter((x) => x.id !== a.id) })} onSave={(next) => update({ allies: board.allies.map((x) => (x.id === a.id ? next : x)) })}
-                title={(d) => d.name}>
-                {(d, editing, set) => <><Field label="Nome" value={d.name} editing={editing} onChange={(v) => set({ name: v })} /><Field label="Quem é" value={d.desc} editing={editing} onChange={(v) => set({ desc: v })} multiline /><Field label="Bônus" value={d.bonus} editing={editing} onChange={(v) => set({ bonus: v })} /></>}
+                title={(d) => <span className="flex flex-wrap items-center gap-2">{d.name}{d.afinidade && <span className={`rounded px-1.5 py-0.5 font-sans text-[9px] font-black uppercase ${AFFINITY_COLOR[d.afinidade]}`} data-affinity>{d.afinidade}</span>}</span>}>
+                {(d, editing, set) => <><Field label="Nome" value={d.name} editing={editing} onChange={(v) => set({ name: v })} />
+                  {editing && <label className="mt-1 block text-[10px] font-bold uppercase text-[#9c9180]">Afinidade<select value={d.afinidade ?? "Neutro"} onChange={(e) => set({ afinidade: e.target.value as Affinity })} className={`${inp} mt-0.5 normal-case`}>{AFFINITIES.map((a) => <option key={a}>{a}</option>)}</select></label>}<Field label="Quem é" value={d.desc} editing={editing} onChange={(v) => set({ desc: v })} multiline /><Field label="Bônus" value={d.bonus} editing={editing} onChange={(v) => set({ bonus: v })} /></>}
               </ItemCard>
             ))}
           </div>
