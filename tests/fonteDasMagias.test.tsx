@@ -29,6 +29,8 @@ describe("fonte de cada magia", () => {
     expect(spell("Bola de Fogo").fonte).toBe("Tormenta 20 — Jogo Básico");
     expect(spell("Armadura Elemental").fonte).toBe("Heróis de Arton");
     expect(spell("Relâmpago Flamejante").fonte).toBe("Tormenta 20 — Jogo Básico");
+    // informado pelo usuário: as três são do suplemento Deuses de Arton
+    for (const nome of ["Soco do Mestre", "Cólera do Deus-Sol", "Bola de Fogo Flamejante"]) expect(spell(nome).fonte, nome).toBe("Deuses de Arton");
   });
 
   it("o cartão da magia mostra a fonte", async () => {
