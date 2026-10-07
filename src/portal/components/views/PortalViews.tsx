@@ -8,7 +8,7 @@ import imgCompendio from "../../assets/menu/compendio.jpg";
 import imgHomebrew from "../../assets/menu/homebrew.jpg";
 import imgRacas from "../../assets/menu/racas-novo.jpg";
 import { HomeBanner } from "./HomeBanner";
-import { HOME_CARDS } from "../layout/menuCards";
+import { EXTERNAL_CARDS, HOME_CARDS } from "../layout/menuCards";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { REQUIRE_LOGIN_FOR_PERSONAL_DATA } from "../../lib/accountConfig";
 import imgCampanhas from "../../assets/menu/campanhas.jpg";
@@ -18,7 +18,7 @@ export const HomeView: React.FC<{ onNavigate: (view: View) => void; characters: 
   const needsLogin = REQUIRE_LOGIN_FOR_PERSONAL_DATA && !user;
   return (
     <div className="mx-auto max-w-[1400px] p-3 sm:p-5">
-      <HomeBanner />
+      <HomeBanner onNavigate={onNavigate} />
       <section className="relative overflow-hidden rounded-xl border border-[#b92b3a]/30 bg-[#2b261f] text-white shadow-xl">
         <img src={imgCampanhas} alt="Paisagem de Arton" className="absolute inset-0 h-full w-full object-cover opacity-40" />
         <div className="relative grid min-h-[360px] items-end gap-6 p-6 sm:p-10 lg:grid-cols-[1.2fr_.8fr]">
@@ -55,6 +55,14 @@ export const HomeView: React.FC<{ onNavigate: (view: View) => void; characters: 
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 pb-1.5 pt-8 text-center font-serif text-[13px] font-black uppercase leading-tight text-white">{c.label}</span>
               </div>
             </button>
+          ))}
+          {EXTERNAL_CARDS.map((c) => (
+            <a key={c.label} href={c.href} target="_blank" rel="noreferrer" title={c.credit} className="group rounded-lg border border-[#ded7c6] bg-white p-1.5 text-left shadow-sm transition-shadow hover:shadow-md" data-external-card>
+              <div className="relative aspect-[16/10] overflow-hidden rounded">
+                <img src={c.img} alt="" className="h-full w-full object-cover object-[50%_30%] transition-transform duration-500 group-hover:scale-110" />
+                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 pb-1.5 pt-8 text-center font-serif text-[13px] font-black uppercase leading-tight text-white">{c.label} ↗</span>
+              </div>
+            </a>
           ))}
         </div>
       </section>

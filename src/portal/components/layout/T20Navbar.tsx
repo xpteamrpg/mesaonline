@@ -3,7 +3,7 @@ import type { CharacterSheet } from "../../types/sheet";
 import type { View } from "../../types/view";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { AuthModal } from "../auth/AuthModal";
-import { MENU_CARDS } from "./menuCards";
+import { EXTERNAL_CARDS, MENU_CARDS } from "./menuCards";
 
 interface Props {
   characters: CharacterSheet[];
@@ -147,6 +147,12 @@ export const T20Navbar: React.FC<Props> = ({ characters, activeId, view, onNavig
                 <img src={c.img} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105" />
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-3 pb-3 pt-8 text-center font-serif text-base font-black uppercase tracking-wide text-white drop-shadow">{c.label}</span>
               </button>
+            ))}
+            {EXTERNAL_CARDS.map((c) => (
+              <a key={c.label} href={c.href} target="_blank" rel="noreferrer" title={c.credit} className="group relative h-[188px] overflow-hidden rounded-lg border border-[#ded7c6] bg-[#2b261f] text-left shadow">
+                <img src={c.img} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105" />
+                <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-3 pb-3 pt-8 text-center font-serif text-base font-black uppercase tracking-wide text-white drop-shadow">{c.label} ↗</span>
+              </a>
             ))}
           </div>
         </div>

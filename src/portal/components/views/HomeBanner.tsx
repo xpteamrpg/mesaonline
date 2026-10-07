@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import type { View } from "../../types/view";
 import imgMonstros from "../../assets/menu/monstros.jpg";
 import imgLivros from "../../assets/menu/livros.jpg";
 import imgRacas from "../../assets/menu/racas.jpg";
@@ -15,14 +16,14 @@ const SLIDES = [
 ] as const;
 
 /** Área fixa (não gira): destaques do projeto. Troque os textos e adicione `href` quando quiser. */
-const FIXED_HIGHLIGHTS: { label: string; title: string; text: string; href?: string; logo?: string }[] = [
-  { label: "Comunidade", title: "Guildas", text: "Este projeto faz parte do sistema de guildas. Em breve, mais detalhes aqui." },
+const FIXED_HIGHLIGHTS: { label: string; title: string; text: string; href?: string; logo?: string; view?: View }[] = [
+  { label: "Comunidade", title: "Guildas", text: "Este projeto faz parte do sistema de guildas. Conheça as guildas e as lojas dos membros.", view: "guilds" },
   { label: "Guilda dos Aventureiros", title: "Armada de Vectora", text: "Entre na guilda do Discord.", href: "https://discord.gg/z3mNsfHfv", logo: "./images/armada-de-vectora-logo.png" },
 ];
 
 const INTERVAL_MS = 6000;
 
-export const HomeBanner: React.FC = () => {
+export const HomeBanner: React.FC<{ onNavigate?: (view: View) => void }> = ({ onNavigate }) => {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -64,6 +65,7 @@ export const HomeBanner: React.FC = () => {
             </>
           );
           const cls = "flex flex-col items-start justify-center text-left rounded-lg border border-[#d7ad5d]/40 bg-[#2b261f] p-4 text-white shadow-sm";
+          if (h.view && onNavigate) return <button key={h.title} type="button" onClick={() => onNavigate(h.view!)} className={`${cls} w-full hover:bg-[#3b3428]`} data-guilds-card>{inner}</button>;
           return h.href ? <a key={h.title} href={h.href} target="_blank" rel="noreferrer" className={`${cls} hover:bg-[#3b3428]`}>{inner}</a> : <div key={h.title} className={cls}>{inner}</div>;
         })}
       </div>

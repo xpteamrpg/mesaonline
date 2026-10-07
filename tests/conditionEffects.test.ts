@@ -18,8 +18,8 @@ function board(tokens = [makeToken()]): BoardState {
 }
 
 describe("catálogo de condições", () => {
-  it("traz as 35 condições do legado com descrição", () => {
-    expect(CONDITION_NAMES).toHaveLength(35);
+  it("traz as 35 condições do legado (mais Morto e Invisível, da mesa) com descrição", () => {
+    expect(CONDITION_NAMES).toHaveLength(37);
     expect(conditionDescription("Em Chamas")).toContain("1d6");
     expect(conditionDescription("caído")).toContain("–5 na Defesa contra ataques corpo a corpo");
   });

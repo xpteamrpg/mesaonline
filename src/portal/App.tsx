@@ -16,6 +16,7 @@ import { VttImportModal } from "./components/sheet/VttImportModal";
 import { AboutView, HomeView } from "./components/views/PortalViews";
 import { OnlineTableView } from "./components/views/OnlineTableView";
 import { HomebrewView } from "./components/views/HomebrewView";
+import { GuildsView } from "./components/views/GuildsView";
 import { CreateCharacterView, ReadyCharactersView } from "./components/views/CharacterCreateViews";
 import { AccountOrders, AccountOverview, AccountProfile } from "./components/views/AccountViews";
 import { SiteFooter } from "./components/layout/SiteFooter";
@@ -275,6 +276,7 @@ function PortalApp() {
         {view === "accountOrders" && <AccountOrders onNavigate={navigate} />}
         {view === "online" && <OnlineTableView campaigns={campaigns} characters={characters} onOpenCharacter={(id) => { setActiveId(id); navigate("sheet"); }} onManageCampaigns={() => navigate("campaigns")} />}
         {view === "homebrew" && <HomebrewView onNavigate={navigate} />}
+        {view === "guilds" && <GuildsView />}
         {view === "companions" && <RequireLogin what="os seus parceiros"><CompanionsView companions={companions} characters={characters} onChange={setCompanions} /></RequireLogin>}
         {view === "compendium" && <CompendiumView onNavigate={navigate} />}
         {view === "books" && <BooksView books={books} onChange={setBooks} />}

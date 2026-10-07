@@ -15,6 +15,7 @@ export type View =
   | "spells"
   | "bestiary"
   | "homebrew"
+  | "guilds"
   | "createChar"
   | "readyChars"
   | "account"
@@ -38,6 +39,7 @@ export const VIEW_HASH: Record<View, string> = {
   spells: "#/magias",
   bestiary: "#/monstros",
   homebrew: "#/homebrew",
+  guilds: "#/guildas",
   createChar: "#/personagens/novo",
   readyChars: "#/personagens/prontos",
   account: "#/conta",

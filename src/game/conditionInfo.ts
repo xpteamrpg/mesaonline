@@ -26,6 +26,8 @@ export const CONDITION_INFO: Record<string, string> = {
   "Fraco": "O personagem sofre -2 em testes de Força, Destreza e Constituição e em testes de perícias baseadas nesses atributos. Se ficar fraco novamente, em vez disso fica debilitado.",
   "Frustrado": "O personagem sofre -2 em testes de Inteligência, Sabedoria e Carisma e em testes de perícias baseadas nesses atributos. Se ficar frustrado novamente, em vez disso fica esmorecido. (Mental)",
   "Imóvel": "Todas as formas de deslocamento do personagem são reduzidas a 0 metros. (Movimento)",
+  "Invisível": "O personagem não pode ser visto: quem tenta atacá-lo tem camuflagem total (50% de chance de errar). Não é uma condição do Livro Básico: vem do efeito da magia Invisibilidade e é usada pela mesa.",
+  "Morto": "O personagem morreu. Marcada à mão pelo mestre; a morte por PV (−10 ou metade dos PV totais) continua automática. Não é uma condição do Livro Básico.",
   "Inconsciente": "O personagem fica indefeso e não pode fazer ações, incluindo reações (mas ainda pode fazer testes que sejam naturalmente feitos quando se está inconsciente, como testes de Constituição para estabilizar sangramento). Balançar uma criatura para acordá-la gasta uma ação padrão.",
   "Indefeso": "O personagem fica desprevenido, mas sofre -10 na Defesa, falha automaticamente em testes de Reflexos e pode sofrer golpes de misericórdia.",
   "Lento": "Todas as formas de deslocamento do personagem são reduzidas à metade (arredonde para baixo para o primeiro incremento de 1,5 metros) e ele não pode correr ou fazer investidas. (Movimento)",

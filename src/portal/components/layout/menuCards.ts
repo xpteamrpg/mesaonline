@@ -34,6 +34,12 @@ export const MENU_CARDS: MenuCard[] = [
   { view: "homebrew", label: "Homebrew", img: imgHomebrew },
 ];
 
+/** Cards que abrem outro site (em outra aba). */
+export interface ExternalCard { href: string; label: string; img: string; credit: string }
+export const EXTERNAL_CARDS: ExternalCard[] = [
+  { href: "https://yurialessandro.github.io/artonMap/", label: "Mapa de Arton", img: imgCompendio, credit: "Mapa interativo de Arton, projeto de Yuri Alessandro (abre em outro site)" },
+];
+
 /** Todos os destinos do site, em cards, para a página inicial. */
 export const HOME_CARDS: MenuCard[] = [
   { view: "workshop", label: "Oficina de Heróis", img: imgOficina },

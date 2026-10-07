@@ -376,7 +376,8 @@ export function updateToken(tokenId: string, patch: Partial<BoardToken>): BoardT
     pmMax: Math.max(0, Number(patch.pmMax ?? current.pmMax)),
   };
   next.defeated = next.hp <= 0;
-  next.dead = diesAt(next);
+  // "Morto" marcado à mão pelo mestre também vale; tirar a condição (com PV acima do limite) ressuscita.
+  next.dead = diesAt(next) || (next.conditions || []).some((name) => /^morto$/i.test(name.trim()));
   // 0 PV ou menos: cai inconsciente e sangrando; voltando a ter PV, recobra a consciência e estabiliza (p.236).
   // Espírito Inquebrável: em Fúria o bárbaro continua de pé (só morre no limite de morte).
   if (current.hp > 0 && next.hp <= 0 && !next.dead && !keepsConsciousAtZero(next)) {

@@ -19,6 +19,7 @@ export function concealmentAgainst(board: BoardState, attacker: BoardToken, targ
     reasons.push(reason);
   };
   if ((attacker.conditions || []).some((condition) => /cego/i.test(condition.normalize("NFD").replace(/[̀-ͯ]/g, "")))) raise("total", "atacante cego");
+  if ((target.conditions || []).some((condition) => /^invisivel$/i.test(condition.normalize("NFD").replace(/[̀-ͯ]/g, "")))) raise("total", "alvo invisível");
   if (weatherRule(board.weather).concealment === "light") raise("light", "névoa");
   if (board.lightingManual) {
     const lighting = boardLighting(board);
