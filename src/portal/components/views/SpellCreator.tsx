@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { CopyButton } from "../common/CopyButton";
+import { MagiaCard } from "./MagiaCard";
+import { PublishSpellDialog } from "./PublishSpellDialog";
+import { myPublishedIds, publishingAvailable, spellLink, unpublishSpell } from "../../lib/homebrew/publicSpells";
 import { deleteMySpell, loadMySpells, novaMagia, novoId, saveMySpell, type SaveWhere } from "../../lib/homebrew/mySpells";
 import { PM_BASE_DO_CIRCULO, TABELA, calcular, circuloEfetivo, ehOfensiva, semAcento, tarifaDoTexto } from "../../lib/homebrew/spellCost";
 import {
@@ -47,28 +50,6 @@ const Sel: React.FC<{ label: string; value: string | number; options: (string | 
   <label className="block"><span className={lbl}>{label}</span><select value={String(value)} onChange={(e) => onChange(e.target.value)} className={inp}>{options.map((o) => <option key={String(o)} value={String(o)}>{String(o)}</option>)}</select></label>
 );
 
-const Carta: React.FC<{ m: MagiaCriada; r: ReturnType<typeof calcular> }> = ({ m, r }) => {
-  const desc = m.descricao.trim() ? substituir(m.descricao, m) : "";
-  const pocao = tipoDePocaoDosEixos(m.eixos.alvo);
-  return (
-    <div className="rounded-lg border-2 border-[#b92b3a] bg-white p-4 shadow-sm" data-spell-card>
-      <div className="font-serif text-2xl font-black text-[#b92b3a]">{m.nome || "Sem Nome"}</div>
-      <div className="text-[11px] font-black uppercase tracking-wide text-[#9c9180]">{m.escola} ({m.tipo}) — {m.circulo}º círculo · {PM_BASE_DO_CIRCULO[m.circulo]} PM</div>
-      <p className="mt-2 text-xs leading-5 text-[#2b261f]">
-        <b>Execução:</b> {ROTULOS.execucao[m.eixos.execucao as keyof typeof ROTULOS.execucao]}; <b>Alcance:</b> {ROTULOS.alcance[m.eixos.alcance as keyof typeof ROTULOS.alcance]?.replace(/ \(.+\)/, "")};
-        {" "}<b>Alvo:</b> {textoAlvo(m)}; <b>Duração:</b> {ROTULOS.duracao[m.eixos.duracao as keyof typeof ROTULOS.duracao]}; <b>Resistência:</b> {textoResistencia(m)}
-        {m.eixos.umaVezPorCena ? "; Limite: uma vez por cena no mesmo alvo" : ""}{m.eixos.componente ? "; Componente: material consumido" : ""}
-      </p>
-      {desc ? <p className="mt-2 whitespace-pre-line text-sm leading-6 text-[#5c5446]">{desc}</p> : resumoDosEfeitos(m) ? <p className="mt-2 text-sm leading-6 text-[#5c5446]">{resumoDosEfeitos(m)}</p> : null}
-      {m.aprimoramentos.filter((a) => a.texto).length > 0 && <ul className="mt-2 space-y-1 text-sm text-[#5c5446]">{m.aprimoramentos.filter((a) => a.texto).map((a, i) => <li key={i}><b className="text-[#b92b3a]">{a.truque ? "Truque" : `+${a.pm} PM`}:</b> {a.texto}{a.requerCirculo ? <i> (requer {a.requerCirculo}º círculo)</i> : null}</li>)}</ul>}
-      {pocao && <div className="mt-2 text-xs text-[#726859]">🧪 pode virar <b>{pocao} de {m.nome || "esta magia"}</b></div>}
-      <div className={`mt-3 border-t border-[#ded7c6] pt-2 text-[11px] font-black uppercase ${r.valido ? "text-[#2f7d32]" : r.precisaAval ? "text-[#c2670a]" : "text-[#b92b3a]"}`} data-spell-points>
-        {r.total}/{r.orcamento} pontos{r.valido ? "" : r.precisaAval ? " — aval do mestre" : " — estourou"}
-      </div>
-    </div>
-  );
-};
-
 type Passo = { id: string; titulo: string; pergunta: string; visivel?: (m: MagiaCriada) => boolean };
 const PASSOS: Passo[] = [
   { id: "basico", titulo: "A magia", pergunta: "Como ela se chama?" },
@@ -96,10 +77,13 @@ export const SpellCreator: React.FC<{ onClose: () => void }> = ({ onClose }) => 
   const [msg, setMsg] = useState("");
   const [erro, setErro] = useState("");
   const descRef = useRef<HTMLTextAreaElement>(null);
+  const [published, setPublished] = useState<Set<string>>(new Set());
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
     void loadMySpells(userId).then((res) => { setMine(res.spells); setWhere(res.where); });
+    void myPublishedIds(userId).then(setPublished);
   }, [userId]);
 
   const r = useMemo(() => calcular(magia), [magia]);
@@ -386,13 +370,20 @@ export const SpellCreator: React.FC<{ onClose: () => void }> = ({ onClose }) => 
             <h2 className="mb-3 font-serif text-xl font-black text-[#2b261f]">{atual.pergunta}</h2>
             {atual.id === "revisao" ? (
               <div className="space-y-3">
-                <Carta m={magia} r={r} />
+                <MagiaCard m={magia} r={r} />
                 {!r.valido && <p className="rounded border border-[#b92b3a] bg-[#fbebee] p-2 text-xs font-semibold text-[#b92b3a]">{r.bloqueada ? "Esta combinação não existe nas magias oficiais — veja os avisos e ajuste." : "A magia estourou o orçamento — volte e ajuste, ou combine o extra com o mestre."}</p>}
                 {erro && <p className="rounded border border-[#b92b3a] bg-[#fbebee] p-2 text-xs font-semibold text-[#b92b3a]">{erro}</p>}
                 {msg && <p role="status" className="rounded border border-[#2b8a3e] bg-[#ebfbee] p-2 text-xs font-bold text-[#2b8a3e]">{msg}</p>}
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => void guardar()} className="rounded bg-[#b92b3a] px-6 py-2.5 text-xs font-black uppercase text-white shadow hover:bg-[#9c1f2d]" data-save-spell>Guardar magia</button>
                   <CopyButton text={textoPlano(magia, r)} label="📋 Copiar texto" className="rounded border border-[#ded7c6] bg-white px-4 py-2.5 text-xs font-bold text-[#726859] hover:bg-[#eae4d5]" />
+                  {published.has(magia.id)
+                    ? <>
+                        <CopyButton text={spellLink(userId, magia.id)} label="🔗 Copiar link da magia" className="rounded border border-[#ded7c6] bg-white px-4 py-2.5 text-xs font-bold text-[#726859] hover:bg-[#eae4d5]" />
+                        <button type="button" onClick={() => void unpublishSpell(userId, magia.id).then((ok) => { if (ok) setPublished((s) => { const n = new Set(s); n.delete(magia.id); return n; }); })} className="rounded border border-[#ded7c6] px-4 py-2.5 text-xs font-black uppercase text-[#b92b3a]" data-unpublish>Despublicar</button>
+                      </>
+                    : <button type="button" disabled={!publishingAvailable() || r.bloqueada} title={r.bloqueada ? "Esta combinação não existe nas magias oficiais: ajuste antes de publicar." : "Mostrar esta magia na página Homebrew, com o seu perfil"} onClick={() => { if (!magia.nome.trim()) { setErro("Dê um nome para a magia antes de publicar."); return; } void guardar().then(() => setPublishing(true)); }} className="rounded border border-[#1c5fb5] bg-white px-4 py-2.5 text-xs font-black uppercase text-[#1c5fb5] disabled:opacity-50" data-publish>Publicar no Homebrew</button>}
+                  <button type="button" disabled title="Em breve: as sugestões vão vir do agente do site" className="rounded border border-[#ded7c6] px-4 py-2.5 text-xs font-black uppercase text-[#9c9180] opacity-70" data-ai-suggestions>⚡ Sugestões da IA (em breve)</button>
                   <button type="button" onClick={baixar} className="rounded border border-[#ded7c6] px-4 py-2.5 text-xs font-black uppercase text-[#726859]">Baixar .json</button>
                   <button type="button" onClick={() => { setMagia(novaMagia()); setPasso(0); setErro(""); setMsg(""); }} className="rounded border border-[#ded7c6] px-4 py-2.5 text-xs font-black uppercase text-[#726859]">Nova magia</button>
                 </div>
@@ -405,7 +396,7 @@ export const SpellCreator: React.FC<{ onClose: () => void }> = ({ onClose }) => 
           </section>
 
           <aside className="space-y-3">
-            {atual.id !== "revisao" && <Carta m={magia} r={r} />}
+            {atual.id !== "revisao" && <MagiaCard m={magia} r={r} />}
             <div className="rounded-lg border border-[#ded7c6] bg-white p-3 text-xs shadow-sm">
               <div className="mb-1 text-[10px] font-black uppercase text-[#9c9180]">De onde vem o custo</div>
               <ul className="space-y-0.5" data-cost-parts>{Object.entries(r.partes).filter(([, v]) => v !== 0).map(([k, v]) => <li key={k} className="flex justify-between"><span>{k}</span><b className={v > 0 ? "text-[#b92b3a]" : "text-[#2f7d32]"}>{money(v)}</b></li>)}</ul>
@@ -427,7 +418,7 @@ export const SpellCreator: React.FC<{ onClose: () => void }> = ({ onClose }) => 
                 return (
                   <li key={s.id} className="rounded border border-[#ded7c6] bg-[#fbf9f4] p-3">
                     <div className="font-serif text-base font-black text-[#b92b3a]">{s.nome}</div>
-                    <div className="text-[10px] font-bold uppercase text-[#9c9180]">{s.escola} ({s.tipo}) · {s.circulo}º círculo · {rs.total}/{rs.orcamento} pts</div>
+                    <div className="text-[10px] font-bold uppercase text-[#9c9180]">{s.escola} ({s.tipo}) · {s.circulo}º círculo · {rs.total}/{rs.orcamento} pts{published.has(s.id) ? " · publicada" : ""}</div>
                     <div className="mt-2 flex gap-2">
                       <button type="button" onClick={() => { setMagia(s); setPasso(0); setMsg(""); setErro(""); window.scrollTo({ top: 0 }); }} className="rounded border border-[#ded7c6] px-2.5 py-1 text-[11px] font-black uppercase text-[#726859]">Editar</button>
                       <button type="button" onClick={() => { const copia = { ...structuredClone(s), id: novoId(), nome: `${s.nome} (cópia)` }; setMagia(copia); setPasso(0); window.scrollTo({ top: 0 }); }} className="rounded border border-[#ded7c6] px-2.5 py-1 text-[11px] font-black uppercase text-[#726859]">Duplicar</button>
@@ -439,6 +430,7 @@ export const SpellCreator: React.FC<{ onClose: () => void }> = ({ onClose }) => 
             </ul>
           )}
         </section>
+        {publishing && <PublishSpellDialog magia={magia} onClose={() => setPublishing(false)} onPublished={() => { setPublishing(false); setPublished((s) => new Set(s).add(magia.id)); setMsg("Magia publicada no Homebrew."); }} />}
         <p className="mt-4 text-center text-[10px] text-[#9c9180]">Motor de custo e textos adaptados do Criador de Magias T20 de RaymundoJMSN (hub-t20).</p>
       </div>
     </div>

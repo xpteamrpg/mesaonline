@@ -6,6 +6,7 @@ import { HOMEBREW_KINDS, type HomebrewKind } from "./homebrewKinds";
 import { deleteLocalFile, getLocalFile, putLocalFile } from "../../lib/localFiles";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { SpellCreator } from "./SpellCreator";
+import { PublicSpellsSection } from "./PublicSpellsSection";
 
 /** Arte própria da página (pintura do projeto, diferente da usada no card da Home). */
 import imgHomebrew from "../../assets/menu/homebrew.jpg";
@@ -155,6 +156,8 @@ export const HomebrewView: React.FC<{ onNavigate: (v: View) => void }> = ({ onNa
       </section>
 
       {creator && <SpellCreator onClose={() => setCreator(false)} />}
+
+      <PublicSpellsSection />
 
       <section id="enviar" className="mb-4 rounded-lg border border-[#c2892c]/50 bg-[#fef9ed] p-5 shadow-sm">
         <h2 className="font-serif text-2xl font-black text-[#c2892c]">Enviar meu homebrew</h2>
