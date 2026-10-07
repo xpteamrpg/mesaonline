@@ -59,15 +59,6 @@ export const HomeView: React.FC<{ onNavigate: (view: View) => void; characters: 
         </div>
       </section>
 
-      <button onClick={() => onNavigate("homebrew")} className="group mt-5 flex w-full flex-col items-start gap-3 rounded-lg border border-[#c2892c]/60 bg-gradient-to-r from-[#2b261f] via-[#49332a] to-[#2b261f] p-5 text-left text-white shadow-md sm:flex-row sm:items-center sm:justify-between">
-        <span>
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f2c572]">Conteúdo da comunidade</span>
-          <span className="mt-1 block font-serif text-2xl font-black">Homebrew</span>
-          <span className="mt-1 block max-w-2xl text-xs leading-5 text-white/75">Raças, classes, poderes, magias, itens, monstros e parceiros criados por jogadores e mestres. Explore, use nas suas fichas e compartilhe o seu.</span>
-        </span>
-        <span className="rounded bg-[#c2892c] px-5 py-2.5 text-xs font-black uppercase text-white transition-colors group-hover:bg-[#a87421]">Explorar Homebrew →</span>
-      </button>
-
       <p className="mt-5 text-center text-[10px] text-[#9c9180]">Conteúdo oficial pertence aos seus respectivos autores. Este é um projeto de fãs, sem fins comerciais.</p>
     </div>
   );

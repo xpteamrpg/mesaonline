@@ -65,13 +65,23 @@ describe("listas de mesas do Portal", () => {
     expect(host.textContent).not.toMatch(/em que participo/i);
   });
 
-  it("jogador vê Importar personagem e Sair; o mestre vê Gerenciar e Editar", async () => {
+  it("cada cartão tem Página da mesa e o menu de dois pontinhos; jogador vê Importar personagem, mestre vê as ações de mestre no menu", async () => {
     await mount();
-    const text = host.textContent!;
-    expect(text.match(/Importar personagem/g)?.length).toBe(2);
-    expect(text.match(/Sair/g)?.length).toBe(2);
-    expect(text).toContain("Gerenciar jogadores e convites");
-    expect(text.match(/Editar mesa/g)?.length).toBe(1);
+    expect(host.querySelectorAll("button[data-table-page]")).toHaveLength(3);
+    expect(host.textContent!.match(/Importar personagem/g)?.length).toBe(2);
+    const menus = Array.from(host.querySelectorAll("button[data-table-menu]"));
+    expect(menus).toHaveLength(3);
+    const open = async (i: number) => { await act(async () => { (menus[i] as HTMLButtonElement).click(); }); return host.querySelector("ul.absolute")!.textContent!; };
+    // a ordem na tela: campanhas (Guerra dos Tronos, jogador) vem antes dos one-shots (Cripta, mestre; Taverna, jogador)
+    const campanhaMenu = await open(0);
+    expect(campanhaMenu).toContain("Sair da mesa");
+    expect(campanhaMenu).not.toContain("Área do mestre");
+    await act(async () => { (menus[0] as HTMLButtonElement).click(); });
+    const mestreMenu = await open(1);
+    expect(mestreMenu).toContain("♛ Área do mestre");
+    expect(mestreMenu).toContain("Editar mesa");
+    expect(mestreMenu).toContain("Gerenciar jogadores e convites");
+    expect(mestreMenu).toContain("Copiar código");
   });
 
   it("o mestre adiciona direto na mesa um herói pronto (já aceito, sem pedido)", async () => {

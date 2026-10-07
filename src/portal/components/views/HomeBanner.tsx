@@ -17,7 +17,7 @@ const SLIDES = [
 /** Área fixa (não gira): destaques do projeto. Troque os textos e adicione `href` quando quiser. */
 const FIXED_HIGHLIGHTS: { label: string; title: string; text: string; href?: string; logo?: string }[] = [
   { label: "Comunidade", title: "Guildas", text: "Este projeto faz parte do sistema de guildas. Em breve, mais detalhes aqui." },
-  { label: "Guilda de Aventureiros", title: "Armada de Vectora", text: "Entre na guilda pelo Discord.", href: "https://discord.gg/z3mNsfHfv", logo: "./images/armada-de-vectora-logo.png" },
+  { label: "Guilda dos Aventureiros", title: "Armada de Vectora", text: "Entre na guilda do Discord.", href: "https://discord.gg/z3mNsfHfv", logo: "./images/armada-de-vectora-logo.png" },
 ];
 
 const INTERVAL_MS = 6000;
@@ -59,11 +59,11 @@ export const HomeBanner: React.FC = () => {
           const inner = (
             <>
               <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#f2c572]">{h.label}</span>
-              {h.logo ? <img src={h.logo} alt={h.title} className="mt-1 h-24 w-full object-contain" /> : <h3 className="mt-1 font-serif text-xl font-black">{h.title}</h3>}
+              {h.logo ? <img src={h.logo} alt={h.title} className="mt-1 h-24 w-full object-contain object-left" /> : <h3 className="mt-1 font-serif text-xl font-black">{h.title}</h3>}
               <p className="mt-1 text-xs leading-5 text-white/70">{h.text}</p>
             </>
           );
-          const cls = "flex flex-col justify-center rounded-lg border border-[#d7ad5d]/40 bg-[#2b261f] p-4 text-white shadow-sm";
+          const cls = "flex flex-col items-start justify-center text-left rounded-lg border border-[#d7ad5d]/40 bg-[#2b261f] p-4 text-white shadow-sm";
           return h.href ? <a key={h.title} href={h.href} target="_blank" rel="noreferrer" className={`${cls} hover:bg-[#3b3428]`}>{inner}</a> : <div key={h.title} className={cls}>{inner}</div>;
         })}
       </div>

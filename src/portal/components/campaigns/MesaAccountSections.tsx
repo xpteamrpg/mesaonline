@@ -128,7 +128,8 @@ export const ParticipatingTables: React.FC<{ characters: CharacterSheet[]; skipI
 };
 
 /** Painel do mestre: jogadores (com expulsar), convites e personagens que pediram entrada. */
-export const ManageTableDialog: React.FC<{ table: { id: string; name: string; code: string }; token?: string; characters?: CharacterSheet[]; onClose: () => void }> = ({ table, token, characters = [], onClose }) => {
+/** Jogadores, convites, pedidos de personagem e personagens da mesa. Fica dentro da página da mesa (só para o mestre). */
+export const ManageTablePanel: React.FC<{ table: { id: string; name: string; code: string }; token?: string; characters?: CharacterSheet[] }> = ({ table, token, characters = [] }) => {
   const { user } = useAuth();
   const [members, setMembers] = useState<TableMember[]>([]);
   const [requests, setRequests] = useState<LinkRequest[]>([]);
@@ -158,7 +159,7 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
   const addable = [...characters, ...READY_HEROES.map((hero) => hero.sheet)].filter((c, i, all) => all.findIndex((x) => x.id === c.id) === i);
   const alreadyIn = new Set(accepted.map((r) => r.characterId));
   return (
-    <Modal title={`Gerenciar · ${table.name}`} onClose={onClose}>
+    <div data-manage-panel>
       {msg && <p role="status" className="mb-3 rounded border border-[#c2892c]/60 bg-[#fff6dc] px-2 py-1 text-[11px] font-semibold text-[#6b4a12]">{msg}</p>}
       <section>
         <h3 className="text-[11px] font-black uppercase tracking-wide text-[#726859]">Jogadores</h3>
@@ -215,9 +216,14 @@ export const ManageTableDialog: React.FC<{ table: { id: string; name: string; co
           ))}</ul>
         )}
       </section>
-    </Modal>
+    </div>
   );
 };
+
+/** O mesmo painel numa janela (uso antigo). */
+export const ManageTableDialog: React.FC<{ table: { id: string; name: string; code: string }; token?: string; characters?: CharacterSheet[]; onClose: () => void }> = ({ table, token, characters, onClose }) => (
+  <Modal title={`Gerenciar · ${table.name}`} onClose={onClose}><ManageTablePanel table={table} token={token} characters={characters} /></Modal>
+);
 
 /**
  * Personagens que estão na mesa: só a cabeça (miniatura do retrato) e o nome. Clicar abre a ficha:

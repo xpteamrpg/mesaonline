@@ -10,14 +10,18 @@ import { ImagePicker } from "../common/ImagePicker";
 import { SITE_ROOT } from "../../../utils/assetUrl";
 import type { CharacterSheet } from "../../types/sheet";
 import { ImportCharacterDialog, ManageTableDialog, PartyStrip, ReceivedInvites } from "../campaigns/MesaAccountSections";
-import { CopyButton } from "../common/CopyButton";
+import { CopyButton, copyText } from "../common/CopyButton";
 import { TableDetailsFields } from "./TableDetailsFields";
 import { TableDetailView } from "./TableDetailView";
+import { CampaignHubView } from "../campaigns/CampaignHubView";
 import type { TableDetails } from "../../lib/tables/details";
 import { claimTable, joinTable, leaveTable, myTables, type MyTable } from "../../lib/campaigns/client";
 
 /** Arte própria da página (pintura do projeto). */
 const MESA_ONLINE_ART = imgCampanhas;
+
+/** O que a página da mesa precisa saber do cartão de onde veio (token do mestre e como abrir a edição). */
+type DetailCtx = { link: MyTableLink; edit: () => void };
 
 const inp = "w-full rounded border border-[#ded7c6] bg-[#fbf9f4] p-2 text-xs";
 const AGE_RATINGS = ["livre", "16", "18"];
@@ -193,12 +197,28 @@ const JoinPrivateTable: React.FC = () => {
   );
 };
 
+/** Menu de dois pontinhos (⋮) do cartão: as ações secundárias da mesa. */
+const KebabMenu: React.FC<{ items: { label: string; onClick: () => void; danger?: boolean }[] }> = ({ items }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-label="Mais opções" aria-expanded={open} className="h-8 w-8 rounded border border-[#ded7c6] bg-white text-lg font-black leading-none text-[#726859] hover:bg-[#eae4d5]" data-table-menu>⋮</button>
+      {open && <>
+        <button type="button" aria-label="Fechar menu" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpen(false)} />
+        <ul className="absolute bottom-full right-0 z-20 mb-1 w-56 overflow-hidden rounded border border-[#ded7c6] bg-white py-1 text-xs shadow-lg">{items.map((i) => <li key={i.label}><button type="button" onClick={() => { setOpen(false); i.onClick(); }} className={`block w-full px-3 py-2 text-left font-bold hover:bg-[#f5f2eb] ${i.danger ? "text-[#b92b3a]" : "text-[#2b261f]"}`}>{i.label}</button></li>)}</ul>
+      </>}
+    </div>
+  );
+};
+
 /** Cartão de uma mesa criada neste navegador: capa, selo e as informações que o mestre preencheu. */
-const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mestre" | "jogador"; members?: number; onDetail: (t: TableEntry, code: string, isGm: boolean) => void; onManage: (l: MyTableLink) => void; onEdit: (l: MyTableLink, current: Partial<TableEntry>) => void; onImport: (t: TableEntry) => void; onLeave: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, role, members, onDetail, onManage, onEdit, onImport, onLeave, characters, onOpenCharacter }) => {
+const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mestre" | "jogador"; members?: number; onDetail: (t: TableEntry, code: string, isGm: boolean, ctx?: DetailCtx) => void; onHub: (t: TableEntry, code: string) => void; onManage: (l: MyTableLink) => void; onEdit: (l: MyTableLink, current: Partial<TableEntry>) => void; onImport: (t: TableEntry) => void; onLeave: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ link, fresh, role, members, onDetail, onHub, onManage, onEdit, onImport, onLeave, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
   const isGm = role === "mestre";
   const t = { ...(link.data ?? {}), ...(fresh ?? {}) } as Partial<TableEntry>;
   const code = link.liveRoomCode || fresh?.liveRoomCode || link.code;
+  const openPage = () => onDetail({ ...(t as TableEntry), id: link.id, name: link.name, code: link.code }, code, isGm, { link, edit: () => onEdit(link, t) });
+  void onManage;
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#ded7c6] bg-white shadow-sm">
       {t.imageUrl ? <img src={t.imageUrl} alt="" className="aspect-video w-full bg-black object-contain" /> : <div className="aspect-video w-full bg-gradient-to-br from-[#2b261f] to-[#4a3f2c]" aria-hidden="true" />}
@@ -218,10 +238,17 @@ const MyTableCard: React.FC<{ link: MyTableLink; fresh?: TableEntry; role: "mest
         </div>
         {!link.local && <PartyStrip tableId={link.id} characters={characters} onOpenOwn={onOpenCharacter} />}
         <button onClick={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(isGm ? { name: link.name, host: code } : { name: link.name, sala: code }); }} className="mt-3 w-full rounded bg-[#b92b3a] py-2 text-xs font-black uppercase text-white hover:bg-[#9c1f2d]">Entrar na mesa online</button>
-        <button onClick={() => onDetail({ ...(t as TableEntry), id: link.id, name: link.name, code: link.code }, code, isGm)} className="mt-2 w-full rounded border border-[#ded7c6] bg-white py-1.5 text-[11px] font-black uppercase text-[#2b261f] hover:bg-[#eae4d5]" data-table-page>Página da mesa</button>
-        {isGm && <button onClick={() => onEdit(link, t)} className="mt-2 w-full rounded border border-[#b92b3a] bg-white py-1.5 text-[11px] font-black uppercase text-[#b92b3a] hover:bg-[#fdeef0]" data-edit-table>Editar mesa</button>}
-        {!isGm && !link.local && <div className="mt-2 flex gap-2"><button onClick={() => onImport({ ...(t as TableEntry), id: link.id, name: link.name })} className="flex-1 rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Importar personagem</button><button onClick={() => onLeave(link)} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-[11px] font-black uppercase text-[#726859] hover:bg-[#eae4d5]">Sair</button></div>}
-        {isGm && !link.local && <button onClick={() => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) onManage(link); }} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Gerenciar jogadores e convites</button>}
+        <div className="mt-2 flex items-center gap-2">
+          <button onClick={() => openPage()} className="flex-1 rounded border border-[#ded7c6] bg-white py-1.5 text-[11px] font-black uppercase text-[#2b261f] hover:bg-[#eae4d5]" data-table-page>Página da mesa</button>
+          <KebabMenu items={[
+            ...(isGm ? [{ label: "♛ Área do mestre", onClick: () => onHub({ ...(t as TableEntry), id: link.id, name: link.name, code: link.code }, code) }] : []),
+            ...(isGm ? [{ label: "Editar mesa", onClick: () => onEdit(link, t) }] : []),
+            ...(isGm && !link.local ? [{ label: "Gerenciar jogadores e convites", onClick: () => { if (requireLogin("Para gerenciar a mesa você precisa estar logado.")) openPage(); } }] : []),
+            { label: "Copiar código", onClick: () => { void copyText(code); } },
+            ...(!isGm && !link.local ? [{ label: "Sair da mesa", onClick: () => onLeave(link), danger: true }] : []),
+          ]} />
+        </div>
+        {!isGm && !link.local && <button onClick={() => onImport({ ...(t as TableEntry), id: link.id, name: link.name })} className="mt-2 w-full rounded border border-[#1c5fb5] bg-white py-1.5 text-[11px] font-black uppercase text-[#1c5fb5] hover:bg-[#eef4fc]">Importar personagem</button>}
       </div>
     </div>
   );
@@ -295,10 +322,11 @@ const EditTableDialog: React.FC<{ link: MyTableLink; current: Partial<TableEntry
 };
 
 /** "Minhas campanhas" (mesas do tipo campanha + campanhas do Portal) e "Meus one-shots": cada mesa com seu cartão. */
-const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; joined?: MyTable[]; onChanged?: () => void; onDetail: (t: TableEntry, code: string, isGm: boolean) => void; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], joined = [], onChanged, onDetail, onManage, onManageTable, characters, onOpenCharacter }) => {
+const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; campaigns?: CampaignRecord[]; joined?: MyTable[]; refreshKey?: number; onChanged?: () => void; onDetail: (t: TableEntry, code: string, isGm: boolean, ctx?: DetailCtx) => void; onHub: (t: TableEntry, code: string) => void; onManage?: () => void; onManageTable: (l: MyTableLink) => void; characters: CharacterSheet[]; onOpenCharacter: (id: string) => void }> = ({ kind, title, campaigns = [], joined = [], refreshKey, onChanged, onDetail, onHub, onManage, onManageTable, characters, onOpenCharacter }) => {
   const { requireLogin } = useAuth();
   const [importing, setImporting] = useState<TableEntry | null>(null);
   const [links, setLinks] = useState<MyTableLink[]>(getMyTables());
+  useEffect(() => { setLinks(getMyTables()); }, [refreshKey]);
   const [editing, setEditing] = useState<{ link: MyTableLink; current: Partial<TableEntry> } | null>(null);
   const [fresh, setFresh] = useState<Record<string, TableEntry>>({});
   useEffect(() => {
@@ -326,7 +354,7 @@ const MyTablesSection: React.FC<{ kind: "campanha" | "oneshot"; title: string; c
         <p className="rounded border border-dashed border-[#ded7c6] p-4 text-center text-xs text-[#726859]">{kind === "campanha" ? "Nenhuma campanha ainda. Crie uma acima escolhendo “Campanha”." : "Nenhum one-shot ainda. Crie uma acima escolhendo “One-shot”."}</p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} role={roleOf(l.id) ?? (l.managementToken || l.local ? "mestre" : "jogador")} members={joined.find((m) => m.table.id === l.id)?.members} onDetail={onDetail} onManage={onManageTable} onEdit={(link, current) => setEditing({ link, current })} onImport={setImporting} onLeave={leave} characters={characters} onOpenCharacter={onOpenCharacter} />)}
+          {mine.map((l) => <MyTableCard key={l.id} link={l} fresh={fresh[l.id]} role={roleOf(l.id) ?? (l.managementToken || l.local ? "mestre" : "jogador")} members={joined.find((m) => m.table.id === l.id)?.members} onDetail={onDetail} onHub={onHub} onManage={onManageTable} onEdit={(link, current) => setEditing({ link, current })} onImport={setImporting} onLeave={leave} characters={characters} onOpenCharacter={onOpenCharacter} />)}
           {campaigns.map((c) => {
             const code = campaignRoomCode(c.id);
             return (
@@ -379,7 +407,8 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
   const [managing, setManaging] = useState<MyTableLink | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [joined, setJoined] = useState<MyTable[]>([]);
-  const [detail, setDetail] = useState<{ table: TableEntry; code: string; member: boolean; gm: boolean } | null>(null);
+  const [detail, setDetail] = useState<{ table: TableEntry; code: string; member: boolean; gm: boolean; ctx?: DetailCtx } | null>(null);
+  const [hub, setHub] = useState<{ table: TableEntry; code: string } | null>(null);
   useEffect(() => { if (user) myTables().then(setJoined).catch(() => setJoined([])); else setJoined([]); }, [user?.id, refresh]);
   const [tables, setTables] = useState<TableEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -404,17 +433,18 @@ export const OnlineTableView: React.FC<{ campaigns?: CampaignRecord[]; character
     <div className="mx-auto max-w-[1400px] p-3 sm:p-5">
       <PageBanner image={MESA_ONLINE_ART} position="50% 40%" title="Mesa online" crumb="Mesa online" />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-[1fr_340px]">
         <CreatePrivateTable onCreated={() => load(1, false)} />
         <JoinPrivateTable />
       </div>
 
       <div className="mt-6"><ReceivedInvites onChanged={() => setRefresh((n) => n + 1)} /></div>
-      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} joined={joined} onChanged={() => setRefresh((n) => n + 1)} onDetail={(table, code, gm) => setDetail({ table, code, member: true, gm })} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
-      <MyTablesSection kind="oneshot" title="Meus one-shots" joined={joined} onChanged={() => setRefresh((n) => n + 1)} onDetail={(table, code, gm) => setDetail({ table, code, member: true, gm })} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
-      {detail && <TableDetailView table={detail.table} code={detail.code} isMember={detail.member} characters={characters} onOpenCharacter={onOpenCharacter} onClose={() => setDetail(null)} onEnter={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(detail.gm ? { name: detail.table.name, host: detail.code } : { name: detail.table.name, sala: detail.code }); }} />}
+      <MyTablesSection kind="campanha" title="Minhas campanhas" campaigns={campaigns} joined={joined} refreshKey={refresh} onChanged={() => setRefresh((n) => n + 1)} onDetail={(table, code, gm, ctx) => setDetail({ table, code, member: true, gm, ctx })} onHub={(table, code) => setHub({ table, code })} onManage={() => onManageCampaigns?.()} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      <MyTablesSection kind="oneshot" title="Meus one-shots" joined={joined} refreshKey={refresh} onChanged={() => setRefresh((n) => n + 1)} onDetail={(table, code, gm, ctx) => setDetail({ table, code, member: true, gm, ctx })} onHub={(table, code) => setHub({ table, code })} onManageTable={setManaging} characters={characters} onOpenCharacter={onOpenCharacter} />
+      {hub && <CampaignHubView table={hub.table} characters={characters} onOpenCharacter={onOpenCharacter} onClose={() => setHub(null)} onPage={() => { setDetail({ table: hub.table, code: hub.code, member: true, gm: true }); setHub(null); }} onEnter={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa({ name: hub.table.name, host: hub.code }); }} />}
+      {detail && <TableDetailView table={detail.table} code={detail.code} isMember={detail.member} isGm={detail.gm} token={detail.ctx?.link.managementToken} onEdit={detail.ctx ? () => { const edit = detail.ctx!.edit; setDetail(null); edit(); } : undefined} onHub={detail.gm ? () => { setHub({ table: detail.table, code: detail.code }); setDetail(null); } : undefined} characters={characters} onOpenCharacter={onOpenCharacter} onClose={() => setDetail(null)} onEnter={() => { if (requireLogin("Para entrar na mesa você precisa estar logado.")) openMesa(detail.gm ? { name: detail.table.name, host: detail.code } : { name: detail.table.name, sala: detail.code }); }} />}
       {managing && <ManageTableDialog table={{ id: managing.id, name: managing.name, code: managing.liveRoomCode || managing.code }} token={managing.managementToken} characters={characters} onClose={() => setManaging(null)} />}
-      <div className="mb-6 [&_h2]:!text-[#f2c572]"><OfficialCampaigns /></div>
+      <div className="mb-6 [&_h2]:!text-[#f2c572]"><OfficialCampaigns onCloned={() => setRefresh((n) => n + 1)} /></div>
 
       <div className="mt-8 border-t-4 border-[#b92b3a] pt-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

@@ -3,7 +3,7 @@ import type { TableEntry } from "../../lib/tables/client";
 import { CONTENT_WARNINGS, SAFETY_TOOLS, announcementText, sessionLine, whatsappLink } from "../../lib/tables/details";
 import type { CharacterSheet } from "../../types/sheet";
 import { CopyButton } from "../common/CopyButton";
-import { PartyStrip } from "../campaigns/MesaAccountSections";
+import { ManageTablePanel, PartyStrip } from "../campaigns/MesaAccountSections";
 
 const card = "rounded-lg border border-[#ded7c6] bg-white p-4 shadow-sm";
 const h3 = "mb-2 font-serif text-base font-black text-[#2b261f]";
@@ -14,7 +14,7 @@ const ageLabel = (a?: string) => (a === "18" ? "+18" : a === "16" || a === "14" 
  * Página de uma mesa: capa 16:9, horários, sobre, regras, cenário, segurança e requisitos à esquerda; à direita entrar,
  * WhatsApp do mestre, cobrança, dados da mesa, plataformas, como participar e quem está na mesa.
  */
-export const TableDetailView: React.FC<{ table: TableEntry; code: string; characters?: CharacterSheet[]; isMember?: boolean; onEnter: () => void; onClose: () => void; onOpenCharacter?: (id: string) => void }> = ({ table, code, characters = [], isMember = false, onEnter, onClose, onOpenCharacter = () => undefined }) => {
+export const TableDetailView: React.FC<{ table: TableEntry; code: string; characters?: CharacterSheet[]; isMember?: boolean; isGm?: boolean; token?: string; onEnter: () => void; onClose: () => void; onEdit?: () => void; onHub?: () => void; onOpenCharacter?: (id: string) => void }> = ({ table, code, characters = [], isMember = false, isGm = false, token, onEnter, onClose, onEdit, onHub, onOpenCharacter = () => undefined }) => {
   const d = table.details ?? {};
   const wa = whatsappLink(d.whatsapp);
   const free = table.priceType !== "paga";
@@ -23,7 +23,12 @@ export const TableDetailView: React.FC<{ table: TableEntry; code: string; charac
   return (
     <div className="fixed inset-0 z-[90] overflow-y-auto bg-[#f5f2eb]" role="dialog" aria-modal="true" aria-label={`Mesa ${table.name}`} data-table-detail>
       <div className="mx-auto max-w-[1200px] p-3 sm:p-6">
-        <button onClick={onClose} className="mb-3 rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-xs font-bold text-[#726859] hover:bg-[#eae4d5]">← Voltar às mesas</button>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <button onClick={onClose} className="rounded border border-[#ded7c6] bg-white px-3 py-1.5 text-xs font-bold text-[#726859] hover:bg-[#eae4d5]">← Voltar às mesas</button>
+          {isGm && onHub && <button onClick={onHub} className="ml-auto rounded bg-[#2b261f] px-4 py-1.5 text-xs font-black uppercase text-[#f2c572] hover:bg-[#3b3428]" data-master-area>♛ Área do mestre</button>}
+          {isGm && onEdit && <button onClick={onEdit} className={`${onHub ? "" : "ml-auto "}rounded border border-[#b92b3a] bg-white px-3 py-1.5 text-xs font-black uppercase text-[#b92b3a] hover:bg-[#fdeef0]`}>Editar mesa</button>}
+        </div>
+        {isGm && onEdit && !Object.keys(table.details ?? {}).length && <div className="mb-3 rounded border border-[#c2892c]/60 bg-[#fff6dc] p-3 text-xs text-[#6b4a12]">Esta página ainda está sem os detalhes: horários, regras, cenário, segurança e o WhatsApp do mestre. <button onClick={onEdit} className="font-black underline">Preencher agora</button></div>}
         <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
           <div className="space-y-4">
             <h1 className="font-serif text-3xl font-black text-[#2b261f]">{table.name}</h1>
@@ -59,6 +64,10 @@ export const TableDetailView: React.FC<{ table: TableEntry; code: string; charac
                 </> : null}
               </section>
             ) : null}
+
+            {isGm && table.id && !table.id.startsWith("local-") && (
+              <section className={card} data-manage-section><h3 className={h3}>👥 Jogadores e convites</h3><ManageTablePanel table={{ id: table.id, name: table.name, code }} token={token} characters={characters} /></section>
+            )}
 
             {d.techRequirements?.length ? <section className={card}><h3 className={h3}>💻 Requisitos técnicos</h3><div className="flex flex-wrap gap-1.5">{d.techRequirements.map((t) => <span key={t} className={tag}>{t}</span>)}</div></section> : null}
           </div>
