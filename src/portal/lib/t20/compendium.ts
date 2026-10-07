@@ -401,6 +401,8 @@ export interface T20Spell {
   resistencia: string;
   custo: number;
   descricao: string;
+  /** manual de onde vem a magia (mesmos rótulos dos poderes: "Tormenta 20 — Jogo Básico", "Heróis de Arton"...) */
+  fonte?: string;
   aprimoramentos: { custo: number; desc: string }[];
 }
 export const T20_SPELLS: T20Spell[] = magiasRaw as T20Spell[];

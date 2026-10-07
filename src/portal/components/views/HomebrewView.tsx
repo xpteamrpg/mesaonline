@@ -4,6 +4,8 @@ import { PageBanner } from "../layout/PageBanner";
 import { ImagePicker } from "../common/ImagePicker";
 import { HOMEBREW_KINDS, type HomebrewKind } from "./homebrewKinds";
 import { deleteLocalFile, getLocalFile, putLocalFile } from "../../lib/localFiles";
+import { useAuth } from "../../lib/auth/AuthContext";
+import { SpellCreator } from "./SpellCreator";
 
 /** Arte própria da página (pintura do projeto, diferente da usada no card da Home). */
 import imgHomebrew from "../../assets/menu/homebrew.jpg";
@@ -56,6 +58,8 @@ const kindOf = (id: string): HomebrewKind => HOMEBREW_KINDS.find((k) => k.id ===
 const fmtSize = (n?: number) => (n === undefined ? "" : n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 export const HomebrewView: React.FC<{ onNavigate: (v: View) => void }> = ({ onNavigate }) => {
+  const { requireLogin } = useAuth();
+  const [creator, setCreator] = useState(false);
   const [entries, setEntries] = useState<HomebrewEntry[]>(load);
   const [kindId, setKindId] = useState(HOMEBREW_KINDS[0].id);
   const [title, setTitle] = useState("");
@@ -144,6 +148,13 @@ export const HomebrewView: React.FC<{ onNavigate: (v: View) => void }> = ({ onNa
           ))}
         </div>
       </section>
+
+      <section className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-[#b92b3a]/40 bg-white p-4 shadow-sm" data-spell-creator-entry>
+        <div className="min-w-0 flex-1"><h2 className="font-serif text-xl font-black text-[#b92b3a]">✦ Criador de magias</h2><p className="text-xs leading-5 text-[#5c5446]">Crie a sua própria magia passo a passo. As magias que você criar são só suas: ficam guardadas na sua conta e ninguém mais vê.</p></div>
+        <button type="button" onClick={() => { if (requireLogin("Para criar e guardar magias você precisa estar logado.")) setCreator(true); }} className="rounded bg-[#b92b3a] px-5 py-2.5 text-xs font-black uppercase text-white shadow hover:bg-[#9c1f2d]">Criar magia</button>
+      </section>
+
+      {creator && <SpellCreator onClose={() => setCreator(false)} />}
 
       <section id="enviar" className="mb-4 rounded-lg border border-[#c2892c]/50 bg-[#fef9ed] p-5 shadow-sm">
         <h2 className="font-serif text-2xl font-black text-[#c2892c]">Enviar meu homebrew</h2>

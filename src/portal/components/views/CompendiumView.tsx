@@ -216,8 +216,10 @@ export const SpellsView: React.FC = () => {
   const [circle, setCircle] = useState<number | null>(null);
   const [type, setType] = useState("");
   const [school, setSchool] = useState("");
+  const [source, setSource] = useState("");
+  const sources = [...new Set(T20_SPELLS.map((m) => m.fonte).filter((f): f is string => Boolean(f)))];
   const s = q.trim().toLowerCase();
-  const list = useMemo(() => T20_SPELLS.filter((m) => (circle === null || m.circulo === circle) && (!type || m.tipo === type || m.tipo === "Universal") && (!school || m.escola === school) && hitIn(s, m.nome, m.descricao)), [s, circle, type, school]);
+  const list = useMemo(() => T20_SPELLS.filter((m) => (circle === null || m.circulo === circle) && (!type || m.tipo === type || m.tipo === "Universal") && (!school || m.escola === school) && (!source || m.fonte === source) && hitIn(s, m.nome, m.descricao, m.fonte)), [s, circle, type, school, source]);
   return (
     <Wrap>
       <PageHead image={imgMagias} position="50% 35%" icon="✨" title="Grimório — Magias" subtitle={`${T20_SPELLS.length} magias arcanas, divinas e universais do 1º ao 5º círculo, com aprimoramentos.`} right={<Search value={q} onChange={setQ} placeholder="Buscar magia…" />}>
@@ -229,6 +231,9 @@ export const SpellsView: React.FC = () => {
         <span className="ml-3 mr-1 text-[10px] font-bold uppercase text-[#726859]">Escola</span>
         <Pill active={!school} onClick={() => setSchool("")}>Todas</Pill>
         {SPELL_SCHOOLS.map((e) => <Pill key={e} active={school === e} onClick={() => setSchool(e)}>{e}</Pill>)}
+        <span className="ml-3 mr-1 text-[10px] font-bold uppercase text-[#726859]">Fonte</span>
+        <Pill active={!source} onClick={() => setSource("")}>Todas</Pill>
+        {sources.map((f) => <Pill key={f} active={source === f} onClick={() => setSource(f)}>{f}</Pill>)}
       </PageHead>
       <div className="space-y-2">{list.map((m) => <SpellCard key={m.id} s={m} />)}</div>
     </Wrap>

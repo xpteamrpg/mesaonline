@@ -123,6 +123,7 @@ export const SpellCard: React.FC<{ s: T20Spell; action?: React.ReactNode }> = ({
         <span className="rounded bg-[#e7f5ff] px-1.5 py-0.5 text-[10px] font-bold text-[#1c7ed6]">{s.circulo}º círculo</span>
         <span className="rounded bg-[#fbebee] px-1.5 py-0.5 text-[10px] font-bold text-[#b92b3a]">{s.custo} PM</span>
         <span className="text-[10px] text-[#726859]">{s.escola} · {s.tipo}</span>
+        {s.fonte && <span className="rounded bg-[#f5f2eb] px-1.5 py-0.5 text-[10px] text-[#726859]" data-spell-source>{s.fonte}</span>}
       </div>
       <div className="mt-0.5 text-[10px] text-[#726859]">
         Execução: {s.execucao} · Alcance: {s.alcance} · Duração: {s.duracao}
