@@ -1,4 +1,5 @@
 import threatsJson from "../../../ficha-modernrpg/t20/vtt/ameacas.json";
+import { spellPm } from "../../game/spellPm";
 import campaignThreatsJson from "../../../ficha-modernrpg/t20/vtt/ameacas_campanhas.json";
 import spellsJson from "../../../ficha-modernrpg/t20/vtt/magias.json";
 import type { GameAction, SaveType, ThreatTemplate } from "../../game/types";
@@ -213,7 +214,7 @@ function mentionedSpellActions(threat: CanonicalThreat): GameAction[] {
         kind: actionKindFromExecution(spell.execucao), effect: healing ? "heal" : formulas.length ? "damage" : "text",
         target: self ? "self" : inferred.areaM ? "area" : healing ? "ally" : "enemy",
         description: spell.descricao || `${spell.tipo || "Magia"} · ${spell.escola || ""}`,
-        pmCost: spell.custo || Math.max(1, spell.circulo * 2 - 1), rangeM: parseRangeM(spell.alcance, self ? 0 : 9),
+        pmCost: spell.custo || spellPm(spell.circulo), rangeM: parseRangeM(spell.alcance, self ? 0 : 9),
         damage: healing ? undefined : formulas[0], healing: healing ? formulas[0] || "1d8" : undefined,
         ...inferred, color: /fogo|chama/i.test(text) ? "fire" : healing ? "gold" : "arcane",
       };

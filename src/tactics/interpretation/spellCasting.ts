@@ -1,5 +1,6 @@
 import spellsJson from "../../../ficha-modernrpg/t20/vtt/magias.json";
 import type { GameAction } from "../../game/types";
+import { spellPm } from "../../game/spellPm";
 import type { CastInfo } from "../../components/tactics/CastPanel";
 import enhancementsJson from "../data/spellEnhancements.json";
 
@@ -252,7 +253,7 @@ export function buildCastInfo(context: CastContext): CastInfo {
   return {
     actionId: action.id,
     name: action.name,
-    baseCost: action.pmCost || entry.custo || Math.max(1, entry.circulo * 2 - 1),
+    baseCost: action.pmCost || entry.custo || spellPm(entry.circulo),
     // Magia racial não cumpre pré-requisito de círculo: usa o círculo da própria magia como máximo.
     maxCircle: context.racial ? entry.circulo : Math.max(1, context.maxCircle ?? entry.circulo),
     circle: entry.circulo,

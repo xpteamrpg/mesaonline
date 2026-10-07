@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../supabase/client";
 import type { CharacterSheet } from "../../types/sheet";
 import { INITIAL_CHARACTERS } from "../../data/characters";
+import { fixSheetSpellCosts } from "../../../game/spellPm";
 
 export const STORAGE_KEY = "tormenta20_online_characters_v2";
 const OWNER_KEY = `${STORAGE_KEY}:owner`;
@@ -19,7 +20,7 @@ const write = (key: string, value: string) => { try { localStorage.setItem(key, 
 function parseList(raw: string | null): CharacterSheet[] {
   try {
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? (parsed as CharacterSheet[]).filter((c) => c && c.id && c.name) : [];
+    return Array.isArray(parsed) ? (parsed as CharacterSheet[]).filter((c) => c && c.id && c.name).map(fixSheetSpellCosts) : [];
   } catch { return []; }
 }
 
@@ -42,7 +43,7 @@ async function fetchAccount(): Promise<CharacterSheet[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.from("mrpg_characters").select("id,data").order("updated_at", { ascending: true });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((row) => ({ ...(row.data as CharacterSheet), id: row.id as string }));
+  return (data ?? []).map((row) => fixSheetSpellCosts({ ...(row.data as CharacterSheet), id: row.id as string }));
 }
 
 async function saveAccount(userId: string, list: CharacterSheet[]) {

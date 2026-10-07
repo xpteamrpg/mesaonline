@@ -20,6 +20,7 @@
  *     fallback silencioso. Sem `characterId`, comportamento normal.
  */
 import type { CharacterSheet } from "./sheet";
+import { fixSheetSpellCosts } from "../src/game/spellPm";
 import { READY_HEROES, isReadyHeroId } from "../src/portal/data/readyHeroes";
 
 export const CHARACTERS_STORAGE_KEY = "tormenta20_online_characters_v2";
@@ -34,7 +35,7 @@ export function loadCharacterSheets(): CharacterSheet[] {
   try {
     const raw = window.localStorage.getItem(CHARACTERS_STORAGE_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list.filter((c): c is CharacterSheet => !!c && typeof c === "object" && typeof (c as CharacterSheet).id === "string") : [];
+    return Array.isArray(list) ? list.filter((c): c is CharacterSheet => !!c && typeof c === "object" && typeof (c as CharacterSheet).id === "string").map(fixSheetSpellCosts) : [];
   } catch {
     return [];
   }

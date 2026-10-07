@@ -1,4 +1,5 @@
 import { withCharges } from "../../game/chargeActions";
+import { fixLegacySpellCost, spellPm } from "../../game/spellPm";
 import { findSpellEntry } from "./spellCasting";
 import { classifySpellEffect, spellDamageType } from "./spellClassification";
 import { type CombatLoadout, readLoadout } from "../../game/combatLoadout";
@@ -103,7 +104,7 @@ function spellAction(spell: SpellItem): GameAction {
     effect: classifySpellEffect({ name: spell.name, description: spell.description, effect: dice }),
     target: personal ? "self" : areaM ? "area" : healing ? "ally" : "enemy",
     description: spell.description || `${spell.circle}º círculo · ${spell.school || spell.type || "Magia"}`,
-    pmCost: spell.cost || Math.max(1, spell.circle * 2 - 1),
+    pmCost: fixLegacySpellCost(spell.circle, spell.cost) || spellPm(spell.circle),
     rangeM: parseRangeM(spell.range, personal ? 0 : 9),
     damage: healing ? undefined : dice,
     damageType: healing ? undefined : spellDamageType(`${spell.effect || ""} ${spell.description || ""}`),
